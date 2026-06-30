@@ -1,0 +1,11 @@
+# Robots.txt para SaveWave
+# Permitir que Google y otros buscadores indexen todo el sitio
+
+User-agent: *
+Allow: /
+
+# Deshabilitar paginas de administracion
+Disallow: /admin/
+
+# Sitemap
+Sitemap: https://savewave.com/sitemap.xml

@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="{% block meta_description %}SaveWave - Descarga videos de YouTube, Instagram, TikTok, Facebook y cientos de plataformas mas. Rapido, gratis y seguro.{% endblock %}">
+    <meta name="keywords" content="{% block meta_keywords %}descargar videos, YouTube downloader, Instagram video downloader, TikTok downloader, descargar videos gratis, SaveWave{% endblock %}">
+    <meta name="author" content="SaveWave">
+    <meta name="robots" content="index, follow">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:title" content="{% block og_title %}SaveWave - Descarga videos gratis{% endblock %}">
+    <meta property="og:description" content="Descarga videos de cualquier plataforma. Rapido, facil y seguro.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ request.url }}">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="SaveWave - Descarga videos gratis">
+    <meta name="twitter:description" content="Descarga videos de cualquier plataforma. Rapido, facil y seguro.">
+    
+    <!-- Verificacion Google Search Console (pon tu codigo aqui) -->
+    <meta name="google-site-verification" content="">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="{{ request.url }}">
+    
+    <!-- Favicon con el logo -->
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='Savewave.png') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='Savewave.png') }}">
+    
+    <title>{% block title %}SaveWave{% endblock %}</title>
+
+    <!-- Bootstrap 5 (CDN) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome (iconos) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Estilos personalizados -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <!-- ==================== NAVBAR ==================== -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="{{ url_for('index') }}">
+                <img src="{{ url_for('static', filename='Savewave.png') }}" alt="SaveWave" height="32" class="me-2" style="border-radius: 6px;">
+                SaveWave
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('index') }}">
+                            <i class="fas fa-home me-1"></i>Inicio
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('pricing') }}">
+                            <i class="fas fa-tags me-1"></i>Planes
+                        </a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav align-items-center">
+                    <li class="nav-item">
+                        <button id="darkModeToggle" title="Modo oscuro">
+                            <i class="fas fa-moon"></i>
+                        </button>
+                    </li>
+                    {% if current_user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('dashboard') }}">
+                                <i class="fas fa-tachometer-alt me-1"></i>Panel
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('logout') }}">
+                                <i class="fas fa-sign-out-alt me-1"></i>Cerrar sesión
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <span class="nav-link text-success">
+                                <i class="fas fa-user me-1"></i>{{ current_user.username }}
+                            </span>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('login') }}">
+                                <i class="fas fa-sign-in-alt me-1"></i>Iniciar sesión
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link btn btn-outline-light btn-sm px-3 ms-2" href="{{ url_for('register') }}">
+                                <i class="fas fa-user-plus me-1"></i>Registrarse
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ==================== ANUNCIO SUPERIOR (Solo plan gratuito) ==================== -->
+    {% if ads_enabled and (not current_user.is_authenticated or (current_user.is_authenticated and current_user.subscription and current_user.subscription.plan.value == 'free')) %}
+    <div class="ad-banner text-center py-2 bg-light border-bottom" id="topAd">
+        <small class="text-muted">Publicidad</small>
+        <!-- Aquí va tu código de AdSense (anuncio display) -->
+        <div class="ad-container mx-auto" style="max-width: 728px; min-height: 90px;">
+            <!-- Coloca aquí el código de AdSense -->
+            <ins class="adsbygoogle"
+                 style="display:block"
+                 data-ad-client="{{ adsense_client }}"
+                 data-ad-slot="1234567890"
+                 data-ad-format="horizontal"
+                 data-full-width-responsive="true"></ins>
+            <script>
+                 (adsbygoogle = window.adsbygoogle || []).push({});
+            </script>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ==================== MENSAJES FLASH ==================== -->
+    <div class="container mt-3">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- ==================== CONTENIDO PRINCIPAL ==================== -->
+    <main class="container py-4">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- ==================== FOOTER ==================== -->
+    <footer class="bg-dark text-light py-4 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5><i class="fas fa-video me-2"></i>SaveWave</h5>
+                    <p class="text-muted small">
+                        Descarga videos de YouTube, Instagram y TikTok fácilmente.
+                        Solo para uso personal.
+                    </p>
+                </div>
+                <div class="col-md-3">
+                    <h6>Enlaces</h6>
+                    <ul class="list-unstyled small">
+                        <li><a href="{{ url_for('index') }}" class="text-light text-decoration-none">Inicio</a></li>
+                        <li><a href="{{ url_for('pricing') }}" class="text-light text-decoration-none">Planes</a></li>
+                        <li><a href="{{ url_for('login') }}" class="text-light text-decoration-none">Iniciar sesión</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-3">
+                    <h6>Legal</h6>
+                    <ul class="list-unstyled small">
+                        <li><a href="{{ url_for('terms') }}" class="text-light text-decoration-none">Terminos de uso</a></li>
+                        <li><a href="{{ url_for('privacy') }}" class="text-light text-decoration-none">Privacidad</a></li>
+                    </ul>
+                </div>
+            </div>
+            <hr class="border-secondary">
+            <p class="text-center text-muted small mb-0">
+                &copy; 2026 SaveWave. No almacenamos videos en nuestros servidores.
+            </p>
+        </div>
+    </footer>
+
+    <!-- ==================== SCRIPTS ==================== -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

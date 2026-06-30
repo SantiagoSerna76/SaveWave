@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Terminos de Uso - SaveWave{% endblock %}
+
+{% block content %}
+{% if ads_enabled %}
+<div class="ad-micro text-center mb-2">
+    <div class="ad-label" style="font-size:0.5rem;">Ad</div>
+    <ins class="adsbygoogle"
+         style="display:inline-block;width:320px;height:50px"
+         data-ad-client="{{ adsense_client }}"
+         data-ad-slot="6666666666"></ins>
+    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+</div>
+{% endif %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <h1 class="fw-bold mb-4"><i class="fas fa-file-contract me-2"></i>Terminos de Uso</h1>
+        <p class="text-muted">Ultima actualizacion: Junio 2026</p>
+
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body">
+                <h5>1. Aceptacion de los Terminos</h5>
+                <p>Al acceder y usar el servicio SaveWave, aceptas estos terminos de uso en su totalidad. Si no estas de acuerdo con alguno de estos terminos, no debes usar el servicio.</p>
+
+                <h5>2. Descripcion del Servicio</h5>
+                <p>SaveWave es una herramienta que permite a los usuarios descargar contenido multimedia de plataformas publicas como YouTube, Instagram y TikTok para uso personal. El servicio no almacena ningun contenido en sus servidores de forma permanente.</p>
+
+                <h5>3. Uso Aceptable</h5>
+                <p>Te comprometes a usar el servicio solo para fines legales y de acuerdo con estos terminos. No debes:</p>
+                <ul>
+                    <li>Usar el servicio para infringir derechos de autor</li>
+                    <li>Distribuir contenido descargado sin autorizacion</li>
+                    <li>Usar el servicio con fines comerciales sin una suscripcion adecuada</li>
+                    <li>Intentar eludir las limitaciones del plan gratuito</li>
+                    <li>Realizar un numero excesivo de solicitudes que puedan afectar el servicio</li>
+                </ul>
+
+                <h5>4. Propiedad Intelectual</h5>
+                <p>El contenido descargado a traves de nuestro servicio sigue siendo propiedad de sus respectivos creadores. No reclamamos propiedad sobre ningun contenido descargado mediante el servicio.</p>
+
+                <h5>5. Limitacion de Responsabilidad</h5>
+                <p>SaveWave no se hace responsable por el uso que los usuarios den al contenido descargado. El servicio se proporciona "tal cual" sin garantias de disponibilidad continua. El usuario asume toda la responsabilidad por el contenido que descarga y como lo utiliza.</p>
+
+                <h5>6. Privacidad</h5>
+                <p>El manejo de tus datos personales se describe en nuestra <a href="{{ url_for('privacy') }}">Politica de Privacidad</a>.</p>
+
+                <h5>7. Suscripciones y Pagos</h5>
+                <p>Las suscripciones de pago se renuevan automaticamente cada mes. Puedes cancelar en cualquier momento desde tu panel de control. Los reembolsos se manejan de acuerdo con la politica de Stripe.</p>
+
+                <h5>8. Modificaciones</h5>
+                <p>Nos reservamos el derecho de modificar estos terminos en cualquier momento. Los cambios entraran en vigor inmediatamente despues de su publicacion en esta pagina.</p>
+
+                <h5>9. Contacto</h5>
+                <p>Para preguntas sobre estos terminos, puedes contactarnos a traves de nuestros canales de soporte.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

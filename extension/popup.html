@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SaveWave</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <span class="logo">SaveWave</span>
+            <span class="badge">v1.0</span>
+        </div>
+
+        <!-- Input URL -->
+        <input type="url" id="urlInput" placeholder="Pega el enlace del video..." autofocus>
+
+        <!-- Formato: Video o MP3 -->
+        <div class="format-group">
+            <button class="format-btn active" data-format="video">
+                <span class="icon">▶</span> Video
+            </button>
+            <button class="format-btn" data-format="mp3">
+                <span class="icon">♪</span> MP3
+            </button>
+        </div>
+
+        <!-- Calidad -->
+        <select id="qualitySelect">
+            <option value="720p">720p</option>
+            <option value="480p">480p</option>
+            <option value="360p">360p</option>
+        </select>
+
+        <!-- Boton descargar -->
+        <button id="downloadBtn" disabled>
+            <span id="btnText">Descargar</span>
+            <span id="spinner" class="hidden">⏳</span>
+        </button>
+
+        <!-- Resultado -->
+        <div id="result" class="hidden">
+            <div class="success">
+                <span class="check">✓</span>
+                <span id="resultText">Descarga completada</span>
+                <a id="downloadLink" href="#" target="_blank" class="btn-small">Abrir</a>
+            </div>
+        </div>
+
+        <!-- Error -->
+        <div id="error" class="hidden error-box">
+            <span id="errorText">Error</span>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <a href="https://savewave.com" target="_blank">SaveWave.com</a>
+            <span class="dot">·</span>
+            <span id="remaining">Sin limite</span>
+        </div>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+</html>

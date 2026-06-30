@@ -1,0 +1,454 @@
+{% extends "base.html" %}
+
+{% block title %}SaveWave - Descarga videos de cualquier plataforma{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <!-- ==================== HERO / TITULO ==================== -->
+        <div class="text-center mb-5">
+            <h1 class="display-4 fw-bold">
+                <i class="fas fa-download text-primary me-2"></i>
+                Descarga videos y MP3 gratis
+            </h1>
+            <p class="lead text-muted">
+                De cualquier plataforma. Rapido, facil y sin registro. Tambien extrae audio a MP3.
+            </p>
+        </div>
+
+        <!-- ==================== FORMULARIO DE DESCARGA ==================== -->
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4">
+                <form id="downloadForm" method="POST">
+                    <div class="mb-3">
+                        <label for="urlInput" class="form-label fw-semibold">
+                            <i class="fas fa-link me-1"></i>Pega el enlace del video
+                        </label>
+                        <div class="input-group input-group-lg">
+                            <input
+                                type="url"
+                                class="form-control"
+                                id="urlInput"
+                                placeholder="https://www.youtube.com/watch?v=..."
+                                required
+                            >
+                            <button type="submit" class="btn btn-primary px-4" id="submitBtn">
+                                <i class="fas fa-search me-1"></i>Obtener video
+                            </button>
+                        </div>
+                        <div class="form-text">
+                            Funciona con YouTube, Instagram, TikTok, Facebook, Twitter, Vimeo y cientos de sitios mas
+                        </div>
+                    </div>
+                </form>
+
+                <!-- ==================== PLATAFORMAS SOPORTADAS ==================== -->
+                <div class="text-center mt-3">
+                    <span class="badge bg-danger me-1">
+                        <i class="fab fa-youtube me-1"></i>YouTube
+                    </span>
+                    <span class="badge bg-warning text-dark me-1">
+                        <i class="fab fa-instagram me-1"></i>Instagram
+                    </span>
+                    <span class="badge bg-dark me-1">
+                        <i class="fab fa-tiktok me-1"></i>TikTok
+                    </span>
+                    {% if ads_enabled %}
+                    <div class="ad-inline ms-2">
+                        <div class="ad-label">Ad</div>
+                        <ins class="adsbygoogle"
+                             style="display:inline-block;width:200px;height:50px"
+                             data-ad-client="{{ adsense_client }}"
+                             data-ad-slot="1111111111"></ins>
+                        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== INFORMACIÓN DEL VIDEO (se muestra después de pegar URL) ==================== -->
+        <div id="videoInfo" class="mt-4" style="display: none;">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <img id="videoThumbnail" src="" alt="Thumbnail" class="img-fluid rounded">
+                        </div>
+                        <div class="col-md-8">
+                            <h5 id="videoTitle" class="fw-bold"></h5>
+                            <p class="text-muted mb-1">
+                                <i class="fas fa-user me-1"></i><span id="videoUploader"></span>
+                            </p>
+                            <p class="text-muted mb-1">
+                                <i class="fas fa-clock me-1"></i><span id="videoDuration"></span>
+                                &nbsp;&nbsp;
+                                <i class="fas fa-eye me-1"></i><span id="videoViews"></span>
+                            </p>
+                            <p class="text-muted mb-1">
+                                <i class="fas fa-globe me-1"></i><span id="videoPlatform"></span>
+                            </p>
+                            <hr>
+                            <!-- Formato: Video o MP3 -->
+                            <div class="mb-3">
+                                <div class="btn-group w-100" role="group">
+                                    <input type="radio" class="btn-check" name="formatType" id="formatVideo" value="video" checked>
+                                    <label class="btn btn-outline-primary btn-sm" for="formatVideo">
+                                        <i class="fas fa-video me-1"></i>Video
+                                    </label>
+                                    <input type="radio" class="btn-check" name="formatType" id="formatMP3" value="mp3">
+                                    <label class="btn btn-outline-primary btn-sm" for="formatMP3">
+                                        <i class="fas fa-music me-1"></i>MP3
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="row align-items-end">
+                                <div class="col-md-6 mb-2 mb-md-0">
+                                    <label for="qualitySelect" class="form-label small">Calidad:</label>
+                                    <select id="qualitySelect" class="form-select form-select-sm">
+                                        <option value="720p">720p</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <button id="downloadBtn" class="btn btn-success w-100">
+                                        <i class="fas fa-download me-1"></i>Descargar
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="mp3Info" class="mt-2 small text-muted" style="display: none;">
+                                <i class="fas fa-info-circle me-1"></i>MP3 128kbps para planes gratuitos, 320kbps para Pro/Premium
+                            </div>
+                            <div id="qualityNote" class="mt-2 small text-muted">
+                                <i class="fas fa-info-circle me-1"></i>La calidad maxima disponible depende del video original. No todos los videos existen en 4K.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== BARRA DE PROGRESO ==================== -->
+        <div id="progressContainer" class="mt-4" style="display: none;">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <h6><i class="fas fa-spinner fa-spin me-2"></i>Descargando...</h6>
+                    <div class="progress" style="height: 25px;">
+                        <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated"
+                             role="progressbar" style="width: 0%;">
+                            0%
+                        </div>
+                    </div>
+                    <p id="progressStatus" class="text-muted small mt-2 mb-0">Iniciando descarga...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== RESULTADO DE DESCARGA ==================== -->
+        <div id="downloadResult" class="mt-4" style="display: none;">
+            <div class="card shadow-sm border-0 bg-success text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-check-circle fa-3x mb-3"></i>
+                    <h4>¡Descarga completada!</h4>
+                    <p id="resultInfo" class="mb-3"></p>
+                    <a id="downloadLink" href="#" class="btn btn-light btn-lg">
+                        <i class="fas fa-save me-2"></i>Guardar video
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== ERROR ==================== -->
+        <div id="errorContainer" class="mt-4" style="display: none;">
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <span id="errorMessage"></span>
+            </div>
+        </div>
+
+        <!-- ==================== UPGRADE (si el plan no permite algo) ==================== -->
+        <div id="upgradeContainer" class="mt-4" style="display: none;">
+            <div class="card shadow-sm border-0 bg-warning">
+                <div class="card-body text-center">
+                    <i class="fas fa-crown fa-3x mb-3"></i>
+                    <h4>Funcionalidad no disponible en tu plan</h4>
+                    <p id="upgradeMessage" class="mb-3"></p>
+                    <a href="{{ url_for('pricing') }}" class="btn btn-dark btn-lg">
+                        <i class="fas fa-arrow-up me-2"></i>Ver planes
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== RESENAS Y TESTIMONIOS ==================== -->
+        <div class="mt-5">
+            <h3 class="text-center fw-bold mb-4">
+                <i class="fas fa-star text-warning me-2"></i>Lo que dicen nuestros usuarios
+            </h3>
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body text-center">
+                            <div class="text-warning mb-2">
+                                <i class="fas fa-star"></i><i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i><i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                            </div>
+                            <p class="mb-2 small">"Increible, descargue un video de Facebook en segundos. Muy facil de usar."</p>
+                            <small class="text-muted">- Carlos M.</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body text-center">
+                            <div class="text-warning mb-2">
+                                <i class="fas fa-star"></i><i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i><i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                            </div>
+                            <p class="mb-2 small">"Funciona con TikTok, Instagram, YouTube... todo lo que he probado. Muy recomendado."</p>
+                            <small class="text-muted">- Ana G.</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body text-center">
+                            <div class="text-warning mb-2">
+                                <i class="fas fa-star"></i><i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i><i class="fas fa-star"></i>
+                                <i class="fas fa-star-half-alt"></i>
+                            </div>
+                            <p class="mb-2 small">"La mejor opcion para descargar videos. Rapido, seguro y sin complicaciones."</p>
+                            <small class="text-muted">- Miguel R.</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="text-center mt-3">
+                <span class="badge bg-warning text-dark fs-6">
+                    <i class="fas fa-star me-1"></i>4.8/5 - Excelente
+                </span>
+                <span class="text-muted ms-2 small">Basado en +1,200 resenas</span>
+            </div>
+        </div>
+
+        <!-- ==================== BADGES DE CONFIANZA ==================== -->
+        <div class="mt-5 pt-4 border-top">
+            <h5 class="text-center text-muted mb-4">Confianza y seguridad</h5>
+            <div class="row text-center g-3">
+                <div class="col-4 col-md-2">
+                    <div class="p-3">
+                        <i class="fas fa-lock fa-2x text-success mb-2"></i>
+                        <small class="d-block text-muted">Conexion segura SSL</small>
+                    </div>
+                </div>
+                <div class="col-4 col-md-2">
+                    <div class="p-3">
+                        <i class="fas fa-shield-alt fa-2x text-primary mb-2"></i>
+                        <small class="d-block text-muted">100% seguro</small>
+                    </div>
+                </div>
+                <div class="col-4 col-md-2">
+                    <div class="p-3">
+                        <i class="fas fa-database fa-2x text-info mb-2"></i>
+                        <small class="d-block text-muted">No almacenamos archivos</small>
+                    </div>
+                </div>
+                <div class="col-4 col-md-2">
+                    <div class="p-3">
+                        <i class="fas fa-user-plus fa-2x text-success mb-2"></i>
+                        <small class="d-block text-muted">Prueba sin registro</small>
+                    </div>
+                </div>
+                <div class="col-4 col-md-2">
+                    <div class="p-3">
+                        <i class="fab fa-cc-visa fa-2x text-primary mb-2"></i>
+                        <small class="d-block text-muted">Pagos Stripe seguros</small>
+                    </div>
+                </div>
+                <div class="col-4 col-md-2">
+                    <div class="p-3">
+                        <i class="fas fa-code-branch fa-2x text-dark mb-2"></i>
+                        <small class="d-block text-muted">Codigo abierto</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== ANUNCIO INFERIOR ==================== -->
+        {% if ads_enabled %}
+        <div class="text-center mt-4 py-3 bg-light rounded">
+            <small class="text-muted">Publicidad</small>
+            <div class="ad-container mx-auto" style="max-width: 728px; min-height: 90px;">
+                <ins class="adsbygoogle"
+                     style="display:block"
+                     data-ad-client="{{ adsense_client }}"
+                     data-ad-slot="0987654321"
+                     data-ad-format="horizontal"
+                     data-full-width-responsive="true"></ins>
+                <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+$(document).ready(function() {
+    const $form = $('#downloadForm');
+    const $urlInput = $('#urlInput');
+    const $submitBtn = $('#submitBtn');
+    const $videoInfo = $('#videoInfo');
+    const $progressContainer = $('#progressContainer');
+    const $downloadResult = $('#downloadResult');
+    const $errorContainer = $('#errorContainer');
+    const $upgradeContainer = $('#upgradeContainer');
+
+    // ============================================================
+    // PASO 1: Obtener información del video al pegar la URL
+    // ============================================================
+    $form.on('submit', function(e) {
+        e.preventDefault();
+        const url = $urlInput.val().trim();
+        if (!url) return;
+
+        // Ocultar resultados anteriores
+        $videoInfo.hide();
+        $downloadResult.hide();
+        $errorContainer.hide();
+        $upgradeContainer.hide();
+        $progressContainer.hide();
+
+        // Mostrar estado de carga
+        $submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>Analizando...');
+
+        $.ajax({
+            url: '{{ url_for("api_video_info") }}',
+            method: 'POST',
+            data: { url: url },
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    // Mostrar información del video
+                    $('#videoThumbnail').attr('src', response.thumbnail);
+                    $('#videoTitle').text(response.title);
+                    $('#videoUploader').text(response.uploader);
+                    $('#videoDuration').text(response.duration_formatted);
+                    $('#videoViews').text(response.views ? response.views.toLocaleString() : 'N/A');
+                    $('#videoPlatform').text(response.platform.charAt(0).toUpperCase() + response.platform.slice(1));
+
+                    // Llenar selector de calidad
+                    const $quality = $('#qualitySelect');
+                    $quality.empty();
+                    response.available_qualities.forEach(function(q) {
+                        $quality.append(`<option value="${q}">${q}</option>`);
+                    });
+
+                    $videoInfo.show();
+                } else if (response.upgrade_required) {
+                    $('#upgradeMessage').text(response.error);
+                    $upgradeContainer.show();
+                } else {
+                    $('#errorMessage').text(response.error);
+                    $errorContainer.show();
+                }
+            },
+            error: function() {
+                $('#errorMessage').text('Error de conexión. Intenta de nuevo.');
+                $errorContainer.show();
+            },
+            complete: function() {
+                $submitBtn.prop('disabled', false).html('<i class="fas fa-search me-1"></i>Obtener video');
+            }
+        });
+    });
+
+    // ============================================================
+    // TOGGLE VIDEO / MP3
+    // ============================================================
+    $('input[name="formatType"]').on('change', function() {
+        const isMp3 = $(this).val() === 'mp3';
+        const $quality = $('#qualitySelect');
+        const $mp3Info = $('#mp3Info');
+
+        if (isMp3) {
+            $quality.empty();
+            $quality.append('<option value="128">MP3 128kbps</option>');
+            $quality.append('<option value="320">MP3 320kbps (Pro/Premium)</option>');
+            $mp3Info.show();
+        } else {
+            $quality.empty();
+            $quality.append('<option value="144p">144p</option>');
+            $quality.append('<option value="360p">360p</option>');
+            $quality.append('<option value="480p">480p</option>');
+            $quality.append('<option value="720p">720p</option>');
+            $quality.append('<option value="1080p">1080p</option>');
+            $quality.append('<option value="2160p">4K</option>');
+            $mp3Info.hide();
+        }
+    });
+
+    // ============================================================
+    // PASO 2: Descargar el video o MP3
+    // ============================================================
+    $('#downloadBtn').on('click', function() {
+        const url = $urlInput.val().trim();
+        const quality = $('#qualitySelect').val();
+        const isMp3 = $('input[name="formatType"]:checked').val() === 'mp3';
+        const apiUrl = isMp3 ? '{{ url_for("api_download_audio") }}' : '{{ url_for("api_download") }}';
+        const fileTypeLabel = isMp3 ? 'MP3' : 'Video';
+
+        // Mostrar progreso
+        $videoInfo.hide();
+        $progressContainer.show();
+        $('#progressBar').css('width', '10%').text('10%');
+        $('#progressStatus').text('Iniciando descarga...');
+
+        $.ajax({
+            url: apiUrl,
+            method: 'POST',
+            data: { url: url, quality: quality },
+            dataType: 'json',
+            xhr: function() {
+                const xhr = new XMLHttpRequest();
+                xhr.upload.addEventListener('progress', function(e) {
+                    if (e.lengthComputable) {
+                        const percent = Math.round((e.loaded / e.total) * 100);
+                        $('#progressBar').css('width', percent + '%').text(percent + '%');
+                    }
+                });
+                return xhr;
+            },
+            success: function(response) {
+                if (response.success) {
+                    $progressContainer.hide();
+                    $('#resultInfo').html(
+                        `<strong>${response.title}</strong><br>` +
+                        `Tamaño: ${response.file_size} | Formato: ${fileTypeLabel} | Plataforma: ${response.platform}`
+                    );
+                    $('#downloadLink').attr('href', response.download_url);
+                    $('#downloadLink').html(`<i class="fas fa-${isMp3 ? 'music' : 'save'} me-2"></i>Guardar ${fileTypeLabel}`);
+                    $downloadResult.show();
+                } else if (response.upgrade_required) {
+                    $progressContainer.hide();
+                    $('#upgradeMessage').text(response.error);
+                    $upgradeContainer.show();
+                } else {
+                    $progressContainer.hide();
+                    $('#errorMessage').text(response.error);
+                    $errorContainer.show();
+                }
+            },
+            error: function() {
+                $progressContainer.hide();
+                $('#errorMessage').text('Error al descargar. Intenta de nuevo.');
+                $errorContainer.show();
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}Registrarse - SaveWave{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4">
+                <div class="text-center mb-4">
+                    <i class="fas fa-user-plus fa-3x text-primary mb-3"></i>
+                    <h3>Crear cuenta gratis</h3>
+                    <p class="text-muted">Regístrate y obtén 5 descargas gratis por día</p>
+                </div>
+
+                <form method="POST" action="{{ url_for('register') }}">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Nombre de usuario</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-user"></i></span>
+                            <input
+                                type="text"
+                                class="form-control"
+                                id="username"
+                                name="username"
+                                placeholder="usuario123"
+                                minlength="3"
+                                maxlength="80"
+                                required
+                            >
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Correo electrónico</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                            <input
+                                type="email"
+                                class="form-control"
+                                id="email"
+                                name="email"
+                                placeholder="tu@email.com"
+                                required
+                            >
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Contraseña</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                            <input
+                                type="password"
+                                class="form-control"
+                                id="password"
+                                name="password"
+                                placeholder="Mínimo 6 caracteres"
+                                minlength="6"
+                                required
+                            >
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="confirm_password" class="form-label">Confirmar contraseña</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-check-circle"></i></span>
+                            <input
+                                type="password"
+                                class="form-control"
+                                id="confirm_password"
+                                name="confirm_password"
+                                placeholder="Repite la contraseña"
+                                minlength="6"
+                                required
+                            >
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-success w-100 py-2">
+                        <i class="fas fa-user-plus me-2"></i>Crear cuenta gratis
+                    </button>
+                </form>
+
+                <div class="text-center mt-3">
+                    <p class="mb-0">
+                        ¿Ya tienes cuenta?
+                        <a href="{{ url_for('login') }}" class="text-primary fw-bold">
+                            Inicia sesión
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Anuncio cuadrado pequeño -->
+        {% if ads_enabled %}
+        <div class="text-center my-3">
+            <div class="ad-square mx-auto">
+                <div class="ad-label">Ad</div>
+                <ins class="adsbygoogle"
+                     style="display:inline-block;width:200px;height:90px"
+                     data-ad-client="{{ adsense_client }}"
+                     data-ad-slot="4444444444"></ins>
+                <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Ventajas de registrarse -->
+        <div class="card shadow-sm border-0 mt-4">
+            <div class="card-body">
+                <h6 class="fw-bold"><i class="fas fa-star text-warning me-2"></i>Que obtienes?</h6>
+                <div class="row small">
+                    <div class="col-6">
+                        <ul class="list-unstyled mb-0">
+                            <li><i class="fas fa-check text-success me-1"></i>5 descargas/dia gratis</li>
+                            <li><i class="fas fa-check text-success me-1"></i>Cientos de plataformas</li>
+                            <li><i class="fas fa-check text-success me-1"></i>Sin limite de tiempo</li>
+                        </ul>
+                    </div>
+                    <div class="col-6">
+                        <ul class="list-unstyled mb-0">
+                            <li><i class="fas fa-check text-success me-1"></i>Historial completo</li>
+                            <li><i class="fas fa-check text-success me-1"></i>Sin anuncios molestos</li>
+                            <li><i class="fas fa-check text-success me-1"></i>Actualiza a Pro cuando quieras</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

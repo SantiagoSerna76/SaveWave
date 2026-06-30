@@ -1,0 +1,33 @@
+# ============================================================
+# IGNORAR ARCHIVOS SENSIBLES Y TEMPORALES
+# ============================================================
+
+# Variables de entorno (contienen passwords, claves API)
+.env
+
+# Base de datos SQLite local
+*.db
+*.sqlite
+instance/
+
+# Archivos de descarga temporales
+downloads/*
+!downloads/.gitkeep
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Sistema
+.DS_Store
+Thumbs.db

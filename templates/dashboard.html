@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+
+{% block title %}Mi Panel - SaveWave{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- ==================== SIDEBAR / INFO DEL USUARIO ==================== -->
+    <div class="col-md-4 mb-4">
+        <!-- Anuncio micro en sidebar (solo plan free) -->
+        {% if ads_enabled and plan_info.plan == 'free' %}
+        <div class="text-center mb-3">
+            <div class="ad-square mx-auto" style="max-width: 200px; min-height: 80px;">
+                <div class="ad-label">Ad</div>
+                <ins class="adsbygoogle"
+                     style="display:inline-block;width:180px;height:60px"
+                     data-ad-client="{{ adsense_client }}"
+                     data-ad-slot="5555555555"></ins>
+                <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Tarjeta de perfil -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body text-center">
+                <div class="avatar-circle mx-auto mb-3">
+                    <span class="avatar-initials">{{ current_user.username[0] | upper }}</span>
+                </div>
+                <h5 class="fw-bold">{{ current_user.username }}</h5>
+                <p class="text-muted small">{{ current_user.email }}</p>
+                <span class="badge bg-primary fs-6">
+                    <i class="fas fa-crown me-1"></i>{{ plan_info.plan | upper }}
+                </span>
+            </div>
+        </div>
+
+        <!-- Tarjeta del plan -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body">
+                <h6 class="fw-bold mb-3"><i class="fas fa-info-circle me-2"></i>Mi plan</h6>
+                <div class="mb-3">
+                    {% if plan_info.plan == 'free' %}
+                        <p class="mb-1"><strong>Plan:</strong> Gratuito</p>
+                        <p class="mb-1">
+                            <strong>Descargas hoy:</strong>
+                            {% if limit_info.remaining >= 0 %}
+                                <span class="text-success">{{ limit_info.remaining }} restantes</span>
+                            {% else %}
+                                <span class="text-danger">Límite alcanzado</span>
+                            {% endif %}
+                        </p>
+                        <p class="mb-1"><strong>Calidad máxima:</strong> {{ plan_info.max_quality }}</p>
+                        <p class="mb-1"><strong>Plataformas:</strong> {{ plan_info.platforms | join(', ') }}</p>
+                        <a href="{{ url_for('pricing') }}" class="btn btn-primary btn-sm mt-2 w-100">
+                            <i class="fas fa-arrow-up me-1"></i>Actualizar plan
+                        </a>
+                    {% elif plan_info.plan == 'pro' %}
+                        <p class="mb-1"><strong>Plan:</strong> Pro - <span class="text-success">Activo</span></p>
+                        <p class="mb-1"><strong>Días restantes:</strong> {{ plan_info.days_remaining }}</p>
+                        <p class="mb-1"><strong>Calidad máxima:</strong> {{ plan_info.max_quality }}</p>
+                        <p class="mb-1"><strong>Plataformas:</strong> {{ plan_info.platforms | join(', ') }}</p>
+                        <form method="POST" action="{{ url_for('cancel_subscription_route') }}" class="mt-2">
+                            <button type="submit" class="btn btn-outline-danger btn-sm w-100"
+                                    onclick="return confirm('¿Estás seguro de cancelar tu suscripción?')">
+                                <i class="fas fa-times me-1"></i>Cancelar suscripción
+                            </button>
+                        </form>
+                    {% elif plan_info.plan == 'premium' %}
+                        <p class="mb-1"><strong>Plan:</strong> Premium - <span class="text-success">Activo</span></p>
+                        <p class="mb-1"><strong>Días restantes:</strong> {{ plan_info.days_remaining }}</p>
+                        <p class="mb-1"><strong>Calidad máxima:</strong> {{ plan_info.max_quality }}</p>
+                        <p class="mb-1"><strong>Plataformas:</strong> {{ plan_info.platforms | join(', ') }}</p>
+                        <form method="POST" action="{{ url_for('cancel_subscription_route') }}" class="mt-2">
+                            <button type="submit" class="btn btn-outline-danger btn-sm w-100"
+                                    onclick="return confirm('¿Estás seguro de cancelar tu suscripción?')">
+                                <i class="fas fa-times me-1"></i>Cancelar suscripción
+                            </button>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Estadísticas rápidas -->
+        <div class="card shadow-sm border-0">
+            <div class="card-body">
+                <h6 class="fw-bold mb-3"><i class="fas fa-chart-bar me-2"></i>Estadísticas</h6>
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h4 class="text-primary fw-bold">{{ recent_downloads | length }}</h4>
+                        <small class="text-muted">Descargas recientes</small>
+                    </div>
+                    <div class="col-6">
+                        <h4 class="text-success fw-bold">
+                            {% if limit_info.remaining >= 0 %}
+                                {{ limit_info.remaining }}
+                            {% else %}
+                                ∞
+                            {% endif %}
+                        </h4>
+                        <small class="text-muted">Restantes hoy</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== CONTENIDO PRINCIPAL ==================== -->
+    <div class="col-md-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-body">
+                <h4 class="fw-bold mb-4">
+                    <i class="fas fa-history me-2"></i>Historial de descargas
+                </h4>
+
+                {% if recent_downloads %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Plataforma</th>
+                                    <th>Calidad</th>
+                                    <th>Tamaño</th>
+                                    <th>Fecha</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for download in recent_downloads %}
+                                <tr>
+                                    <td>{{ download.id }}</td>
+                                    <td>
+                                        {% if download.platform == 'youtube' %}
+                                            <span class="badge bg-danger"><i class="fab fa-youtube me-1"></i>YouTube</span>
+                                        {% elif download.platform == 'instagram' %}
+                                            <span class="badge bg-warning text-dark"><i class="fab fa-instagram me-1"></i>Instagram</span>
+                                        {% elif download.platform == 'tiktok' %}
+                                            <span class="badge bg-dark"><i class="fab fa-tiktok me-1"></i>TikTok</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ download.platform }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ download.quality }}</td>
+                                    <td>
+                                        {% if download.file_size %}
+                                            {{ (download.file_size / 1048576) | round(1) }} MB
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ download.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                                    <td>
+                                        {% if download.status == 'completed' %}
+                                            <span class="badge bg-success">Completada</span>
+                                        {% elif download.status == 'failed' %}
+                                            <span class="badge bg-danger">Fallida</span>
+                                        {% else %}
+                                            <span class="badge bg-warning text-dark">Pendiente</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-download fa-4x text-muted mb-3"></i>
+                        <h5 class="text-muted">No tienes descargas aún</h5>
+                        <p class="text-muted">¡Ve a la página principal y descarga tu primer video!</p>
+                        <a href="{{ url_for('index') }}" class="btn btn-primary">
+                            <i class="fas fa-arrow-left me-2"></i>Ir a descargar
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+    .avatar-circle {
+        width: 80px;
+        height: 80px;
+        background-color: #0d6efd;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .avatar-initials {
+        font-size: 2rem;
+        color: white;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}

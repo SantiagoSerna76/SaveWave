@@ -1,0 +1,393 @@
+{% extends "base.html" %}
+
+{% block title %}Planes - SaveWave{% endblock %}
+
+{% block content %}
+<div class="text-center mb-5">
+    <h1 class="fw-bold">Elige tu plan</h1>
+    <p class="lead text-muted">
+        Empieza sin registro y actualiza cuando necesites mas
+    </p>
+</div>
+
+<div class="row justify-content-center g-4">
+    <!-- ==================== GRATIS (SIN REGISTRO) ==================== -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-body text-center p-4">
+                <i class="fas fa-user fa-3x text-secondary mb-3"></i>
+                <h3 class="fw-bold">Gratis</h3>
+                <p class="text-muted">Sin registro</p>
+                <h2 class="fw-bold mb-4">$0</h2>
+
+                <ul class="list-unstyled text-start mb-4">
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        Descargas <strong>ilimitadas</strong>
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        Calidad maxima 720p
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        Solo YouTube
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-music text-success me-2"></i>
+                        MP3 128kbps
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-danger me-2"></i>
+                        Con anuncios
+                    </li>
+                    <li class="mb-2 text-muted">
+                        <i class="fas fa-times me-2"></i>
+                        Otras plataformas
+                    </li>
+                    <li class="mb-2 text-muted">
+                        <i class="fas fa-times me-2"></i>
+                        Calidad superior
+                    </li>
+                </ul>
+
+                <a href="{{ url_for('index') }}" class="btn btn-outline-primary w-100">
+                    <i class="fas fa-download me-2"></i>Probar ahora
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== GRATIS (REGISTRADO) ==================== -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-body text-center p-4">
+                <i class="fas fa-user-plus fa-3x text-info mb-3"></i>
+                <h3 class="fw-bold">Registrado</h3>
+                <p class="text-muted">Cuenta gratis</p>
+                <h2 class="fw-bold mb-4">$0 <small class="text-muted fs-6">/mes</small></h2>
+
+                <ul class="list-unstyled text-start mb-4">
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        Descargas <strong>ilimitadas</strong>
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        Calidad maxima 720p
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        YouTube + Facebook + Twitter + Vimeo
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-music text-success me-2"></i>
+                        MP3 128kbps
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-danger me-2"></i>
+                        Con anuncios
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        Historial de descargas
+                    </li>
+                    <li class="mb-2 text-muted">
+                        <i class="fas fa-times me-2"></i>
+                        Instagram, TikTok, Twitch
+                    </li>
+                </ul>
+
+                {% if current_user.is_authenticated and current_user.subscription.plan.value == 'free' %}
+                    <span class="btn btn-outline-info w-100" disabled>
+                        <i class="fas fa-check me-2"></i>Plan actual
+                    </span>
+                {% else %}
+                    <a href="{{ url_for('register') }}" class="btn btn-info text-white w-100">
+                        <i class="fas fa-user-plus me-2"></i>Registrarse gratis
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== PLAN PRO ($2/mes) ==================== -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card shadow border-primary border-2 h-100">
+            <div class="card-header bg-primary text-white text-center py-2">
+                <small class="fw-bold"><i class="fas fa-star me-1"></i>POPULAR</small>
+            </div>
+            <div class="card-body text-center p-4">
+                <i class="fas fa-crown fa-3x text-primary mb-3"></i>
+                <h3 class="fw-bold">Pro</h3>
+                <p class="text-muted">Para uso diario</p>
+                <h2 class="fw-bold mb-4">$2 <small class="text-muted fs-6">/mes</small></h2>
+
+                <ul class="list-unstyled text-start mb-4">
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        Descargas <strong>ilimitadas</strong>
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        Calidad hasta <strong>Full HD 1080p</strong>
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        <strong>Todas las plataformas</strong>
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        <strong>Sin anuncios</strong>
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-music text-success me-2"></i>
+                        MP3 320kbps
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        Descarga de playlists
+                    </li>
+                    <li class="mb-2 text-muted">
+                        <i class="fas fa-times me-2"></i>
+                        Calidad 4K
+                    </li>
+                </ul>
+
+                {% if current_user.is_authenticated %}
+                    {% if current_user.subscription.plan.value == 'pro' %}
+                        <span class="btn btn-outline-primary w-100" disabled>
+                            <i class="fas fa-check me-2"></i>Plan actual
+                        </span>
+                    {% elif current_user.subscription.plan.value == 'premium' %}
+                        <span class="btn btn-outline-secondary w-100" disabled>
+                            <i class="fas fa-check me-2"></i>Ya tienes Premium
+                        </span>
+                    {% else %}
+                        <form method="POST" action="{{ url_for('payment_create', plan_type='pro') }}">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-arrow-up me-2"></i>Actualizar a Pro - $2
+                            </button>
+                        </form>
+                    {% endif %}
+                {% else %}
+                    <a href="{{ url_for('register') }}" class="btn btn-primary w-100">
+                        <i class="fas fa-user-plus me-2"></i>Registrate y actualiza
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== PLAN PREMIUM ($5/mes) ==================== -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-body text-center p-4">
+                <i class="fas fa-gem fa-3x text-warning mb-3"></i>
+                <h3 class="fw-bold">Premium</h3>
+                <p class="text-muted">Lo maximo</p>
+                <h2 class="fw-bold mb-4">$5 <small class="text-muted fs-6">/mes</small></h2>
+
+                <ul class="list-unstyled text-start mb-4">
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        Todo lo de Pro
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        Calidad hasta <strong>4K</strong>
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-music text-success me-2"></i>
+                        MP3 320kbps
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        Descarga masiva (varios links)
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        Prioridad en el servidor
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        API para integraciones
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        Soporte VIP
+                    </li>
+                </ul>
+
+                {% if current_user.is_authenticated %}
+                    {% if current_user.subscription.plan.value == 'premium' %}
+                        <span class="btn btn-outline-warning w-100" disabled>
+                            <i class="fas fa-check me-2"></i>Plan actual
+                        </span>
+                    {% else %}
+                        <form method="POST" action="{{ url_for('payment_create', plan_type='premium') }}">
+                            <button type="submit" class="btn btn-warning w-100">
+                                <i class="fas fa-arrow-up me-2"></i>Actualizar a Premium - $5
+                            </button>
+                        </form>
+                    {% endif %}
+                {% else %}
+                    <a href="{{ url_for('register') }}" class="btn btn-warning w-100">
+                        <i class="fas fa-user-plus me-2"></i>Registrate y actualiza
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== COMPARATIVA ==================== -->
+<div class="row justify-content-center mt-5">
+    <div class="col-lg-10">
+        <h3 class="text-center fw-bold mb-4">Comparativa</h3>
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover text-center">
+                <thead class="table-dark">
+                    <tr>
+                        <th class="text-start">Caracteristica</th>
+                        <th>Gratis (anonimo)</th>
+                        <th>Registrado</th>
+                        <th>Pro - $2</th>
+                        <th>Premium - $5</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="text-start">Descargas</td>
+                        <td>Ilimitadas</td>
+                        <td>Ilimitadas</td>
+                        <td class="fw-bold text-success">Ilimitadas</td>
+                        <td class="fw-bold text-success">Ilimitadas</td>
+                    </tr>
+                    <tr>
+                        <td class="text-start">Calidad maxima</td>
+                        <td>720p</td>
+                        <td>720p</td>
+                        <td>1080p Full HD</td>
+                        <td>4K</td>
+                    </tr>
+                    <tr>
+                        <td class="text-start">YouTube</td>
+                        <td><i class="fas fa-check text-success"></i></td>
+                        <td><i class="fas fa-check text-success"></i></td>
+                        <td><i class="fas fa-check text-success"></i></td>
+                        <td><i class="fas fa-check text-success"></i></td>
+                    </tr>
+                    <tr>
+                        <td class="text-start">Facebook, Twitter, Vimeo</td>
+                        <td><i class="fas fa-times text-danger"></i></td>
+                        <td><i class="fas fa-check text-success"></i></td>
+                        <td><i class="fas fa-check text-success"></i></td>
+                        <td><i class="fas fa-check text-success"></i></td>
+                    </tr>
+                    <tr>
+                        <td class="text-start">Instagram, TikTok, Twitch</td>
+                        <td><i class="fas fa-times text-danger"></i></td>
+                        <td><i class="fas fa-times text-danger"></i></td>
+                        <td><i class="fas fa-check text-success"></i></td>
+                        <td><i class="fas fa-check text-success"></i></td>
+                    </tr>
+                    <tr>
+                        <td class="text-start">Anuncios</td>
+                        <td><i class="fas fa-check text-danger"></i> Si</td>
+                        <td><i class="fas fa-check text-danger"></i> Si</td>
+                        <td><i class="fas fa-check text-success"></i> No</td>
+                        <td><i class="fas fa-check text-success"></i> No</td>
+                    </tr>
+                    <tr>
+                        <td class="text-start">Historial</td>
+                        <td><i class="fas fa-times text-danger"></i></td>
+                        <td><i class="fas fa-check text-success"></i></td>
+                        <td><i class="fas fa-check text-success"></i></td>
+                        <td><i class="fas fa-check text-success"></i></td>
+                    </tr>
+                    <tr>
+                        <td class="text-start">Playlists</td>
+                        <td><i class="fas fa-times text-danger"></i></td>
+                        <td><i class="fas fa-times text-danger"></i></td>
+                        <td><i class="fas fa-check text-success"></i></td>
+                        <td><i class="fas fa-check text-success"></i></td>
+                    </tr>
+                    <tr>
+                        <td class="text-start">Descarga masiva</td>
+                        <td><i class="fas fa-times text-danger"></i></td>
+                        <td><i class="fas fa-times text-danger"></i></td>
+                        <td><i class="fas fa-times text-danger"></i></td>
+                        <td><i class="fas fa-check text-success"></i></td>
+                    </tr>
+                    <tr>
+                        <td class="text-start">API</td>
+                        <td><i class="fas fa-times text-danger"></i></td>
+                        <td><i class="fas fa-times text-danger"></i></td>
+                        <td><i class="fas fa-times text-danger"></i></td>
+                        <td><i class="fas fa-check text-success"></i></td>
+                    </tr>
+                    <tr>
+                        <td class="text-start">Soporte</td>
+                        <td>-</td>
+                        <td>Email</td>
+                        <td>Prioritario</td>
+                        <td>VIP 24/7</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== FAQ ==================== -->
+<div class="row justify-content-center mt-5">
+    <div class="col-lg-8">
+        <h3 class="text-center fw-bold mb-4">Preguntas frecuentes</h3>
+
+        <div class="accordion" id="faqAccordion">
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                        Puedo descargar sin registrarme?
+                    </button>
+                </h2>
+                <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body">
+                        Si! Puedes descargar videos de YouTube en 720p sin ningun registro,
+                        sin limites diarios. Solo con anuncios.
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                        Que beneficios tengo al registrarme?
+                    </button>
+                </h2>
+                <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body">
+                        Al registrarte gratis obtienes descargas ilimitadas, acceso a Facebook,
+                        Twitter y Vimeo, e historial completo de tus descargas.
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+                        Que metodos de pago aceptan?
+                    </button>
+                </h2>
+                <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body">
+                        Aceptamos tarjetas de credito/debito (Visa, Mastercard, American Express)
+                        a traves de Stripe, la plataforma de pagos mas segura del mundo.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}Politica de Privacidad - SaveWave{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <h1 class="fw-bold mb-4"><i class="fas fa-shield-alt me-2"></i>Politica de Privacidad</h1>
+        <p class="text-muted">Ultima actualizacion: Junio 2026</p>
+
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body">
+                <h5>1. Informacion que Recopilamos</h5>
+                <p>Recopilamos la siguiente informacion cuando usas nuestro servicio:</p>
+                <ul>
+                    <li><strong>Informacion de cuenta:</strong> nombre de usuario, correo electronico y contrasena (almacenada de forma segura y hasheada).</li>
+                    <li><strong>Datos de uso:</strong> URLs de videos que descargas, fechas y horarios, calidad seleccionada.</li>
+                    <li><strong>Datos tecnicos:</strong> direccion IP, tipo de navegador, sistema operativo.</li>
+                    <li><strong>Informacion de pago:</strong> procesada exclusivamente por Stripe. Nosotros no almacenamos datos de tarjetas de credito.</li>
+                </ul>
+
+                <h5>2. Como Usamos tu Informacion</h5>
+                <p>Utilizamos la informacion recopilada para:</p>
+                <ul>
+                    <li>Proveer y mantener el servicio de descarga de videos</li>
+                    <li>Gestionar tu cuenta y suscripcion</li>
+                    <li>Controlar limites de uso segun tu plan</li>
+                    <li>Mejorar la experiencia del usuario</li>
+                    <li>Prevenir abusos y uso fraudulento del servicio</li>
+                    <li>Cumplir con obligaciones legales</li>
+                </ul>
+
+                <h5>3. Almacenamiento de Datos</h5>
+                <p>Tus datos se almacenan en servidores seguros con las siguientes medidas:</p>
+                <ul>
+                    <li>Contrasenas hasheadas con algoritmo pbkdf2:sha256</li>
+                    <li>Conexion a base de datos protegida</li>
+                    <li>Tokens JWT con expiracion temporal</li>
+                    <li>Sesiones HTTP-only (no accesibles desde JavaScript)</li>
+                    <li>Rate limiting en todas las APIs</li>
+                </ul>
+
+                <h5>4. Comparticion de Datos</h5>
+                <p>No vendemos ni compartimos tu informacion personal con terceros, excepto:</p>
+                <ul>
+                    <li><strong>Stripe:</strong> para procesar pagos de suscripciones (sus terminos aplican)</li>
+                    <li><strong>Google AdSense:</strong> para mostrar anuncios en el plan gratuito (sus terminos aplican)</li>
+                    <li><strong>Autoridades legales:</strong> si es requerido por ley</li>
+                </ul>
+
+                <h5>5. Retencion de Datos</h5>
+                <p>Conservamos tus datos mientras tu cuenta este activa. Si eliminas tu cuenta, tus datos personales se eliminaran en un plazo de 30 dias. Los registros de descargas pueden conservarse de forma anonima para fines estadisticos.</p>
+
+                <h5>6. Tus Derechos</h5>
+                <p>Tienes derecho a:</p>
+                <ul>
+                    <li>Acceder a tus datos personales</li>
+                    <li>Solicitar la correccion de datos incorrectos</li>
+                    <li>Solicitar la eliminacion de tu cuenta y datos</li>
+                    <li>Exportar tus datos en formato estructurado</li>
+                    <li>Cancelar tu suscripcion en cualquier momento</li>
+                </ul>
+                <p>Para ejercer estos derechos, contactanos a traves de nuestro panel de control o soporte.</p>
+
+                <h5>7. Cookies</h5>
+                <p>Utilizamos cookies esenciales para el funcionamiento del sitio (sesion de usuario). Las cookies de terceros (AdSense) pueden utilizarse para mostrar anuncios personalizados. Puedes gestionar las cookies desde la configuracion de tu navegador.</p>
+
+                <h5>8. Seguridad</h5>
+                <p>Implementamos medidas de seguridad tecnicas y organizativas para proteger tus datos, incluyendo:</p>
+                <ul>
+                    <li>Cifrado de contrasenas</li>
+                    <li>Tokens JWT con expiracion</li>
+                    <li>Rate limiting contra ataques de fuerza bruta</li>
+                    <li>Validacion de entrada en formularios</li>
+                    <li>Proteccion contra path traversal en descargas</li>
+                </ul>
+
+                <h5>9. Cambios a esta Politica</h5>
+                <p>Podemos actualizar esta politica de privacidad periodicamente. Te notificaremos de cambios significativos a traves del correo electronico asociado a tu cuenta o mediante un aviso en el sitio.</p>
+
+                <h5>10. Contacto</h5>
+                <p>Si tienes preguntas sobre esta politica de privacidad, puedes contactarnos a traves de nuestros canales de soporte.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

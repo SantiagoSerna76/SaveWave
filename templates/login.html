@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}Iniciar sesión - SaveWave{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4">
+                <div class="text-center mb-4">
+                    <i class="fas fa-sign-in-alt fa-3x text-primary mb-3"></i>
+                    <h3>Iniciar sesión</h3>
+                    <p class="text-muted">Accede a tu cuenta para descargas ilimitadas</p>
+                </div>
+
+                <form method="POST" action="{{ url_for('login') }}">
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Correo electrónico</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                            <input
+                                type="email"
+                                class="form-control"
+                                id="email"
+                                name="email"
+                                placeholder="tu@email.com"
+                                required
+                            >
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Contraseña</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                            <input
+                                type="password"
+                                class="form-control"
+                                id="password"
+                                name="password"
+                                placeholder="••••••••"
+                                required
+                            >
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 py-2">
+                        <i class="fas fa-sign-in-alt me-2"></i>Iniciar sesión
+                    </button>
+                </form>
+
+                <div class="text-center mt-3">
+                    <p class="mb-0">
+                        ¿No tienes cuenta?
+                        <a href="{{ url_for('register') }}" class="text-primary fw-bold">
+                            Regístrate gratis
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Anuncio cuadrado pequeño -->
+        {% if ads_enabled %}
+        <div class="text-center my-3">
+            <div class="ad-square mx-auto">
+                <div class="ad-label">Ad</div>
+                <ins class="adsbygoogle"
+                     style="display:inline-block;width:200px;height:90px"
+                     data-ad-client="{{ adsense_client }}"
+                     data-ad-slot="3333333333"></ins>
+                <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Beneficios de tener cuenta -->
+        <div class="card shadow-sm border-0 mt-4">
+            <div class="card-body">
+                <h6 class="fw-bold"><i class="fas fa-gift text-primary me-2"></i>Beneficios al registrarte:</h6>
+                <ul class="list-unstyled mb-0 small">
+                    <li><i class="fas fa-check text-success me-2"></i>5 descargas gratis por dia</li>
+                    <li><i class="fas fa-check text-success me-2"></i>Descarga desde cientos de plataformas</li>
+                    <li><i class="fas fa-check text-success me-2"></i>Historial de descargas</li>
+                    <li><i class="fas fa-check text-success me-2"></i>Sin limite de tiempo</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

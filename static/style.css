@@ -1,0 +1,366 @@
+/* ============================================================
+   ESTILOS PERSONALIZADOS - SaveWave
+   ============================================================ */
+
+/* ============================================================
+   MODO OSCURO
+   ============================================================ */
+:root {
+    --primary-color: #0d6efd;
+    --success-color: #198754;
+    --warning-color: #ffc107;
+    --danger-color: #dc3545;
+    --dark-color: #212529;
+    --light-bg: #f8f9fa;
+    --border-radius: 12px;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+    --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+    --shadow-lg: 0 10px 25px rgba(0,0,0,0.15);
+    --card-bg: #ffffff;
+    --text-color: #212529;
+    --text-muted: #6c757d;
+}
+
+body.dark-mode {
+    --primary-color: #6ea8fe;
+    --success-color: #75b798;
+    --warning-color: #ffda6a;
+    --danger-color: #ea868f;
+    --dark-color: #f8f9fa;
+    --light-bg: #1a1d21;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+    --shadow-md: 0 4px 6px rgba(0,0,0,0.3);
+    --shadow-lg: 0 10px 25px rgba(0,0,0,0.4);
+    --card-bg: #2c3034;
+    --text-color: #dee2e6;
+    --text-muted: #adb5bd;
+    background-color: #1a1d21;
+    color: #dee2e6;
+}
+
+body.dark-mode .card {
+    background-color: var(--card-bg);
+    border-color: #444;
+}
+
+body.dark-mode .card-header {
+    background-color: #343a40 !important;
+    border-color: #444;
+}
+
+body.dark-mode .table {
+    color: #dee2e6;
+}
+
+body.dark-mode .table-light {
+    background-color: #343a40;
+}
+
+body.dark-mode .form-control,
+body.dark-mode .form-select {
+    background-color: #2c3034;
+    border-color: #444;
+    color: #dee2e6;
+}
+
+body.dark-mode .input-group-text {
+    background-color: #343a40;
+    border-color: #444;
+    color: #dee2e6;
+}
+
+body.dark-mode .bg-light {
+    background-color: #2c3034 !important;
+}
+
+body.dark-mode .text-muted {
+    color: var(--text-muted) !important;
+}
+
+body.dark-mode .accordion-item {
+    background-color: var(--card-bg);
+    border-color: #444;
+}
+
+body.dark-mode .accordion-button {
+    background-color: var(--card-bg);
+    color: #dee2e6;
+}
+
+body.dark-mode .accordion-button:not(.collapsed) {
+    background-color: #343a40;
+    color: white;
+}
+
+body.dark-mode .ad-container,
+body.dark-mode .ad-inline,
+body.dark-mode .ad-square {
+    background-color: #2c3034;
+    border-color: #444;
+}
+
+/* Dark mode toggle button */
+#darkModeToggle {
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    color: rgba(255,255,255,0.7);
+    font-size: 1.2rem;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+#darkModeToggle:hover {
+    color: white;
+    background: rgba(255,255,255,0.1);
+}
+
+/* -------------------- ESTILOS GENERALES -------------------- */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--light-bg);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1;
+}
+
+/* -------------------- TARJETAS (CARDS) -------------------- */
+.card {
+    border-radius: var(--border-radius);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+/* -------------------- BOTONES -------------------- */
+.btn {
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.btn-lg {
+    border-radius: 12px;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #0d6efd, #0a58ca);
+    border: none;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #0a58ca, #084298);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.4);
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #198754, #157347);
+    border: none;
+}
+
+.btn-success:hover {
+    background: linear-gradient(135deg, #157347, #0f5c3a);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(25, 135, 84, 0.4);
+}
+
+/* -------------------- FORMULARIOS -------------------- */
+.form-control, .form-select {
+    border-radius: 8px;
+    border: 2px solid #e0e0e0;
+    padding: 10px 16px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15);
+}
+
+.input-group-text {
+    border-radius: 8px 0 0 8px;
+    background-color: #f0f0f0;
+    border: 2px solid #e0e0e0;
+    border-right: none;
+}
+
+.input-group .form-control {
+    border-radius: 0 8px 8px 0;
+}
+
+/* -------------------- BARRA DE PROGRESO -------------------- */
+.progress {
+    border-radius: 12px;
+    overflow: hidden;
+    background-color: #e9ecef;
+}
+
+.progress-bar {
+    background: linear-gradient(135deg, #0d6efd, #0a58ca);
+    font-weight: 600;
+    font-size: 0.85rem;
+    transition: width 0.3s ease;
+}
+
+/* -------------------- ANUNCIOS -------------------- */
+.ad-banner {
+    background: linear-gradient(180deg, #f8f9fa, #e9ecef);
+}
+
+.ad-container {
+    background-color: #f0f0f0;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #999;
+    font-size: 0.85rem;
+}
+
+/* Anuncio pequeno inline (entre contenido) */
+.ad-inline {
+    display: inline-block;
+    max-width: 300px;
+    min-height: 60px;
+    background-color: #f5f5f5;
+    border-radius: 6px;
+    padding: 4px;
+    margin: 0 8px;
+    vertical-align: middle;
+}
+
+/* Anuncio cuadrado pequeno (sidebar/widget) */
+.ad-square {
+    width: 100%;
+    max-width: 250px;
+    min-height: 120px;
+    background-color: #f8f8f8;
+    border-radius: 8px;
+    padding: 6px;
+    margin: 12px auto;
+    border: 1px solid #eee;
+}
+
+/* Anuncio micro (entre lineas de texto) */
+.ad-micro {
+    display: inline;
+    max-width: 120px;
+    min-height: 30px;
+    background-color: #fafafa;
+    border-radius: 4px;
+    padding: 1px 4px;
+    font-size: 0.7rem;
+    vertical-align: middle;
+}
+
+/* Para que los anuncios no rompan el flujo del layout */
+.ad-container, .ad-square, .ad-inline {
+    overflow: hidden;
+}
+
+.ad-label {
+    font-size: 0.6rem;
+    color: #bbb;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 2px;
+}
+
+/* -------------------- NAVBAR -------------------- */
+.navbar {
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.navbar-brand {
+    font-size: 1.4rem;
+    letter-spacing: -0.5px;
+}
+
+/* -------------------- FOOTER -------------------- */
+footer {
+    margin-top: auto;
+}
+
+footer a:hover {
+    text-decoration: underline !important;
+}
+
+/* -------------------- BADGES DE PLATAFORMA -------------------- */
+.badge {
+    font-weight: 500;
+    padding: 6px 12px;
+    border-radius: 6px;
+}
+
+/* -------------------- ALERTAS -------------------- */
+.alert {
+    border-radius: 10px;
+    border: none;
+}
+
+/* -------------------- TABLAS -------------------- */
+.table {
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.table thead th {
+    border-bottom: 2px solid #dee2e6;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.5px;
+}
+
+/* -------------------- ANIMACIONES -------------------- */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.card, .alert, #videoInfo, #downloadResult {
+    animation: fadeIn 0.3s ease;
+}
+
+/* -------------------- RESPONSIVE -------------------- */
+@media (max-width: 768px) {
+    .display-4 {
+        font-size: 2rem;
+    }
+
+    .card-body {
+        padding: 1.25rem;
+    }
+
+    .input-group-lg .form-control,
+    .input-group-lg .btn {
+        font-size: 0.9rem;
+    }
+}
+
+/* -------------------- SCROLLBAR PERSONALIZADO -------------------- */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}

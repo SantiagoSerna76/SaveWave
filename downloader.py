@@ -102,21 +102,28 @@ def detect_platform(url: str) -> str:
 def _get_ydl_opts(extra_opts: dict = None) -> dict:
     """
     Construye las opciones base para yt-dlp.
-    Usa player_client android para evitar bloqueos de YouTube sin necesidad de cookies.
     """
     opts = {
         "quiet": True,
         "no_warnings": True,
-        "extract_flat": False,
+        "nocheckcertificate": True,
+        "restrictfilenames": True,
         "noplaylist": True,
-        # Usar android como player client evita muchos bloqueos de YouTube
-        # sin requerir cookies del navegador
+        # Fake user agent para evitar bloqueos
+        "http_headers": {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        },
+        # Usar android como player client evita muchos bloqueos de YouTube sin requerir cookies
         "extractor_args": {"youtube": {"player_client": ["android", "web"]}},
     }
+    
+    # Usar ffmpeg local si existe en la carpeta bin
+    bin_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'bin')
+    if os.path.exists(os.path.join(bin_dir, 'ffmpeg.exe')):
+        opts['ffmpeg_location'] = bin_dir
 
     if extra_opts:
         opts.update(extra_opts)
-
     return opts
 
 

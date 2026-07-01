@@ -69,7 +69,7 @@ class Config:
     ANONYMOUS_UNLIMITED = True        # Sin límite diario (no tenemos como controlarlo)
 
     # -------------------- LÍMITES DEL PLAN GRATUITO (registrado) --------------------
-    FREE_DAILY_LIMIT = -1                    # Ilimitadas (igual que anonimo)
+    FREE_DAILY_LIMIT = 5                     # Limite de descargas para usuarios gratuitos
     FREE_MAX_QUALITY = "720p"                # Calidad máxima en plan gratuito
     FREE_PLATFORMS = ["youtube", "facebook", "twitter_x", "vimeo", "dailymotion"]
 

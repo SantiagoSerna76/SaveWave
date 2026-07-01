@@ -1010,6 +1010,37 @@
         });
     }
 
+    function setupMediaSession(track) {
+        if ('mediaSession' in navigator) {
+            const playlistTitle = document.getElementById('playlistName').textContent;
+            navigator.mediaSession.metadata = new MediaMetadata({
+                title: track.title,
+                artist: track.platform === 'audio_local' ? 'Archivo local' : track.platform,
+                album: playlistTitle,
+                artwork: [
+                    { src: track.thumbnail || '/static/Savewave.png', sizes: '512x512', type: 'image/png' }
+                ]
+            });
+
+            navigator.mediaSession.setActionHandler('play', function() {
+                audioPlayer.play();
+                isPlaying = true;
+                updatePlayPauseUI();
+            });
+            navigator.mediaSession.setActionHandler('pause', function() {
+                audioPlayer.pause();
+                isPlaying = false;
+                updatePlayPauseUI();
+            });
+            navigator.mediaSession.setActionHandler('previoustrack', function() {
+                playPrev();
+            });
+            navigator.mediaSession.setActionHandler('nexttrack', function() {
+                playNext();
+            });
+        }
+    }
+
     async function playTrack(index) {
         if (index < 0 || index >= currentPlaylistItems.length) return;
         
@@ -1040,6 +1071,9 @@
 
         // Highlight current row
         highlightCurrentTrack();
+        
+        // Setup Media Session API for background playback
+        setupMediaSession(track);
 
         // Show loading state
         isPlaying = false;

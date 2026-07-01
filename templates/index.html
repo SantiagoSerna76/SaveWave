@@ -876,6 +876,11 @@ $(document).ready(function() {
         new bootstrap.Modal(document.getElementById('selectPlaylistModal')).show();
     };
 
+    // Expose playlist functions to global scope for onclick attributes
+    window.quickCreateAndAdd = quickCreateAndAdd;
+    window.addToPlaylist = addToPlaylist;
+    window.uploadLocalFile = uploadLocalFile;
+
     // ============================================================
     // BATCH DOWNLOAD LOGIC
     // ============================================================

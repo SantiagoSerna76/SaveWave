@@ -868,11 +868,13 @@
 
         // Update player UI
         document.getElementById('playerTitle').textContent = track.title;
-        document.getElementById('playerArtist').textContent = track.platform;
+        document.getElementById('playerArtist').textContent = track.platform === 'audio_local' ? 'Archivo local' : track.platform === 'video_local' ? 'Video local' : track.platform;
         const coverEl = document.getElementById('playerCover');
         if (track.thumbnail) {
             coverEl.src = track.thumbnail;
             coverEl.classList.remove('d-none');
+        } else {
+            coverEl.classList.add('d-none');
         }
 
         // Highlight current row
@@ -885,6 +887,21 @@
         updatePlayPauseUI();
         document.getElementById('playerTitle').textContent = 'Cargando: ' + track.title;
 
+        // --- LOCAL FILES: reproducir directamente sin llamar a /api/download-audio ---
+        if (track.platform === 'audio_local' || track.platform === 'video_local') {
+            audioPlayer.src = track.url;
+            audioPlayer.play().then(() => {
+                isPlaying = true;
+                document.getElementById('playerTitle').textContent = track.title;
+                updatePlayPauseUI();
+            }).catch(() => {
+                document.getElementById('playerTitle').textContent = 'Error al reproducir archivo local';
+                updatePlayPauseUI();
+            });
+            return;
+        }
+
+        // --- REMOTE URLS: descargar audio via API ---
         try {
             const res = await fetch('/api/download-audio', {
                 method: 'POST',

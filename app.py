@@ -889,6 +889,78 @@ def api_playlists_list():
         "playlists": [{"id": pl.id, "name": pl.name} for pl in user_playlists]
     })
 
+
+@app.route("/api/playlists/upload", methods=["POST"])
+@login_required
+def api_playlist_upload():
+    """
+    Sube un archivo de audio o video desde el dispositivo del usuario
+    y lo guarda en una playlist como un item local.
+    """
+    from werkzeug.utils import secure_filename
+
+    ALLOWED_EXTENSIONS = {"mp3", "mp4", "wav", "ogg", "m4a", "aac", "flac", "webm", "mkv"}
+    MAX_SIZE_BYTES = 200 * 1024 * 1024  # 200 MB
+
+    playlist_id = request.form.get("playlist_id")
+    file = request.files.get("file")
+
+    if not playlist_id:
+        return jsonify({"success": False, "error": "Falta el ID de la playlist."}), 400
+    if not file or file.filename == "":
+        return jsonify({"success": False, "error": "No se seleccionó ningún archivo."}), 400
+
+    playlist = Playlist.query.filter_by(id=playlist_id, user_id=current_user.id).first()
+    if not playlist:
+        return jsonify({"success": False, "error": "Playlist no encontrada."}), 404
+
+    # Validar extension
+    ext = file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else ""
+    if ext not in ALLOWED_EXTENSIONS:
+        return jsonify({"success": False, "error": f"Formato no soportado. Usa: {', '.join(ALLOWED_EXTENSIONS)}"}), 400
+
+    # Guardar el archivo
+    safe_name = secure_filename(file.filename)
+    timestamp = int(time.time())
+    stored_name = f"upload_{current_user.id}_{timestamp}_{safe_name}"
+    file_path = os.path.join(Config.DOWNLOAD_FOLDER, stored_name)
+
+    # Leer en chunks para verificar tamaño sin cargar todo en RAM
+    file.seek(0, 2)
+    file_size = file.tell()
+    file.seek(0)
+    if file_size > MAX_SIZE_BYTES:
+        return jsonify({"success": False, "error": "El archivo supera el límite de 200MB."}), 413
+
+    file.save(file_path)
+
+    # Detectar si es video o audio por extensión
+    video_exts = {"mp4", "webm", "mkv"}
+    platform = "video_local" if ext in video_exts else "audio_local"
+
+    # Crear el item en la playlist
+    display_name = os.path.splitext(safe_name)[0]
+    new_item = PlaylistItem(
+        playlist_id=playlist.id,
+        title=display_name,
+        url=f"/downloads/{stored_name}",
+        platform=platform,
+        thumbnail=None,
+        duration=0
+    )
+    db.session.add(new_item)
+    db.session.commit()
+
+    return jsonify({
+        "success": True,
+        "item": {
+            "id": new_item.id,
+            "title": new_item.title,
+            "url": new_item.url,
+            "platform": new_item.platform,
+        }
+    })
+
 # ============================================================
 # INICIO DE LA APLICACION
 # ============================================================

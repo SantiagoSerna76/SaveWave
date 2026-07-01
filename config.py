@@ -101,6 +101,9 @@ class Config:
     # Tiempo máximo que un archivo descargado se guarda antes de eliminarse (en segundos)
     DOWNLOAD_EXPIRY_SECONDS = 3600  # 1 hora
 
+    # Tamaño máximo de upload de archivos (200 MB)
+    MAX_CONTENT_LENGTH = 200 * 1024 * 1024  # 200 MB
+
     # -------------------- ANUNCIOS --------------------
     ADS_ENABLED = True  # Activar/desactivar anuncios globalmente
     # Código de AdSense (se inyecta en las plantillas)

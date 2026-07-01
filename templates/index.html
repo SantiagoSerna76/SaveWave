@@ -370,17 +370,60 @@
         {% if current_user.is_authenticated %}
         <div class="modal fade" id="selectPlaylistModal" tabindex="-1">
             <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content" style="background-color: #282828; color: #fff;">
-                    <div class="modal-header" style="border-bottom-color: #404040;">
-                        <h5 class="modal-title fw-bold"><i class="fas fa-headphones me-2"></i>Guardar en Playlist</h5>
+                <div class="modal-content" style="background-color: #1e1e2e; color: #fff; border: 1px solid #313244;">
+                    <div class="modal-header" style="border-bottom: 1px solid #313244;">
+                        <h5 class="modal-title fw-bold"><i class="fas fa-headphones me-2" style="color:#a6e3a1;"></i>Guardar en Playlist</h5>
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                     </div>
-                    <div class="modal-body">
-                        <div id="userPlaylistsList"></div>
-                        <hr style="border-color:#404040;">
-                        <div class="input-group">
-                            <input type="text" class="form-control" id="quickNewPlaylistName" placeholder="Crear nueva playlist..." style="background:#3e3e3e;border:none;color:#fff;">
-                            <button class="btn btn-success" onclick="quickCreateAndAdd()" style="background:#1ed760;border:none;color:#000;font-weight:700;">Crear</button>
+                    <div class="modal-body p-0">
+                        <!-- TABS dentro del modal -->
+                        <ul class="nav nav-tabs nav-fill border-0" id="playlistModalTabs" style="background:#181825; border-bottom: 1px solid #313244 !important;">
+                            <li class="nav-item">
+                                <button class="nav-link active fw-semibold" id="modal-playlists-tab" data-bs-toggle="tab" data-bs-target="#modal-playlists" type="button" style="color:#cdd6f4; border-radius:0;">
+                                    <i class="fas fa-list me-1"></i> Mis Playlists
+                                </button>
+                            </li>
+                            <li class="nav-item">
+                                <button class="nav-link fw-semibold" id="modal-upload-tab" data-bs-toggle="tab" data-bs-target="#modal-upload" type="button" style="color:#cdd6f4; border-radius:0;">
+                                    <i class="fas fa-upload me-1"></i> Subir Archivo
+                                </button>
+                            </li>
+                        </ul>
+                        <div class="tab-content">
+                            <!-- TAB 1: Mis Playlists -->
+                            <div class="tab-pane fade show active p-3" id="modal-playlists">
+                                <div id="userPlaylistsList" class="mb-3">
+                                    <p class="text-secondary small"><i class="fas fa-spinner fa-spin me-1"></i> Cargando...</p>
+                                </div>
+                                <hr style="border-color:#313244;">
+                                <p class="text-secondary small mb-2"><i class="fas fa-plus-circle me-1" style="color:#a6e3a1;"></i>O crea una nueva playlist:</p>
+                                <div id="quickCreateError" class="alert alert-warning py-2 small d-none"></div>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="quickNewPlaylistName" placeholder="Nombre de la nueva playlist..." style="background:#313244; border:1px solid #45475a; color:#fff;">
+                                    <button class="btn fw-bold" onclick="quickCreateAndAdd()" id="quickCreateBtn" style="background:#a6e3a1; border:none; color:#1e1e2e;"><i class="fas fa-check me-1"></i>Crear y guardar</button>
+                                </div>
+                            </div>
+                            <!-- TAB 2: Subir archivo -->
+                            <div class="tab-pane fade p-3" id="modal-upload">
+                                <p class="text-secondary small mb-3">Sube un audio o video desde tu dispositivo directamente a una playlist.</p>
+                                <div class="mb-3">
+                                    <label class="form-label text-secondary small fw-semibold">Elige una playlist destino</label>
+                                    <select class="form-select" id="uploadTargetPlaylist" style="background:#313244; border:1px solid #45475a; color:#fff;">
+                                        <option value="">-- Selecciona una playlist --</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label text-secondary small fw-semibold">Archivo (MP3, MP4, WAV, OGG, M4A — máx 200MB)</label>
+                                    <input class="form-control" type="file" id="localFileInput" accept="audio/*,video/*" style="background:#313244; border:1px solid #45475a; color:#fff;">
+                                </div>
+                                <div class="progress mb-3 d-none" id="uploadProgressBar" style="height:8px; background:#313244;">
+                                    <div class="progress-bar" id="uploadProgressFill" role="progressbar" style="width:0%; background:#a6e3a1;"></div>
+                                </div>
+                                <div id="uploadStatus" class="small text-secondary d-none"></div>
+                                <button class="btn fw-bold w-100" id="uploadFileBtn" onclick="uploadLocalFile()" style="background:#a6e3a1; border:none; color:#1e1e2e;">
+                                    <i class="fas fa-cloud-upload-alt me-1"></i>Subir a Playlist
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -697,17 +740,23 @@ $(document).ready(function() {
         fetch('/api/playlists/list')
             .then(r => r.json())
             .then(data => {
-                if (!data.success) return;
+                if (!data.success) {
+                    $('#userPlaylistsList').html('<p class="text-warning small"><i class="fas fa-lock me-1"></i>Inicia sesión para guardar en playlists.</p>');
+                    return;
+                }
                 let html = '';
+                let selectHtml = '<option value="">-- Selecciona una playlist --</option>';
                 data.playlists.forEach(function(pl) {
-                    html += `<button class="btn btn-outline-light btn-sm w-100 mb-2 text-start" onclick="addToPlaylist(${pl.id})">`;
-                    html += `<i class="fas fa-music me-2"></i>${pl.name}</button>`;
+                    html += `<button class="btn btn-sm w-100 mb-2 text-start fw-semibold" onclick="addToPlaylist(${pl.id})" style="background:#313244; color:#cdd6f4; border:1px solid #45475a;">`;
+                    html += `<i class="fas fa-music me-2" style="color:#a6e3a1;"></i>${pl.name}</button>`;
+                    selectHtml += `<option value="${pl.id}">${pl.name}</option>`;
                 });
-                if (!html) html = '<p class="text-muted small">No tienes playlists aún. Crea una abajo.</p>';
+                if (!html) html = '<p class="text-secondary small"><i class="fas fa-info-circle me-1"></i>No tienes playlists aún. Crea una abajo.</p>';
                 $('#userPlaylistsList').html(html);
+                $('#uploadTargetPlaylist').html(selectHtml);
             })
             .catch(() => {
-                $('#userPlaylistsList').html('<p class="text-danger small">Error al cargar playlists.</p>');
+                $('#userPlaylistsList').html('<p class="text-danger small"><i class="fas fa-exclamation-circle me-1"></i>Error al cargar playlists.</p>');
             });
     }
 
@@ -730,7 +779,10 @@ $(document).ready(function() {
         .then(data => {
             if (data.success) {
                 bootstrap.Modal.getInstance(document.getElementById('selectPlaylistModal')).hide();
-                alert(`¡${data.added} cancion(es) agregada(s) a tu playlist!`);
+                // Show toast-style success
+                const toast = $('<div class="alert alert-success position-fixed" style="bottom:20px;right:20px;z-index:9999;border-radius:12px;">').text(`✓ ${data.added} canción(es) guardada(s)`);
+                $('body').append(toast);
+                setTimeout(() => toast.fadeOut(400, () => toast.remove()), 2500);
             } else {
                 alert(data.error);
             }
@@ -739,7 +791,14 @@ $(document).ready(function() {
 
     function quickCreateAndAdd() {
         const name = $('#quickNewPlaylistName').val().trim();
-        if (!name) return;
+        const $err = $('#quickCreateError');
+        const $btn = $('#quickCreateBtn');
+        $err.addClass('d-none');
+        if (!name) {
+            $err.removeClass('d-none').text('Escribe un nombre para la playlist.');
+            return;
+        }
+        $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>Creando...');
         fetch('/api/playlists/create', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
@@ -748,11 +807,66 @@ $(document).ready(function() {
         .then(r => r.json())
         .then(data => {
             if (data.success) {
+                $('#quickNewPlaylistName').val('');
                 addToPlaylist(data.playlist.id);
+                loadUserPlaylists();
             } else {
-                alert(data.error);
+                $err.removeClass('d-none').text(data.error || 'Error al crear. ¿Tienes plan Pro o Premium?');
             }
-        });
+        })
+        .catch(() => $err.removeClass('d-none').text('Error de conexión.'))
+        .finally(() => $btn.prop('disabled', false).html('<i class="fas fa-check me-1"></i>Crear y guardar'));
+    }
+
+    // Upload local file to playlist
+    function uploadLocalFile() {
+        const playlistId = $('#uploadTargetPlaylist').val();
+        const fileInput = document.getElementById('localFileInput');
+        const file = fileInput.files[0];
+        const $status = $('#uploadStatus');
+        const $progress = $('#uploadProgressBar');
+        const $fill = $('#uploadProgressFill');
+        const $btn = $('#uploadFileBtn');
+
+        if (!playlistId) { $status.removeClass('d-none').text('⚠ Selecciona una playlist destino.'); return; }
+        if (!file) { $status.removeClass('d-none').text('⚠ Selecciona un archivo primero.'); return; }
+        if (file.size > 200 * 1024 * 1024) { $status.removeClass('d-none').text('⚠ El archivo supera el límite de 200MB.'); return; }
+
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('playlist_id', playlistId);
+
+        $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>Subiendo...');
+        $status.removeClass('d-none text-danger text-success').addClass('text-secondary').text('Subiendo archivo, por favor espera...');
+        $progress.removeClass('d-none');
+        $fill.css('width', '0%');
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', '/api/playlists/upload');
+        xhr.upload.onprogress = function(e) {
+            if (e.lengthComputable) {
+                const pct = Math.round((e.loaded / e.total) * 100);
+                $fill.css('width', pct + '%');
+                $status.text(`Subiendo... ${pct}%`);
+            }
+        };
+        xhr.onload = function() {
+            const data = JSON.parse(xhr.responseText);
+            if (data.success) {
+                $status.removeClass('text-secondary text-danger').addClass('text-success').text('✓ Archivo subido exitosamente a tu playlist.');
+                $fill.css('width', '100%');
+                fileInput.value = '';
+                loadUserPlaylists();
+            } else {
+                $status.removeClass('text-secondary text-success').addClass('text-danger').text('✗ Error: ' + (data.error || 'Error al subir.'));
+            }
+            $btn.prop('disabled', false).html('<i class="fas fa-cloud-upload-alt me-1"></i>Subir a Playlist');
+        };
+        xhr.onerror = function() {
+            $status.removeClass('text-secondary text-success').addClass('text-danger').text('✗ Error de conexión.');
+            $btn.prop('disabled', false).html('<i class="fas fa-cloud-upload-alt me-1"></i>Subir a Playlist');
+        };
+        xhr.send(formData);
     }
 
     // Import full YouTube playlist

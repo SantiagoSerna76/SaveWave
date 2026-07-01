@@ -130,13 +130,46 @@ def get_video_info(url: str) -> dict:
     Returns:
         Diccionario con: title, duration, platform, thumbnail, available_qualities.
     """
-    ydl_opts = _get_ydl_opts({"extract_flat": False})
+    ydl_opts = _get_ydl_opts({
+        "extract_flat": "in_playlist",
+        "noplaylist": False,
+    })
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
 
-            # Obtener calidades disponibles desde los formatos
+            # Verificar si es una playlist
+            if "entries" in info:
+                playlist_items = []
+                platform = detect_platform(url)
+                for entry in info["entries"]:
+                    if not entry:
+                        continue
+                    
+                    item_url = entry.get("url", "")
+                    if not item_url and entry.get("id"):
+                        if platform == "youtube":
+                            item_url = f"https://www.youtube.com/watch?v={entry['id']}"
+                        else:
+                            item_url = url # Fallback
+                            
+                    playlist_items.append({
+                        "title": entry.get("title", "Sin título"),
+                        "duration": entry.get("duration", 0),
+                        "url": item_url,
+                        "thumbnail": entry.get("thumbnail") or info.get("thumbnail", ""),
+                        "platform": platform
+                    })
+                    
+                return {
+                    "is_playlist": True,
+                    "title": info.get("title", "Lista de reproducción"),
+                    "platform": platform,
+                    "items": playlist_items
+                }
+
+            # Flujo normal para un solo video
             available_qualities = set()
             if "formats" in info:
                 for fmt in info["formats"]:
@@ -151,6 +184,7 @@ def get_video_info(url: str) -> dict:
             )
 
             return {
+                "is_playlist": False,
                 "title": info.get("title", "Sin título"),
                 "duration": info.get("duration", 0),  # En segundos
                 "platform": detect_platform(url),

@@ -45,6 +45,7 @@ class User(UserMixin, db.Model):
     # Relaciones
     subscription = db.relationship("Subscription", backref="user", uselist=False, lazy=True)
     downloads = db.relationship("Download", backref="user", lazy="dynamic")
+    playlists = db.relationship("Playlist", backref="user", lazy="dynamic", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<User {self.username} ({self.email})>"
@@ -104,6 +105,45 @@ class Download(db.Model):
 
     def __repr__(self):
         return f"<Download {self.id} - {self.platform} - {self.status}>"
+
+
+class Playlist(db.Model):
+    """
+    Tabla de listas de reproduccion del usuario.
+    Solo para planes Pro/Premium.
+    """
+    __tablename__ = "playlists"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.String(255), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relaciones
+    items = db.relationship("PlaylistItem", backref="playlist", lazy="dynamic", cascade="all, delete-orphan")
+
+    def __repr__(self):
+        return f"<Playlist {self.name}>"
+
+
+class PlaylistItem(db.Model):
+    """
+    Tabla de canciones/videos guardados dentro de una playlist.
+    """
+    __tablename__ = "playlist_items"
+
+    id = db.Column(db.Integer, primary_key=True)
+    playlist_id = db.Column(db.Integer, db.ForeignKey("playlists.id"), nullable=False)
+    title = db.Column(db.String(255), nullable=False)
+    url = db.Column(db.String(500), nullable=False)
+    platform = db.Column(db.String(50), nullable=False)
+    thumbnail = db.Column(db.String(500), nullable=True)
+    duration = db.Column(db.Integer, nullable=True) # Segundos
+    added_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f"<PlaylistItem {self.title}>"
 
 
 def init_db(app):

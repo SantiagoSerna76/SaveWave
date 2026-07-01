@@ -40,7 +40,7 @@ from datetime import datetime
 from config import Config
 
 # Importar modelos y base de datos
-from models import db, init_db, User, Download, PlanType
+from models import db, init_db, User, Download, PlanType, Playlist, PlaylistItem
 
 # Importar servicios
 from downloader import (
@@ -343,14 +343,16 @@ def api_video_info():
 
         return jsonify({
             "success": True,
-            "title": info["title"],
-            "duration": info["duration"],
-            "duration_formatted": format_duration(info["duration"]),
-            "platform": info["platform"],
-            "thumbnail": info["thumbnail"],
-            "uploader": info["uploader"],
-            "views": info["view_count"],
-            "available_qualities": info["available_qualities"],
+            "is_playlist": info.get("is_playlist", False),
+            "title": info.get("title", ""),
+            "duration": info.get("duration", 0),
+            "duration_formatted": format_duration(info.get("duration", 0)),
+            "platform": info.get("platform", ""),
+            "thumbnail": info.get("thumbnail", ""),
+            "uploader": info.get("uploader", ""),
+            "views": info.get("view_count", 0),
+            "available_qualities": info.get("available_qualities", []),
+            "items": info.get("items", [])
         })
 
     except ValueError as e:
@@ -769,6 +771,112 @@ def api_generate_token():
     )
     return jsonify({"success": True, "token": token, "expires_in": "30 dias"})
 
+
+# ============================================================
+# RUTAS - PLAYLISTS (API & VIEWS)
+# ============================================================
+
+@app.route("/playlists")
+@login_required
+def playlists_view():
+    """Vista principal de Playlists (estilo Spotify)."""
+    plan_info = get_user_plan(current_user)
+    if plan_info["plan"] not in ("pro", "premium"):
+        flash("Las Playlists son exclusivas de planes Pro y Premium.", "warning")
+        return redirect(url_for("pricing"))
+        
+    user_playlists = Playlist.query.filter_by(user_id=current_user.id).order_by(Playlist.created_at.desc()).all()
+    return render_template("playlists.html", playlists=user_playlists)
+
+@app.route("/api/playlists/create", methods=["POST"])
+@login_required
+def api_playlist_create():
+    """Crea una nueva playlist."""
+    plan_info = get_user_plan(current_user)
+    if plan_info["plan"] not in ("pro", "premium"):
+        return jsonify({"success": False, "error": "Exclusivo de planes Pro/Premium."}), 403
+
+    data = request.get_json() or {}
+    name = data.get("name", "").strip()
+    if not name:
+        return jsonify({"success": False, "error": "El nombre es obligatorio."})
+
+    new_playlist = Playlist(user_id=current_user.id, name=name, description=data.get("description", ""))
+    db.session.add(new_playlist)
+    db.session.commit()
+    
+    return jsonify({"success": True, "playlist": {"id": new_playlist.id, "name": new_playlist.name}})
+
+@app.route("/api/playlists/add", methods=["POST"])
+@login_required
+def api_playlist_add():
+    """Agrega uno o varios items a una playlist."""
+    data = request.get_json() or {}
+    playlist_id = data.get("playlist_id")
+    items = data.get("items", []) # Lista de {title, url, platform, thumbnail, duration}
+    
+    if not playlist_id or not items:
+        return jsonify({"success": False, "error": "Faltan datos."})
+
+    playlist = Playlist.query.filter_by(id=playlist_id, user_id=current_user.id).first()
+    if not playlist:
+        return jsonify({"success": False, "error": "Playlist no encontrada."}), 404
+
+    added_count = 0
+    for item in items:
+        existing = PlaylistItem.query.filter_by(playlist_id=playlist.id, url=item.get("url")).first()
+        if not existing:
+            new_item = PlaylistItem(
+                playlist_id=playlist.id,
+                title=item.get("title", "Desconocido"),
+                url=item.get("url"),
+                platform=item.get("platform", "youtube"),
+                thumbnail=item.get("thumbnail"),
+                duration=item.get("duration", 0)
+            )
+            db.session.add(new_item)
+            added_count += 1
+            
+    db.session.commit()
+    return jsonify({"success": True, "added": added_count})
+
+@app.route("/api/playlists/<int:playlist_id>")
+@login_required
+def api_playlist_get(playlist_id):
+    """Obtiene los detalles y canciones de una playlist."""
+    playlist = Playlist.query.filter_by(id=playlist_id, user_id=current_user.id).first()
+    if not playlist:
+        return jsonify({"success": False, "error": "No encontrada."}), 404
+        
+    items = playlist.items.order_by(PlaylistItem.added_at.desc()).all()
+    
+    return jsonify({
+        "success": True,
+        "playlist": {
+            "id": playlist.id,
+            "name": playlist.name,
+            "description": playlist.description,
+            "items": [{
+                "id": i.id,
+                "title": i.title,
+                "url": i.url,
+                "platform": i.platform,
+                "thumbnail": i.thumbnail,
+                "duration": i.duration,
+                "duration_formatted": format_duration(i.duration)
+            } for i in items]
+        }
+    })
+
+@app.route("/api/playlists/list")
+@login_required
+def api_playlists_list():
+    """Devuelve la lista de playlists del usuario (para el modal del index)."""
+    user_playlists = Playlist.query.filter_by(user_id=current_user.id).order_by(Playlist.created_at.desc()).all()
+    return jsonify({
+        "success": True,
+        "playlists": [{"id": pl.id, "name": pl.name} for pl in user_playlists]
+    })
 
 # ============================================================
 # INICIO DE LA APLICACION

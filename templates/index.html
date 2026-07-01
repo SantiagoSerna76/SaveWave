@@ -115,6 +115,13 @@
                                     </button>
                                 </div>
                             </div>
+                            {% if current_user.is_authenticated %}
+                            <div class="mt-2">
+                                <button id="saveToPlaylistBtn" class="btn btn-outline-success btn-sm w-100" style="display:none;">
+                                    <i class="fas fa-plus me-1"></i>Guardar en Playlist
+                                </button>
+                            </div>
+                            {% endif %}
                             <div id="mp3Info" class="mt-2 small text-muted" style="display: none;">
                                 <i class="fas fa-info-circle me-1"></i>MP3 128kbps para planes gratuitos, 320kbps para Pro/Premium
                             </div>
@@ -178,6 +185,50 @@
                 </div>
             </div>
         </div>
+
+        <!-- ==================== PLAYLIST DETECTADA (YouTube playlists) ==================== -->
+        <div id="playlistDetected" class="mt-4" style="display: none;">
+            <div class="card shadow-sm border-0" style="background: linear-gradient(135deg, #1a1a2e, #16213e); color: white;">
+                <div class="card-body">
+                    <h5 class="fw-bold mb-3"><i class="fas fa-list-ul me-2"></i>Playlist detectada: <span id="playlistTitle"></span></h5>
+                    <p class="text-muted small mb-3"><span id="playlistCount"></span> canciones encontradas</p>
+                    <div id="playlistItemsList" style="max-height: 300px; overflow-y: auto;"></div>
+                    {% if current_user.is_authenticated %}
+                    <div class="mt-3 d-flex gap-2">
+                        <button class="btn btn-success" onclick="importPlaylistToSaveWave()">
+                            <i class="fas fa-plus me-1"></i>Importar toda la playlist
+                        </button>
+                    </div>
+                    {% else %}
+                    <div class="mt-3">
+                        <a href="{{ url_for('login') }}" class="btn btn-outline-light btn-sm">Inicia sesion para guardar playlists</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== MODAL: Seleccionar Playlist ==================== -->
+        {% if current_user.is_authenticated %}
+        <div class="modal fade" id="selectPlaylistModal" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content" style="background-color: #282828; color: #fff;">
+                    <div class="modal-header" style="border-bottom-color: #404040;">
+                        <h5 class="modal-title fw-bold"><i class="fas fa-headphones me-2"></i>Guardar en Playlist</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="userPlaylistsList"></div>
+                        <hr style="border-color:#404040;">
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="quickNewPlaylistName" placeholder="Crear nueva playlist..." style="background:#3e3e3e;border:none;color:#fff;">
+                            <button class="btn btn-success" onclick="quickCreateAndAdd()" style="background:#1ed760;border:none;color:#000;font-weight:700;">Crear</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
 
         <!-- ==================== RESENAS Y TESTIMONIOS ==================== -->
         <div class="mt-5">
@@ -309,20 +360,23 @@ $(document).ready(function() {
 
     // ============================================================
     // PASO 1: Obtener información del video al pegar la URL
+    // (Soporta detección de playlists de YouTube)
     // ============================================================
+    let lastVideoInfo = null;
+
     $form.on('submit', function(e) {
         e.preventDefault();
         const url = $urlInput.val().trim();
         if (!url) return;
 
-        // Ocultar resultados anteriores
         $videoInfo.hide();
         $downloadResult.hide();
         $errorContainer.hide();
         $upgradeContainer.hide();
         $progressContainer.hide();
+        $('#playlistDetected').hide();
+        $('#saveToPlaylistBtn').hide();
 
-        // Mostrar estado de carga
         $submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>Analizando...');
 
         $.ajax({
@@ -332,22 +386,44 @@ $(document).ready(function() {
             dataType: 'json',
             success: function(response) {
                 if (response.success) {
-                    // Mostrar información del video
-                    $('#videoThumbnail').attr('src', response.thumbnail);
-                    $('#videoTitle').text(response.title);
-                    $('#videoUploader').text(response.uploader);
-                    $('#videoDuration').text(response.duration_formatted);
-                    $('#videoViews').text(response.views ? response.views.toLocaleString() : 'N/A');
-                    $('#videoPlatform').text(response.platform.charAt(0).toUpperCase() + response.platform.slice(1));
+                    if (response.is_playlist && response.items && response.items.length > 0) {
+                        // Show playlist UI
+                        $('#playlistTitle').text(response.title);
+                        $('#playlistCount').text(response.items.length);
+                        let html = '';
+                        response.items.forEach(function(item, idx) {
+                            html += `<div class="d-flex align-items-center mb-2 p-2 rounded" style="background:rgba(255,255,255,0.05);">`;
+                            html += `<span class="text-muted me-3" style="min-width:24px;">${idx+1}</span>`;
+                            if (item.thumbnail) {
+                                html += `<img src="${item.thumbnail}" width="40" height="40" class="me-3 rounded" style="object-fit:cover;">`;
+                            }
+                            html += `<div><div class="fw-semibold small">${item.title}</div>`;
+                            html += `<div class="text-muted" style="font-size:0.75rem;">${item.platform}</div></div></div>`;
+                        });
+                        $('#playlistItemsList').html(html);
+                        $('#playlistDetected').show();
+                        lastVideoInfo = response;
+                    } else {
+                        // Normal single video
+                        $('#videoThumbnail').attr('src', response.thumbnail);
+                        $('#videoTitle').text(response.title);
+                        $('#videoUploader').text(response.uploader);
+                        $('#videoDuration').text(response.duration_formatted);
+                        $('#videoViews').text(response.views ? response.views.toLocaleString() : 'N/A');
+                        $('#videoPlatform').text(response.platform.charAt(0).toUpperCase() + response.platform.slice(1));
 
-                    // Llenar selector de calidad
-                    const $quality = $('#qualitySelect');
-                    $quality.empty();
-                    response.available_qualities.forEach(function(q) {
-                        $quality.append(`<option value="${q}">${q}</option>`);
-                    });
+                        const $quality = $('#qualitySelect');
+                        $quality.empty();
+                        if (response.available_qualities) {
+                            response.available_qualities.forEach(function(q) {
+                                $quality.append(`<option value="${q}">${q}</option>`);
+                            });
+                        }
 
-                    $videoInfo.show();
+                        lastVideoInfo = response;
+                        $videoInfo.show();
+                        $('#saveToPlaylistBtn').show();
+                    }
                 } else if (response.upgrade_required) {
                     $('#upgradeMessage').text(response.error);
                     $upgradeContainer.show();
@@ -357,7 +433,7 @@ $(document).ready(function() {
                 }
             },
             error: function() {
-                $('#errorMessage').text('Error de conexión. Intenta de nuevo.');
+                $('#errorMessage').text('Error de conexion. Intenta de nuevo.');
                 $errorContainer.show();
             },
             complete: function() {
@@ -449,6 +525,84 @@ $(document).ready(function() {
             }
         });
     });
+
+    // ============================================================
+    // SAVE TO PLAYLIST (single video)
+    // ============================================================
+    $('#saveToPlaylistBtn').on('click', function() {
+        if (!lastVideoInfo) return;
+        loadUserPlaylists();
+        new bootstrap.Modal(document.getElementById('selectPlaylistModal')).show();
+    });
+
+    function loadUserPlaylists() {
+        fetch('/api/playlists/list')
+            .then(r => r.json())
+            .then(data => {
+                if (!data.success) return;
+                let html = '';
+                data.playlists.forEach(function(pl) {
+                    html += `<button class="btn btn-outline-light btn-sm w-100 mb-2 text-start" onclick="addToPlaylist(${pl.id})">`;
+                    html += `<i class="fas fa-music me-2"></i>${pl.name}</button>`;
+                });
+                if (!html) html = '<p class="text-muted small">No tienes playlists aún. Crea una abajo.</p>';
+                $('#userPlaylistsList').html(html);
+            })
+            .catch(() => {
+                $('#userPlaylistsList').html('<p class="text-danger small">Error al cargar playlists.</p>');
+            });
+    }
+
+    function addToPlaylist(playlistId) {
+        if (!lastVideoInfo) return;
+        const items = lastVideoInfo.is_playlist ? lastVideoInfo.items : [{
+            title: lastVideoInfo.title,
+            url: $urlInput.val().trim(),
+            platform: lastVideoInfo.platform,
+            thumbnail: lastVideoInfo.thumbnail,
+            duration: lastVideoInfo.duration
+        }];
+
+        fetch('/api/playlists/add', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ playlist_id: playlistId, items: items })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                bootstrap.Modal.getInstance(document.getElementById('selectPlaylistModal')).hide();
+                alert(`¡${data.added} cancion(es) agregada(s) a tu playlist!`);
+            } else {
+                alert(data.error);
+            }
+        });
+    }
+
+    function quickCreateAndAdd() {
+        const name = $('#quickNewPlaylistName').val().trim();
+        if (!name) return;
+        fetch('/api/playlists/create', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ name: name })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                addToPlaylist(data.playlist.id);
+            } else {
+                alert(data.error);
+            }
+        });
+    }
+
+    // Import full YouTube playlist
+    window.importPlaylistToSaveWave = function() {
+        if (!lastVideoInfo || !lastVideoInfo.is_playlist) return;
+        loadUserPlaylists();
+        new bootstrap.Modal(document.getElementById('selectPlaylistModal')).show();
+    };
 });
 </script>
 {% endblock %}

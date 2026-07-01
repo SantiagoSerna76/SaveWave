@@ -8,41 +8,45 @@
    ============================================================ */
 
 /* ============================================================
-   MODO OSCURO
+   MODO OSCURO Y VARIABLES GLOBALES
    ============================================================ */
 :root {
-    --primary-color: #0d6efd;
-    --success-color: #198754;
-    --warning-color: #ffc107;
-    --danger-color: #dc3545;
-    --dark-color: #212529;
-    --light-bg: #f8f9fa;
+    --primary-color: #0f172a; /* Slate 900 */
+    --primary-hover: #1e293b;
+    --success-color: #059669;
+    --warning-color: #d97706;
+    --danger-color: #dc2626;
+    --dark-color: #0f172a;
+    --light-bg: #f8fafc; /* Slate 50 */
     --border-radius: 12px;
-    --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
-    --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
-    --shadow-lg: 0 10px 25px rgba(0,0,0,0.15);
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
     --card-bg: #ffffff;
-    --text-color: #212529;
-    --text-muted: #6c757d;
-    --accent-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    --navbar-gradient: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    --card-border: #e2e8f0;
+    --text-color: #1e293b;
+    --text-muted: #64748b;
+    --accent-gradient: linear-gradient(135deg, #0f172a 0%, #334155 100%);
+    --navbar-gradient: #ffffff;
 }
 
 body.dark-mode {
-    --primary-color: #6ea8fe;
-    --success-color: #75b798;
-    --warning-color: #ffda6a;
-    --danger-color: #ea868f;
-    --dark-color: #f8f9fa;
-    --light-bg: #1a1d21;
-    --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
-    --shadow-md: 0 4px 6px rgba(0,0,0,0.3);
-    --shadow-lg: 0 10px 25px rgba(0,0,0,0.4);
-    --card-bg: #2c3034;
-    --text-color: #dee2e6;
-    --text-muted: #adb5bd;
-    background-color: #1a1d21;
-    color: #dee2e6;
+    --primary-color: #3b82f6; /* Blue 500 */
+    --primary-hover: #60a5fa;
+    --success-color: #10b981;
+    --warning-color: #f59e0b;
+    --danger-color: #ef4444;
+    --dark-color: #f8fafc;
+    --light-bg: #0f172a; /* Slate 900 */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.6), 0 2px 4px -1px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.7), 0 4px 6px -2px rgba(0, 0, 0, 0.5);
+    --card-bg: #1e293b; /* Slate 800 */
+    --card-border: #334155;
+    --text-color: #f1f5f9;
+    --text-muted: #94a3b8;
+    background-color: var(--light-bg);
+    color: var(--text-color);
 }
 
 body.dark-mode .card {
@@ -139,13 +143,14 @@ main {
 /* -------------------- TARJETAS (CARDS) -------------------- */
 .card {
     border-radius: var(--border-radius);
-    transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-                box-shadow 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    border: 1px solid var(--card-border);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    background-color: var(--card-bg);
 }
 
 .card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 20px 40px rgba(0,0,0,0.12);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
 }
 
 /* -------------------- BOTONES -------------------- */
@@ -153,32 +158,40 @@ main {
     border-radius: 8px;
     font-weight: 500;
     transition: all 0.2s ease;
+    padding: 0.5rem 1rem;
 }
 
 .btn-lg {
-    border-radius: 12px;
+    border-radius: 10px;
+    padding: 0.75rem 1.5rem;
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, #0d6efd, #0a58ca);
-    border: none;
+    background-color: var(--primary-color);
+    border: 1px solid var(--primary-color);
+    color: white;
 }
 
 .btn-primary:hover {
-    background: linear-gradient(135deg, #0a58ca, #084298);
+    background-color: var(--primary-hover);
+    border-color: var(--primary-hover);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.4);
+    box-shadow: var(--shadow-md);
+    color: white;
 }
 
 .btn-success {
-    background: linear-gradient(135deg, #198754, #157347);
-    border: none;
+    background-color: var(--success-color);
+    border: 1px solid var(--success-color);
+    color: white;
 }
 
 .btn-success:hover {
-    background: linear-gradient(135deg, #157347, #0f5c3a);
+    background-color: #047857; /* Emerald 700 */
+    border-color: #047857;
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(25, 135, 84, 0.4);
+    box-shadow: var(--shadow-md);
+    color: white;
 }
 
 /* -------------------- FORMULARIOS -------------------- */

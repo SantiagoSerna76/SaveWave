@@ -673,6 +673,12 @@ def robots():
     return render_template("robots.txt"), 200, {"Content-Type": "text/plain"}
 
 
+@app.route("/google426583ef775745bf.html")
+def google_verification():
+    """Sirve el archivo de verificacion de Google Search Console."""
+    return send_file("google426583ef775745bf.html")
+
+
 # ============================================================
 # INICIO DE LA APLICACION
 # ============================================================

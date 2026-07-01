@@ -74,7 +74,7 @@
                     </li>
                 </ul>
                 <ul class="navbar-nav align-items-center">
-                    <li class="nav-item me-3 d-none" id="installAppContainer">
+                    <li class="nav-item me-3" id="installAppContainer">
                         <button class="btn btn-sm fw-bold rounded-pill px-3 shadow-sm" id="installAppBtn" 
                                 style="background: linear-gradient(45deg, var(--primary-color), #8bd5ca); border:none; color:#1e1e2e; transition: all 0.3s ease; animation: pulse 2s infinite;">
                             <i class="fas fa-mobile-alt me-2"></i>Instalar App
@@ -138,15 +138,12 @@
     {% if ads_enabled and (not current_user.is_authenticated or (current_user.is_authenticated and current_user.subscription and current_user.subscription.plan.value == 'free')) %}
     <div class="ad-banner text-center py-2 bg-light border-bottom" id="topAd">
         <small class="text-muted">Publicidad</small>
-        <!-- Aquí va tu código de AdSense (anuncio display) -->
-        <div class="ad-container mx-auto" style="max-width: 728px; min-height: 90px;">
-            <!-- Coloca aquí el código de AdSense -->
+        <div class="d-flex justify-content-center align-items-center mt-1">
+            <!-- Google Adsense Banner -->
             <ins class="adsbygoogle"
-                 style="display:block"
+                 style="display:inline-block;width:728px;height:90px"
                  data-ad-client="{{ adsense_client }}"
-                 data-ad-slot="1234567890"
-                 data-ad-format="horizontal"
-                 data-full-width-responsive="true"></ins>
+                 data-ad-slot="{{ adsense_slot_top }}"></ins>
             <script>
                  (adsbygoogle = window.adsbygoogle || []).push({});
             </script>
@@ -238,6 +235,25 @@
         </div>
     </div>
 
+    <!-- ==================== PWA FALLBACK INSTRUCTIONS MODAL ==================== -->
+    <div class="modal fade" id="pwaFallbackModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="border-radius: 20px; overflow: hidden; border: 1px solid var(--card-border);">
+                <div class="modal-body text-center p-5 position-relative">
+                    <button type="button" class="btn-close position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <img src="{{ url_for('static', filename='Savewave.png') }}" alt="SaveWave Logo" class="mb-4" style="height: 80px; width: auto; max-width: 100%; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.15); object-fit: contain;">
+                    <h4 class="fw-bold mb-3">Cómo instalar SaveWave</h4>
+                    <p class="text-muted mb-4">Si el instalador automático no se abre, puedes añadir la aplicación manualmente:</p>
+                    <div class="text-start mb-4 p-3 bg-light rounded" style="font-size: 0.9rem; color: var(--text-color); border: 1px solid var(--card-border);">
+                        <p class="mb-2"><strong>🖥️ En Computadora (Chrome / Edge):</strong><br>Busca el icono de la computadora con una flecha (<i class="display-inline-block text-primary fas fa-desktop"></i>) al final de la barra de direcciones arriba y haz clic en él.</p>
+                        <p class="mb-0"><strong>📱 En Celular:</strong><br>Pulsa el menú de opciones de tu navegador (tres puntos <i class="fas fa-ellipsis-v"></i>) y selecciona <strong>"Instalar aplicación"</strong> o <strong>"Agregar a la pantalla principal"</strong>.</p>
+                    </div>
+                    <button class="btn btn-primary rounded-pill px-5 fw-bold w-100" data-bs-dismiss="modal" style="background: linear-gradient(45deg, var(--primary-color), #8bd5ca); border: none;">Entendido</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- PWA Script -->
     <script>
         // Registrar Service Worker
@@ -257,18 +273,30 @@
         const installBtn = document.getElementById('installAppBtn');
         const confirmInstallBtn = document.getElementById('confirmInstallBtn');
         const installModal = new bootstrap.Modal(document.getElementById('pwaInstallModal'));
+        const fallbackModal = new bootstrap.Modal(document.getElementById('pwaFallbackModal'));
+
+        // Ocultar el botón si ya está ejecutándose como aplicación instalada
+        if (window.matchMedia('(display-mode: standalone)').matches || navigator.standalone) {
+            installContainer.classList.add('d-none');
+        }
 
         window.addEventListener('beforeinstallprompt', (e) => {
             // Prevenir que el navegador muestre el prompt automáticamente
             e.preventDefault();
             deferredPrompt = e;
-            // Mostrar nuestro botón personalizado en el navbar
-            installContainer.classList.remove('d-none');
+            // Asegurar que se muestre el botón
+            if (!(window.matchMedia('(display-mode: standalone)').matches || navigator.standalone)) {
+                installContainer.classList.remove('d-none');
+            }
         });
 
-        // Al hacer click en navbar, abrir modal
+        // Al hacer click en navbar, abrir modal correspondiente
         installBtn.addEventListener('click', () => {
-            installModal.show();
+            if (deferredPrompt) {
+                installModal.show();
+            } else {
+                fallbackModal.show();
+            }
         });
 
         // Al hacer click en "Instalar Ahora" dentro del modal

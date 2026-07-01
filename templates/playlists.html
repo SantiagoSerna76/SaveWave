@@ -712,7 +712,7 @@
     let repeatMode = 0;
     let shuffleOrder = [];
     let shuffleIndex = -1;
-    let isLoadingTrack = false;
+    let currentFetchController = null;
 
     const audioPlayer = document.getElementById('audioPlayer');
     const playPauseBtn = document.getElementById('playPauseBtn');
@@ -880,8 +880,16 @@
 
     async function playTrack(index) {
         if (index < 0 || index >= currentPlaylistItems.length) return;
-        if (isLoadingTrack) return; // Prevent double-loading
-        isLoadingTrack = true;
+        
+        // Prevent double loading the exact same track if it's already playing or loading
+        if (currentTrackIndex === index && currentFetchController !== null) return;
+        if (currentTrackIndex === index && !audioPlayer.paused) return;
+
+        // Abort previous fetch if any
+        if (currentFetchController) {
+            currentFetchController.abort();
+            currentFetchController = null;
+        }
 
         currentTrackIndex = index;
         const track = currentPlaylistItems[index];
@@ -911,9 +919,9 @@
         document.getElementById('timeCurrent').textContent = '0:00';
         document.getElementById('timeTotal').textContent = '0:00';
 
-        // --- LOCAL FILES: play directly ---
-        if (track.platform === 'audio_local' || track.platform === 'video_local') {
-            audioPlayer.src = track.url;
+        // --- LOCAL FILES & CACHED URLS: play directly ---
+        if (track.platform === 'audio_local' || track.platform === 'video_local' || track.cached_url) {
+            audioPlayer.src = track.cached_url || track.url;
             try {
                 await audioPlayer.play();
                 isPlaying = true;
@@ -922,19 +930,26 @@
                 document.getElementById('playerTitle').textContent = '❌ Error al reproducir';
             }
             updatePlayPauseUI();
-            isLoadingTrack = false;
             return;
         }
 
         // --- REMOTE URLS: download audio via API then play ---
+        currentFetchController = new AbortController();
         try {
             const res = await fetch('/api/download-audio', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                body: 'url=' + encodeURIComponent(track.url) + '&quality=128'
+                body: 'url=' + encodeURIComponent(track.url) + '&quality=128',
+                signal: currentFetchController.signal
             });
             const data = await res.json();
+            currentFetchController = null;
+
+            // Prevent race condition: ensure we are still trying to play the same track
+            if (currentTrackIndex !== index) return;
+
             if (data.success) {
+                track.cached_url = data.download_url; // Cache the URL
                 audioPlayer.src = data.download_url;
                 try {
                     await audioPlayer.play();
@@ -947,10 +962,17 @@
                 document.getElementById('playerTitle').textContent = '❌ ' + (data.error || 'No disponible');
             }
         } catch(e) {
-            document.getElementById('playerTitle').textContent = '❌ Error de conexión';
+            // Only show error if it wasn't an abort
+            if (e.name !== 'AbortError') {
+                document.getElementById('playerTitle').textContent = '❌ Error de conexión';
+            }
+            currentFetchController = null;
         }
-        updatePlayPauseUI();
-        isLoadingTrack = false;
+        
+        // Only update UI if we're still on this track
+        if (currentTrackIndex === index) {
+            updatePlayPauseUI();
+        }
     }
 
     // ========== PLAY / PAUSE ==========
@@ -1158,8 +1180,8 @@
         updatePlayPauseUI();
     });
     audioPlayer.addEventListener('pause', function() {
-        // Only update if we're not in the middle of loading a new track
-        if (!isLoadingTrack) {
+        // Only update if we're not currently fetching a track
+        if (!currentFetchController) {
             isPlaying = false;
             updatePlayPauseUI();
         }

@@ -1,37 +1,37 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
-        <loc>https://savewave.159.223.178.155.nip.io/</loc>
+        <loc>https://savewave.software/</loc>
         <lastmod>2026-06-29</lastmod>
         <changefreq>daily</changefreq>
         <priority>1.0</priority>
     </url>
     <url>
-        <loc>https://savewave.159.223.178.155.nip.io/pricing</loc>
+        <loc>https://savewave.software/pricing</loc>
         <lastmod>2026-06-29</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.8</priority>
     </url>
     <url>
-        <loc>https://savewave.159.223.178.155.nip.io/login</loc>
+        <loc>https://savewave.software/login</loc>
         <lastmod>2026-06-29</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.5</priority>
     </url>
     <url>
-        <loc>https://savewave.159.223.178.155.nip.io/register</loc>
+        <loc>https://savewave.software/register</loc>
         <lastmod>2026-06-29</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.6</priority>
     </url>
     <url>
-        <loc>https://savewave.159.223.178.155.nip.io/terms</loc>
+        <loc>https://savewave.software/terms</loc>
         <lastmod>2026-06-29</lastmod>
         <changefreq>yearly</changefreq>
         <priority>0.3</priority>
     </url>
     <url>
-        <loc>https://savewave.159.223.178.155.nip.io/privacy</loc>
+        <loc>https://savewave.software/privacy</loc>
         <lastmod>2026-06-29</lastmod>
         <changefreq>yearly</changefreq>
         <priority>0.3</priority>

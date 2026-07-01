@@ -158,7 +158,21 @@ echo -e "${YELLOW}[8/8] Configurando Nginx como proxy...${NC}"
 cat > /etc/nginx/sites-available/savewave <<EOF
 server {
     listen 80;
-    server_name 159.223.178.155;
+    server_name savewave.software www.savewave.software 159.223.178.155;
+
+    # Redirigir todo HTTP a HTTPS
+    return 301 https://savewave.software\$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name savewave.software www.savewave.software;
+
+    # Certificados SSL (generados por Certbot)
+    ssl_certificate /etc/letsencrypt/live/savewave.software/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/savewave.software/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
 
     # Logs
     access_log /var/log/nginx/savewave_access.log;

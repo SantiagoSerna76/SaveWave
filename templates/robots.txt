@@ -8,4 +8,4 @@ Allow: /
 Disallow: /admin/
 
 # Sitemap
-Sitemap: https://savewave.159.223.178.155.nip.io/sitemap.xml
+Sitemap: https://savewave.software/sitemap.xml

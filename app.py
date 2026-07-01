@@ -13,6 +13,7 @@ SEGURIDAD:
 """
 
 import os
+import time
 import pymysql
 import stripe
 
@@ -28,7 +29,8 @@ from flask_login import (
     LoginManager, login_required, current_user
 )
 from flask_jwt_extended import (
-    JWTManager, jwt_required, get_jwt_identity, get_jwt
+    JWTManager, jwt_required, get_jwt_identity, get_jwt,
+    verify_jwt_in_request
 )
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -134,6 +136,34 @@ def format_number(n):
     if n >= 1000:
         return f"{n/1000:.1f}K"
     return str(n)
+
+
+# ============================================================
+# HELPER - Obtener usuario desde JWT o sesion web
+# ============================================================
+
+def _get_api_user():
+    """
+    Intenta obtener el usuario autenticado, primero via JWT (API),
+    luego via sesion web (Flask-Login).
+    Retorna (user, is_jwt) o (None, False) si no hay autenticacion.
+    """
+    # Intentar JWT primero (header Authorization: Bearer <token>)
+    try:
+        verify_jwt_in_request(optional=True)
+        user_id = get_jwt_identity()
+        if user_id:
+            user = get_user_by_id(int(user_id))
+            if user:
+                return user, True
+    except Exception:
+        pass
+
+    # Fallback a sesion web
+    if current_user.is_authenticated:
+        return current_user, False
+
+    return None, False
 
 
 # ============================================================
@@ -285,9 +315,14 @@ def cancel_subscription_route():
 def api_video_info():
     """
     API: Obtiene informacion de un video sin descargarlo.
-    Con rate limiting para evitar abusos.
+    Acepta autenticacion via sesion web O via JWT (Authorization: Bearer <token>).
     """
-    url = request.form.get("url", "").strip()
+    # Soportar tanto form data como JSON
+    if request.is_json:
+        data = request.get_json()
+        url = data.get("url", "").strip() if data else ""
+    else:
+        url = request.form.get("url", "").strip()
 
     if not url:
         return jsonify({"success": False, "error": "Debes proporcionar una URL."})
@@ -295,9 +330,10 @@ def api_video_info():
     try:
         info = get_video_info(url)
 
-        # Verificar permisos segun plataforma (si esta autenticado)
-        if current_user.is_authenticated:
-            if not can_download_platform(current_user, info["platform"]):
+        # Verificar permisos segun plataforma (sesion web o JWT)
+        user, is_jwt = _get_api_user()
+        if user:
+            if not can_download_platform(user, info["platform"]):
                 return jsonify({
                     "success": False,
                     "error": f"Tu plan no permite descargas de {info['platform']}. "
@@ -330,24 +366,32 @@ def api_video_info():
 def api_download():
     """
     API: Descarga un video.
-    Con rate limiting para evitar uso excesivo del servidor.
+    Acepta autenticacion via sesion web O via JWT (Authorization: Bearer <token>).
     """
-    url = request.form.get("url", "").strip()
-    quality = request.form.get("quality", "720p").strip()
+    # Soportar tanto form data como JSON
+    if request.is_json:
+        data = request.get_json()
+        url = data.get("url", "").strip() if data else ""
+        quality = data.get("quality", "720p").strip() if data else "720p"
+    else:
+        url = request.form.get("url", "").strip()
+        quality = request.form.get("quality", "720p").strip()
 
     if not url:
         return jsonify({"success": False, "error": "Debes proporcionar una URL."})
 
-    # --- Verificar limites segun el usuario ---
-    if current_user.is_authenticated:
+    # --- Verificar limites segun el usuario (sesion web o JWT) ---
+    user, is_jwt = _get_api_user()
+
+    if user:
         # Verificar limite diario
-        limit_check = check_daily_limit(current_user)
+        limit_check = check_daily_limit(user)
         if not limit_check["allowed"]:
             return jsonify({"success": False, "error": limit_check["error"],
                           "upgrade_required": True})
 
         # Verificar calidad maxima permitida
-        max_quality = get_max_quality(current_user)
+        max_quality = get_max_quality(user)
         quality_number = int(quality.replace("p", ""))
         max_quality_number = int(max_quality.replace("p", ""))
         if quality_number > max_quality_number:
@@ -380,7 +424,7 @@ def api_download():
         if result["success"]:
             # Registrar la descarga en la base de datos
             download_record = Download(
-                user_id=current_user.id if current_user.is_authenticated else None,
+                user_id=user.id if user else None,
                 url=url,
                 platform=detect_platform(url),
                 quality=quality,
@@ -399,7 +443,7 @@ def api_download():
                 "file_size": result["file_size_formatted"],
                 "title": result["title"],
                 "platform": result["platform"],
-                "download_url": url_for("download_file", filename=result["filename"]),
+                "download_url": url_for("download_file", filename=result["filename"], _external=True),
             })
         else:
             return jsonify({"success": False, "error": result["error"]})
@@ -501,24 +545,32 @@ def api_auth_me():
 def api_download_audio():
     """
     API: Descarga solo el audio de un video y lo convierte a MP3.
+    Acepta autenticacion via sesion web O via JWT (Authorization: Bearer <token>).
     """
-    url = request.form.get("url", "").strip()
-    quality = request.form.get("quality", "128").strip()
+    # Soportar tanto form data como JSON
+    if request.is_json:
+        data = request.get_json()
+        url = data.get("url", "").strip() if data else ""
+        quality = data.get("quality", "128").strip() if data else "128"
+    else:
+        url = request.form.get("url", "").strip()
+        quality = request.form.get("quality", "128").strip()
 
     if not url:
         return jsonify({"success": False, "error": "Debes proporcionar una URL."})
 
-    # Verificar limite si esta autenticado
-    if current_user.is_authenticated:
-        limit_check = check_daily_limit(current_user)
+    # Verificar limite (sesion web o JWT)
+    user, is_jwt = _get_api_user()
+    if user:
+        limit_check = check_daily_limit(user)
         if not limit_check["allowed"]:
             return jsonify({"success": False, "error": limit_check["error"],
                           "upgrade_required": True})
 
     # Solo permitir MP3 128kbps para usuarios gratuitos
     mp3_quality = "128"
-    if current_user.is_authenticated:
-        plan_info = get_user_plan(current_user)
+    if user:
+        plan_info = get_user_plan(user)
         if plan_info["plan"] in ("pro", "premium"):
             mp3_quality = "320"  # Mayor calidad para planes de pago
 
@@ -531,7 +583,7 @@ def api_download_audio():
                 "file_size": result["file_size_formatted"],
                 "title": result["title"],
                 "platform": result["platform"],
-                "download_url": url_for("download_file", filename=result["filename"]),
+                "download_url": url_for("download_file", filename=result["filename"], _external=True),
             })
         else:
             return jsonify({"success": False, "error": result["error"]})
@@ -677,6 +729,45 @@ def robots():
 def google_verification():
     """Sirve el archivo de verificacion de Google Search Console."""
     return send_file("google426583ef775745bf.html")
+
+
+# ============================================================
+# RUTAS - API DOCS Y TOKEN
+# ============================================================
+
+@app.route("/api-docs")
+def api_docs():
+    """Pagina de documentacion de la API para usuarios Premium."""
+    return render_template(
+        "api_docs.html",
+        ads_enabled=Config.ADS_ENABLED,
+        adsense_client=Config.ADSENSE_CLIENT_ID,
+    )
+
+
+@app.route("/api/token", methods=["POST"])
+@login_required
+def api_generate_token():
+    """
+    Genera un token JWT de larga duracion para usuarios Premium.
+    Solo accesible desde el dashboard web.
+    """
+    plan_info = get_user_plan(current_user)
+    if plan_info["plan"] != "premium":
+        return jsonify({"success": False, "error": "Solo usuarios Premium pueden generar tokens de API."}), 403
+
+    from datetime import timedelta as td
+    from flask_jwt_extended import create_access_token as create_token
+    token = create_token(
+        identity=str(current_user.id),
+        additional_claims={
+            "username": current_user.username,
+            "plan": "premium",
+            "api_access": True,
+        },
+        expires_delta=td(days=30),  # Token valido por 30 dias
+    )
+    return jsonify({"success": True, "token": token, "expires_in": "30 dias"})
 
 
 # ============================================================

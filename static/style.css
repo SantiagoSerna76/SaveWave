@@ -1,4 +1,9 @@
 /* ============================================================
+   Google Font Import — Inter (premium sans-serif)
+   ============================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+/* ============================================================
    ESTILOS PERSONALIZADOS - SaveWave
    ============================================================ */
 
@@ -19,6 +24,8 @@
     --card-bg: #ffffff;
     --text-color: #212529;
     --text-muted: #6c757d;
+    --accent-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --navbar-gradient: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
 }
 
 body.dark-mode {
@@ -118,7 +125,7 @@ body.dark-mode .ad-square {
 
 /* -------------------- ESTILOS GENERALES -------------------- */
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Inter', sans-serif;
     background-color: var(--light-bg);
     min-height: 100vh;
     display: flex;
@@ -132,12 +139,13 @@ main {
 /* -------------------- TARJETAS (CARDS) -------------------- */
 .card {
     border-radius: var(--border-radius);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                box-shadow 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .card:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.12);
 }
 
 /* -------------------- BOTONES -------------------- */
@@ -278,16 +286,19 @@ main {
 /* -------------------- NAVBAR -------------------- */
 .navbar {
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
 }
 
 .navbar-brand {
     font-size: 1.4rem;
-    letter-spacing: -0.5px;
+    font-weight: 800;
+    letter-spacing: -1px;
 }
 
 /* -------------------- FOOTER -------------------- */
 footer {
     margin-top: auto;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%) !important;
 }
 
 footer a:hover {
@@ -299,6 +310,11 @@ footer a:hover {
     font-weight: 500;
     padding: 6px 12px;
     border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.badge:hover {
+    transform: scale(1.1);
 }
 
 /* -------------------- ALERTAS -------------------- */
@@ -331,6 +347,282 @@ footer a:hover {
     animation: fadeIn 0.3s ease;
 }
 
+/* ============================================================
+   PREMIUM ENHANCEMENTS — SaveWave Ultra
+   ============================================================ */
+
+/* -------------------- HERO GRADIENT TEXT -------------------- */
+.hero-title {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 800;
+    letter-spacing: -1.5px;
+    line-height: 1.1;
+}
+
+/* -------------------- GLASSMORPHISM CARD -------------------- */
+.glass-card {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: var(--border-radius);
+    box-shadow: 0 8px 32px rgba(31, 38, 135, 0.1);
+    transition: all 0.3s ease;
+}
+
+.glass-card:hover {
+    box-shadow: 0 12px 40px rgba(31, 38, 135, 0.18);
+    transform: translateY(-3px);
+}
+
+body.dark-mode .glass-card {
+    background: rgba(44, 48, 52, 0.65);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+body.dark-mode .glass-card:hover {
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+}
+
+/* -------------------- CTA PULSE BUTTON -------------------- */
+@keyframes pulse {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.4);
+    }
+    70% {
+        box-shadow: 0 0 0 15px rgba(13, 110, 253, 0);
+    }
+}
+
+.btn-pulse {
+    animation: pulse 2s infinite;
+}
+
+.btn-pulse:hover {
+    animation: none;
+    box-shadow: 0 6px 20px rgba(13, 110, 253, 0.45);
+}
+
+/* -------------------- FLOATING URL INPUT -------------------- */
+@keyframes inputGlow {
+    0%, 100% {
+        box-shadow: 0 0 5px rgba(102, 126, 234, 0.15),
+                    0 0 15px rgba(102, 126, 234, 0);
+    }
+    50% {
+        box-shadow: 0 0 8px rgba(102, 126, 234, 0.3),
+                    0 0 25px rgba(118, 75, 162, 0.12);
+    }
+}
+
+.url-input-wrapper {
+    position: relative;
+}
+
+.url-input-wrapper .form-control:focus {
+    border-color: #667eea;
+    animation: inputGlow 2s ease-in-out infinite;
+}
+
+.url-input-wrapper .form-control {
+    transition: all 0.3s ease;
+}
+
+/* -------------------- STATS COUNTER -------------------- */
+.stat-number {
+    font-size: 2.5rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.2;
+}
+
+.stat-label {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* -------------------- TESTIMONIAL CARD -------------------- */
+.testimonial-card {
+    position: relative;
+    overflow: hidden;
+    border-radius: 16px;
+    transition: all 0.3s ease;
+}
+
+.testimonial-card::before {
+    content: '\201C';
+    position: absolute;
+    top: -10px;
+    left: 10px;
+    font-size: 6rem;
+    color: rgba(102, 126, 234, 0.1);
+    font-family: Georgia, serif;
+    line-height: 1;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.testimonial-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.1);
+}
+
+body.dark-mode .testimonial-card::before {
+    color: rgba(110, 168, 254, 0.08);
+}
+
+/* -------------------- API DOCS STYLES -------------------- */
+.api-code-block {
+    background: #1e1e2e;
+    color: #cdd6f4;
+    border-radius: 12px;
+    padding: 20px;
+    font-family: 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+    overflow-x: auto;
+    border: 1px solid #313244;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    tab-size: 4;
+}
+
+.api-code-block::-webkit-scrollbar {
+    height: 6px;
+}
+
+.api-code-block::-webkit-scrollbar-thumb {
+    background: #45475a;
+    border-radius: 3px;
+}
+
+.api-endpoint {
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 12px;
+    border-left: 4px solid #667eea;
+    transition: all 0.25s ease;
+}
+
+.api-endpoint:hover {
+    transform: translateX(4px);
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.15);
+}
+
+.api-method-get {
+    color: #a6e3a1;
+    font-weight: 700;
+    font-family: 'Fira Code', monospace;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+}
+
+.api-method-post {
+    color: #f9e2af;
+    font-weight: 700;
+    font-family: 'Fira Code', monospace;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+}
+
+.api-method-delete {
+    color: #f38ba8;
+    font-weight: 700;
+    font-family: 'Fira Code', monospace;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+}
+
+/* -------------------- API TOKEN CARD -------------------- */
+.api-token-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 16px;
+    color: white;
+    border: none;
+    position: relative;
+    overflow: hidden;
+}
+
+.api-token-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+.token-display {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    padding: 12px;
+    font-family: 'Fira Code', 'Consolas', monospace;
+    word-break: break-all;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* -------------------- DARK MODE — NEW CLASSES -------------------- */
+body.dark-mode .hero-title {
+    background: linear-gradient(135deg, #8fa4f0 0%, #a67dd6 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+body.dark-mode .stat-number {
+    background: linear-gradient(135deg, #8fa4f0, #a67dd6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+body.dark-mode .api-endpoint {
+    background: linear-gradient(135deg, #13131f, #111827);
+    border-left-color: #8fa4f0;
+}
+
+body.dark-mode .api-code-block {
+    background: #13131f;
+    border-color: #2a2a3c;
+}
+
+body.dark-mode .url-input-wrapper .form-control:focus {
+    border-color: #8fa4f0;
+}
+
+body.dark-mode .testimonial-card {
+    background-color: var(--card-bg);
+}
+
+body.dark-mode .progress {
+    background-color: #343a40;
+}
+
+body.dark-mode ::-webkit-scrollbar-track {
+    background: #1a1d21;
+}
+
+body.dark-mode ::-webkit-scrollbar-thumb {
+    background: #444;
+}
+
+body.dark-mode ::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
 /* -------------------- RESPONSIVE -------------------- */
 @media (max-width: 768px) {
     .display-4 {
@@ -344,6 +636,23 @@ footer a:hover {
     .input-group-lg .form-control,
     .input-group-lg .btn {
         font-size: 0.9rem;
+    }
+
+    .hero-title {
+        font-size: 2rem;
+    }
+
+    .stat-number {
+        font-size: 1.8rem;
+    }
+
+    .api-code-block {
+        padding: 14px;
+        font-size: 0.8rem;
+    }
+
+    .api-endpoint {
+        padding: 12px;
     }
 }
 
@@ -363,4 +672,29 @@ footer a:hover {
 
 ::-webkit-scrollbar-thumb:hover {
     background: #555;
+}
+
+/* -------------------- UTILIDADES PREMIUM -------------------- */
+.text-gradient {
+    background: var(--accent-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.hover-lift {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.hover-lift:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 16px 32px rgba(0, 0, 0, 0.12);
+}
+
+.section-divider {
+    height: 4px;
+    width: 60px;
+    background: var(--accent-gradient);
+    border-radius: 2px;
+    margin: 0 auto 1.5rem;
 }

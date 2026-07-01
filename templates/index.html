@@ -7,7 +7,7 @@
     <div class="col-lg-8">
         <!-- ==================== HERO / TITULO ==================== -->
         <div class="text-center mb-5">
-            <h1 class="display-4 fw-bold">
+            <h1 class="hero-title display-4 fw-bold">
                 <i class="fas fa-download text-primary me-2"></i>
                 Descarga videos y MP3 gratis
             </h1>
@@ -17,14 +17,14 @@
         </div>
 
         <!-- ==================== FORMULARIO DE DESCARGA ==================== -->
-        <div class="card shadow-sm border-0">
+        <div class="card glass-card shadow-lg border-0">
             <div class="card-body p-4">
                 <form id="downloadForm" method="POST">
                     <div class="mb-3">
                         <label for="urlInput" class="form-label fw-semibold">
                             <i class="fas fa-link me-1"></i>Pega el enlace del video
                         </label>
-                        <div class="input-group input-group-lg">
+                        <div class="url-input-wrapper input-group input-group-lg">
                             <input
                                 type="url"
                                 class="form-control"
@@ -32,7 +32,7 @@
                                 placeholder="https://www.youtube.com/watch?v=..."
                                 required
                             >
-                            <button type="submit" class="btn btn-primary px-4" id="submitBtn">
+                            <button type="submit" class="btn btn-primary px-4 btn-pulse" id="submitBtn">
                                 <i class="fas fa-search me-1"></i>Obtener video
                             </button>
                         </div>
@@ -69,7 +69,7 @@
 
         <!-- ==================== INFORMACIÓN DEL VIDEO (se muestra después de pegar URL) ==================== -->
         <div id="videoInfo" class="mt-4" style="display: none;">
-            <div class="card shadow-sm border-0">
+            <div class="card glass-card shadow-sm border-0">
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-4">
@@ -145,7 +145,7 @@
 
         <!-- ==================== RESULTADO DE DESCARGA ==================== -->
         <div id="downloadResult" class="mt-4" style="display: none;">
-            <div class="card shadow-sm border-0 bg-success text-white">
+            <div class="card glass-card shadow-sm border-0 bg-success text-white">
                 <div class="card-body text-center">
                     <i class="fas fa-check-circle fa-3x mb-3"></i>
                     <h4>¡Descarga completada!</h4>
@@ -186,7 +186,7 @@
             </h3>
             <div class="row g-4">
                 <div class="col-md-4">
-                    <div class="card shadow-sm border-0 h-100">
+                    <div class="card testimonial-card shadow-sm border-0 h-100">
                         <div class="card-body text-center">
                             <div class="text-warning mb-2">
                                 <i class="fas fa-star"></i><i class="fas fa-star"></i>
@@ -199,7 +199,7 @@
                     </div>
                 </div>
                 <div class="col-md-4">
-                    <div class="card shadow-sm border-0 h-100">
+                    <div class="card testimonial-card shadow-sm border-0 h-100">
                         <div class="card-body text-center">
                             <div class="text-warning mb-2">
                                 <i class="fas fa-star"></i><i class="fas fa-star"></i>
@@ -212,7 +212,7 @@
                     </div>
                 </div>
                 <div class="col-md-4">
-                    <div class="card shadow-sm border-0 h-100">
+                    <div class="card testimonial-card shadow-sm border-0 h-100">
                         <div class="card-body text-center">
                             <div class="text-warning mb-2">
                                 <i class="fas fa-star"></i><i class="fas fa-star"></i>

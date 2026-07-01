@@ -646,16 +646,79 @@
         width: 0%;
     }
 
-    /* Responsive */
+    /* Responsive Mobile Overhaul */
+    .mobile-menu-toggle {
+        display: none;
+        position: absolute;
+        top: 15px;
+        left: 15px;
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        border-radius: 8px;
+        padding: 8px 16px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: var(--text-color);
+        z-index: 1030;
+        box-shadow: var(--shadow-sm);
+    }
+    .sidebar-overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 80px;
+        background: rgba(0,0,0,0.6);
+        z-index: 1035;
+        backdrop-filter: blur(2px);
+    }
+    .sidebar-overlay.show { display: block; }
+
     @media (max-width: 768px) {
-        .playlist-sidebar { width: 100%; min-width: unset; border-right: none; border-bottom: 1px solid var(--card-border); max-height: 200px; }
-        .playlist-container { flex-direction: column; }
-        .playlist-main { padding: 20px; }
-        .pl-header { flex-direction: column; align-items: center; text-align: center; gap: 20px; }
-        .pl-cover { width: 160px; height: 160px; }
-        .pl-meta h1 { font-size: 1.8rem; }
-        .player-left, .player-right { display: none; }
-        .player-center { width: 100%; }
+        .mobile-menu-toggle { display: flex; align-items: center; gap: 8px; }
+        
+        .playlist-sidebar { 
+            position: fixed;
+            top: 0;
+            left: -100%;
+            width: 85%;
+            max-width: 320px;
+            height: calc(100vh - 80px);
+            z-index: 1040;
+            transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: var(--card-bg);
+            border-right: 1px solid var(--card-border);
+            border-bottom: none;
+            max-height: none;
+        }
+        .playlist-sidebar.show { left: 0; }
+        
+        .playlist-container { flex-direction: column; position: relative; }
+        .playlist-main { padding: 15px; padding-top: 60px; }
+        .pl-header { flex-direction: column; align-items: center; text-align: center; gap: 15px; margin-bottom: 20px; padding-bottom: 20px; }
+        .pl-cover { width: 140px; height: 140px; }
+        .pl-meta h1 { font-size: 1.6rem; }
+        
+        /* Mobile Premium Player Redesign */
+        .premium-player {
+            height: auto;
+            padding: 8px 12px;
+            flex-direction: column;
+            gap: 6px;
+            justify-content: center;
+        }
+        .player-left { 
+            display: flex !important; 
+            width: 100%; 
+            margin-bottom: 4px;
+        }
+        #playerCover { width: 40px; height: 40px; border-radius: 6px; }
+        .player-info { max-width: calc(100vw - 80px); }
+        #playerTitle { font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+        #playerArtist { font-size: 0.75rem; margin-top: 2px; }
+        
+        .player-center { width: 100%; gap: 5px; }
+        .player-controls { margin-bottom: 2px; gap: 16px; }
+        .btn-play-main { width: 40px; height: 40px; font-size: 1rem; }
+        .player-right { display: none; }
     }
 </style>
 {% endblock %}
@@ -664,8 +727,11 @@
 </div></main><!-- Close container and main from base.html to go full-width -->
 
 <div class="playlist-container">
+    <!-- Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
     <!-- SIDEBAR -->
-    <div class="playlist-sidebar">
+    <div class="playlist-sidebar" id="playlistSidebar">
         <div class="sidebar-header">
             <h5><i class="fas fa-headphones me-2" style="color: var(--primary-color);"></i>Mi Biblioteca</h5>
         </div>
@@ -696,6 +762,11 @@
 
     <!-- MAIN AREA -->
     <div class="playlist-main" id="playlistMain">
+        <!-- Mobile Toggle Button -->
+        <button class="mobile-menu-toggle" onclick="toggleSidebar()">
+            <i class="fas fa-bars"></i> Mi Biblioteca
+        </button>
+
         <div class="empty-state">
             <div class="empty-state-icon">
                 <i class="fas fa-music"></i>
@@ -833,6 +904,23 @@
     const audioPlayer = document.getElementById('audioPlayer');
     const playPauseBtn = document.getElementById('playPauseBtn');
 
+    // ========== MOBILE SIDEBAR TOGGLE ==========
+    function toggleSidebar() {
+        const sidebar = document.getElementById('playlistSidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        sidebar.classList.toggle('show');
+        overlay.classList.toggle('show');
+    }
+
+    function closeSidebarOnMobile() {
+        if (window.innerWidth <= 768) {
+            const sidebar = document.getElementById('playlistSidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.remove('show');
+            overlay.classList.remove('show');
+        }
+    }
+
     // ========== LOAD PLAYLIST ==========
     async function loadPlaylist(id, evt) {
         document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
@@ -848,6 +936,8 @@
                 currentPlaylistItems = data.playlist.items;
                 // Reset shuffle order when loading new playlist
                 generateShuffleOrder();
+                // Auto-close sidebar on mobile after selecting playlist
+                closeSidebarOnMobile();
             } else {
                 alert(data.error || 'Error al cargar la playlist.');
             }

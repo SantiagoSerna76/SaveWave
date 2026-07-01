@@ -139,6 +139,7 @@ def _get_ydl_opts(extra_opts: dict = None) -> dict:
 def get_video_info(url: str) -> dict:
     """
     Obtiene metadatos del video sin descargarlo.
+    Usa cache para evitar consultas repetidas a YouTube (TTL 15 min).
 
     Args:
         url: URL del video.
@@ -146,6 +147,13 @@ def get_video_info(url: str) -> dict:
     Returns:
         Diccionario con: title, duration, platform, thumbnail, available_qualities.
     """
+    from cache import get_cached_video_info, set_cached_video_info
+
+    # Intentar obtener del cache primero
+    cached = get_cached_video_info(url)
+    if cached:
+        return cached
+
     ydl_opts = _get_ydl_opts({
         "extract_flat": "in_playlist",
         "noplaylist": False,
@@ -168,7 +176,7 @@ def get_video_info(url: str) -> dict:
                         if platform == "youtube":
                             item_url = f"https://www.youtube.com/watch?v={entry['id']}"
                         else:
-                            item_url = url # Fallback
+                            item_url = url
 
                     playlist_items.append({
                         "title": entry.get("title", "Sin título"),
@@ -178,12 +186,15 @@ def get_video_info(url: str) -> dict:
                         "platform": platform
                     })
 
-                return {
+                result = {
                     "is_playlist": True,
                     "title": info.get("title", "Lista de reproducción"),
                     "platform": platform,
                     "items": playlist_items
                 }
+                # Cachear playlists por 5 min (cambian mas seguido)
+                set_cached_video_info(url, result, ttl=300)
+                return result
 
             # Flujo normal para un solo video
             available_qualities = set()
@@ -193,22 +204,25 @@ def get_video_info(url: str) -> dict:
                     if height:
                         available_qualities.add(f"{height}p")
 
-            # Ordenar calidades de menor a mayor
             sorted_qualities = sorted(
                 available_qualities,
                 key=lambda q: int(q.replace("p", "")),
             )
 
-            return {
+            result = {
                 "is_playlist": False,
                 "title": info.get("title", "Sin título"),
-                "duration": info.get("duration", 0),  # En segundos
+                "duration": info.get("duration", 0),
                 "platform": detect_platform(url),
                 "thumbnail": info.get("thumbnail", ""),
                 "available_qualities": sorted_qualities if sorted_qualities else ["720p"],
                 "uploader": info.get("uploader", "Desconocido"),
                 "view_count": info.get("view_count", 0),
             }
+
+            # Guardar en cache por 15 minutos
+            set_cached_video_info(url, result, ttl=900)
+            return result
 
     except Exception as e:
         raise RuntimeError(f"Error al obtener informacion del video: {str(e)}")

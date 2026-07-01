@@ -738,6 +738,29 @@ def admin_cleanup():
 
 
 # ============================================================
+# API - CACHE STATS
+# ============================================================
+
+@app.route("/api/cache/stats", methods=["GET"])
+def api_cache_stats():
+    """API: Muestra estadisticas del sistema de cache."""
+    from cache import get_cache_stats
+    return jsonify(get_cache_stats())
+
+
+@app.route("/api/cache/clear", methods=["POST"])
+@login_required
+def api_cache_clear():
+    """API: Invalida el cache (solo para administradores)."""
+    from cache import invalidate_cache
+    url = request.form.get("url", "")
+    if url:
+        invalidate_cache(url)
+        return jsonify({"success": True, "message": f"Cache invalidado para {url}"})
+    return jsonify({"success": False, "error": "Debes proporcionar una URL."})
+
+
+# ============================================================
 # RUTAS - SEO (Sitemap y Robots)
 # ============================================================
 

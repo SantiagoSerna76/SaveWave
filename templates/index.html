@@ -47,6 +47,10 @@
                         <div class="d-flex align-items-center gap-2"><i class="fab fa-youtube text-muted fs-5"></i><span class="small fw-medium text-muted">YouTube</span></div>
                         <div class="d-flex align-items-center gap-2"><i class="fab fa-instagram text-muted fs-5"></i><span class="small fw-medium text-muted">Instagram</span></div>
                         <div class="d-flex align-items-center gap-2"><i class="fab fa-tiktok text-muted fs-5"></i><span class="small fw-medium text-muted">TikTok</span></div>
+                        <div class="d-flex align-items-center gap-2"><i class="fab fa-facebook text-muted fs-5"></i><span class="small fw-medium text-muted">Facebook</span></div>
+                        <a href="#" class="d-flex align-items-center gap-1 text-decoration-none" data-bs-toggle="modal" data-bs-target="#platformsModal">
+                            <span class="badge rounded-pill bg-light text-dark border fw-bold px-3 py-1 hover-lift shadow-sm">+1000 sitios más</span>
+                        </a>
                     </div>
                     {% if ads_enabled %}
                     <div class="ad-inline ms-3">
@@ -58,6 +62,95 @@
                         <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
                     </div>
                     {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL PLATAFORMAS SOPORTADAS -->
+        <div class="modal fade" id="platformsModal" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+                    <div class="modal-header border-0 pb-0">
+                        <h5 class="modal-title fw-bold fs-4 mx-auto pt-3">Plataformas Soportadas</h5>
+                        <button type="button" class="btn-close position-absolute end-0 top-0 m-4" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body p-5">
+                        <p class="text-center text-muted mb-5">SaveWave soporta la descarga de Video (MP4) y Audio (MP3) de más de 1,000 sitios web en todo el mundo. Aquí están los más populares:</p>
+                        
+                        <div class="row g-4 text-center">
+                            <div class="col-4 col-md-3">
+                                <div class="p-3 rounded-4 bg-light border hover-lift">
+                                    <i class="fab fa-youtube fa-2x text-danger mb-2"></i>
+                                    <div class="small fw-bold">YouTube</div>
+                                </div>
+                            </div>
+                            <div class="col-4 col-md-3">
+                                <div class="p-3 rounded-4 bg-light border hover-lift">
+                                    <i class="fab fa-instagram fa-2x text-warning mb-2"></i>
+                                    <div class="small fw-bold">Instagram</div>
+                                </div>
+                            </div>
+                            <div class="col-4 col-md-3">
+                                <div class="p-3 rounded-4 bg-light border hover-lift">
+                                    <i class="fab fa-tiktok fa-2x text-dark mb-2"></i>
+                                    <div class="small fw-bold">TikTok</div>
+                                </div>
+                            </div>
+                            <div class="col-4 col-md-3">
+                                <div class="p-3 rounded-4 bg-light border hover-lift">
+                                    <i class="fab fa-facebook fa-2x text-primary mb-2"></i>
+                                    <div class="small fw-bold">Facebook</div>
+                                </div>
+                            </div>
+                            <div class="col-4 col-md-3">
+                                <div class="p-3 rounded-4 bg-light border hover-lift">
+                                    <i class="fab fa-twitter fa-2x text-info mb-2"></i>
+                                    <div class="small fw-bold">Twitter / X</div>
+                                </div>
+                            </div>
+                            <div class="col-4 col-md-3">
+                                <div class="p-3 rounded-4 bg-light border hover-lift">
+                                    <i class="fab fa-vimeo fa-2x text-info mb-2"></i>
+                                    <div class="small fw-bold">Vimeo</div>
+                                </div>
+                            </div>
+                            <div class="col-4 col-md-3">
+                                <div class="p-3 rounded-4 bg-light border hover-lift">
+                                    <i class="fab fa-twitch fa-2x text-secondary mb-2"></i>
+                                    <div class="small fw-bold">Twitch</div>
+                                </div>
+                            </div>
+                            <div class="col-4 col-md-3">
+                                <div class="p-3 rounded-4 bg-light border hover-lift">
+                                    <i class="fab fa-soundcloud fa-2x text-warning mb-2"></i>
+                                    <div class="small fw-bold">SoundCloud</div>
+                                </div>
+                            </div>
+                            <div class="col-4 col-md-3">
+                                <div class="p-3 rounded-4 bg-light border hover-lift">
+                                    <i class="fab fa-reddit fa-2x text-danger mb-2"></i>
+                                    <div class="small fw-bold">Reddit</div>
+                                </div>
+                            </div>
+                            <div class="col-4 col-md-3">
+                                <div class="p-3 rounded-4 bg-light border hover-lift">
+                                    <i class="fab fa-pinterest fa-2x text-danger mb-2"></i>
+                                    <div class="small fw-bold">Pinterest</div>
+                                </div>
+                            </div>
+                            <div class="col-4 col-md-3">
+                                <div class="p-3 rounded-4 bg-light border hover-lift">
+                                    <i class="fab fa-spotify fa-2x text-success mb-2"></i>
+                                    <div class="small fw-bold">Podcasts</div>
+                                </div>
+                            </div>
+                            <div class="col-4 col-md-3">
+                                <div class="p-3 rounded-4 bg-primary text-white hover-lift d-flex align-items-center justify-content-center h-100">
+                                    <div class="fw-bold">Y cientos más...</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

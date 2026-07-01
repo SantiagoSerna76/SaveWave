@@ -4,16 +4,16 @@
 {% block extra_head %}
 <style>
     /* =========================================
-       SPOTIFY-LIKE PLAYLIST STYLES
+       ELEGANT SAAS PLAYLIST STYLES
        ========================================= */
     body {
-        background-color: #121212 !important; /* Spotify dark bg */
-        color: #ffffff;
+        background-color: var(--light-bg) !important;
+        color: var(--text-color);
         padding-bottom: 90px; /* Space for the audio player */
     }
 
-    /* Override base navbar and footer for this page to match dark theme */
-    .navbar { background-color: #000000 !important; }
+    /* Override base navbar and footer for this page */
+    .navbar { background-color: var(--card-bg) !important; border-bottom: 1px solid var(--card-border); box-shadow: none; }
     footer { display: none !important; } /* Hide footer to leave space for sticky player */
 
     .playlist-container {
@@ -23,17 +23,17 @@
 
     /* Sidebar */
     .playlist-sidebar {
-        width: 250px;
-        background-color: #000000;
+        width: 280px;
+        background-color: var(--card-bg);
         padding: 24px;
-        border-right: 1px solid #282828;
+        border-right: 1px solid var(--card-border);
     }
 
     .playlist-sidebar h6 {
-        color: #b3b3b3;
-        font-size: 0.8rem;
+        color: var(--text-muted);
+        font-size: 0.75rem;
         font-weight: 700;
-        letter-spacing: 0.1em;
+        letter-spacing: 0.05em;
         text-transform: uppercase;
         margin-bottom: 16px;
     }
@@ -41,24 +41,32 @@
     .playlist-nav-item {
         display: flex;
         align-items: center;
-        color: #b3b3b3;
+        color: var(--text-muted);
         text-decoration: none;
-        padding: 8px 0;
-        font-size: 0.9rem;
-        font-weight: 600;
-        transition: color 0.2s ease;
+        padding: 10px 12px;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
         cursor: pointer;
+        margin-bottom: 4px;
     }
 
     .playlist-nav-item:hover, .playlist-nav-item.active {
-        color: #ffffff;
+        color: var(--primary-color);
+        background-color: rgba(13, 110, 253, 0.08);
+        font-weight: 600;
+    }
+    
+    body.dark-mode .playlist-nav-item:hover, body.dark-mode .playlist-nav-item.active {
+        background-color: rgba(59, 130, 246, 0.15);
     }
 
     /* Main Area */
     .playlist-main {
         flex: 1;
-        background: linear-gradient(to bottom, #2b2b2b 0%, #121212 100%);
-        padding: 32px;
+        background: linear-gradient(180deg, rgba(13,110,253,0.05) 0%, transparent 400px);
+        padding: 40px;
         overflow-y: auto;
     }
 
@@ -66,41 +74,43 @@
     .playlist-header {
         display: flex;
         align-items: flex-end;
-        gap: 24px;
-        margin-bottom: 32px;
+        gap: 32px;
+        margin-bottom: 40px;
     }
 
     .playlist-cover {
-        width: 232px;
-        height: 232px;
-        box-shadow: 0 4px 60px rgba(0,0,0,.5);
-        background-color: #282828;
+        width: 220px;
+        height: 220px;
+        box-shadow: var(--shadow-lg);
+        background: linear-gradient(135deg, var(--card-border), var(--light-bg));
         display: flex;
         align-items: center;
         justify-content: center;
         font-size: 4rem;
-        color: #b3b3b3;
-        border-radius: 8px;
+        color: var(--text-muted);
+        border-radius: 16px;
         object-fit: cover;
+        border: 1px solid var(--card-border);
     }
 
     .playlist-info h1 {
-        font-size: 4rem;
-        font-weight: 900;
+        font-size: 3.5rem;
+        font-weight: 800;
         margin: 8px 0;
-        letter-spacing: -0.04em;
+        letter-spacing: -1.5px;
+        color: var(--text-color);
     }
 
     .playlist-info p {
-        color: #b3b3b3;
-        font-size: 0.9rem;
+        color: var(--text-muted);
+        font-size: 1rem;
     }
 
     /* Controls */
     .playlist-controls {
         display: flex;
         align-items: center;
-        gap: 24px;
+        gap: 20px;
         margin-bottom: 32px;
     }
 
@@ -108,37 +118,38 @@
         width: 56px;
         height: 56px;
         border-radius: 50%;
-        background-color: #1ed760;
-        color: #000;
+        background-color: var(--primary-color);
+        color: #fff;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.5rem;
+        font-size: 1.25rem;
         border: none;
-        transition: transform 0.2s, background-color 0.2s;
+        box-shadow: var(--shadow-md);
+        transition: all 0.2s;
     }
 
     .btn-play-large:hover {
         transform: scale(1.05);
-        background-color: #1fdf64;
+        box-shadow: var(--shadow-lg);
+        background-color: var(--primary-hover);
     }
 
     .btn-download-all {
-        background-color: transparent;
-        color: #b3b3b3;
-        border: 1px solid #b3b3b3;
-        border-radius: 500px;
-        padding: 8px 32px;
-        font-weight: 700;
-        font-size: 0.8rem;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
+        background-color: var(--card-bg);
+        color: var(--text-color);
+        border: 1px solid var(--card-border);
+        border-radius: 8px;
+        padding: 10px 24px;
+        font-weight: 600;
+        font-size: 0.9rem;
         transition: all 0.2s;
+        box-shadow: var(--shadow-sm);
     }
 
     .btn-download-all:hover {
-        color: #fff;
-        border-color: #fff;
+        background-color: var(--light-bg);
+        border-color: var(--text-muted);
     }
 
     /* Tracklist Table */
@@ -148,33 +159,42 @@
     }
 
     .tracklist th {
-        color: #b3b3b3;
+        color: var(--text-muted);
         font-size: 0.75rem;
-        font-weight: 400;
+        font-weight: 500;
         text-transform: uppercase;
-        letter-spacing: 0.1em;
-        padding: 8px 16px;
-        border-bottom: 1px solid #282828;
+        letter-spacing: 0.05em;
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--card-border);
     }
 
     .tracklist td {
-        padding: 12px 16px;
-        color: #b3b3b3;
-        font-size: 0.9rem;
+        padding: 14px 16px;
+        color: var(--text-muted);
+        font-size: 0.95rem;
+        border-bottom: 1px solid rgba(0,0,0,0.03);
+    }
+    
+    body.dark-mode .tracklist td {
+        border-bottom: 1px solid rgba(255,255,255,0.03);
     }
 
     .track-row {
-        border-radius: 4px;
+        border-radius: 8px;
         transition: background-color 0.2s;
     }
 
     .track-row:hover {
-        background-color: rgba(255,255,255,0.1);
+        background-color: rgba(13, 110, 253, 0.05);
+    }
+    
+    body.dark-mode .track-row:hover {
+        background-color: rgba(255, 255, 255, 0.05);
     }
 
     .track-title {
-        color: #ffffff;
-        font-weight: 400;
+        color: var(--text-color);
+        font-weight: 500;
         font-size: 1rem;
     }
 
@@ -199,12 +219,13 @@
         left: 0;
         width: 100%;
         height: 90px;
-        background-color: #181818;
-        border-top: 1px solid #282828;
+        background-color: var(--card-bg);
+        border-top: 1px solid var(--card-border);
+        box-shadow: 0 -4px 20px rgba(0,0,0,0.05);
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 0 16px;
+        padding: 0 24px;
         z-index: 1000;
     }
 
@@ -218,15 +239,15 @@
     .player-cover {
         width: 56px;
         height: 56px;
-        background-color: #282828;
-        border-radius: 4px;
+        background-color: var(--card-border);
+        border-radius: 8px;
         object-fit: cover;
     }
 
     .player-title {
-        color: #ffffff;
-        font-size: 0.9rem;
-        font-weight: 500;
+        color: var(--text-color);
+        font-size: 0.95rem;
+        font-weight: 600;
         margin-bottom: 4px;
         white-space: nowrap;
         overflow: hidden;
@@ -239,6 +260,8 @@
         align-items: center;
         width: 40%;
     }
+        width: 40%;
+    }
 
     .player-buttons {
         display: flex;
@@ -248,31 +271,34 @@
     }
 
     .player-btn {
-        background: none;
+        background: transparent;
         border: none;
-        color: #b3b3b3;
-        font-size: 1rem;
+        color: var(--text-muted);
+        font-size: 1.2rem;
+        cursor: pointer;
         transition: color 0.2s;
     }
 
     .player-btn:hover {
-        color: #ffffff;
+        color: var(--text-color);
     }
 
-    .player-btn.play-pause {
-        background-color: #ffffff;
-        color: #000000;
+    .player-btn-play {
+        background-color: var(--text-color);
+        color: var(--card-bg);
         width: 32px;
         height: 32px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
+        font-size: 0.9rem;
+        transition: transform 0.2s;
     }
 
-    .player-btn.play-pause:hover {
-        transform: scale(1.05);
-        color: #000000;
+    .player-btn-play:hover {
+        transform: scale(1.1);
+        color: var(--card-bg);
     }
 
     .player-progress {
@@ -280,33 +306,28 @@
         align-items: center;
         gap: 8px;
         width: 100%;
-        max-width: 600px;
+        font-size: 0.75rem;
+        color: var(--text-muted);
     }
 
-    .progress-time {
-        color: #b3b3b3;
-        font-size: 0.7rem;
-        min-width: 40px;
-    }
-
-    .progress-bar-container {
+    .progress-bar-bg {
         flex: 1;
         height: 4px;
-        background-color: #4d4d4d;
+        background-color: var(--card-border);
         border-radius: 2px;
-        cursor: pointer;
         position: relative;
+        cursor: pointer;
     }
 
     .progress-bar-fill {
+        position: absolute;
+        top: 0;
+        left: 0;
         height: 100%;
-        background-color: #ffffff;
+        background-color: var(--primary-color);
         border-radius: 2px;
         width: 0%;
-    }
-
-    .progress-bar-container:hover .progress-bar-fill {
-        background-color: #1db954;
+        pointer-events: none;
     }
 
     /* Modal New Playlist */

@@ -220,6 +220,24 @@
     <!-- Custom Scripts -->
     {% block extra_scripts %}{% endblock %}
 
+    <!-- ==================== PWA INSTALL MODAL ==================== -->
+    <div class="modal fade" id="pwaInstallModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="border-radius: 20px; overflow: hidden; border: 1px solid var(--card-border);">
+                <div class="modal-body text-center p-5 position-relative">
+                    <button type="button" class="btn-close position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <img src="{{ url_for('static', filename='Savewave.png') }}" alt="SaveWave Logo" class="mb-4" style="width: 80px; height: 80px; border-radius: 18px; box-shadow: 0 10px 20px rgba(0,0,0,0.2);">
+                    <h4 class="fw-bold mb-3">Instala SaveWave</h4>
+                    <p class="text-muted mb-4">Disfruta de una experiencia premium: música en segundo plano, descargas más rápidas, acceso desde tu pantalla de inicio y reproducción sin interrupciones del navegador.</p>
+                    <button class="btn btn-primary btn-lg rounded-pill px-5 fw-bold w-100 mb-3" id="confirmInstallBtn" style="background: linear-gradient(45deg, var(--primary-color), #8bd5ca); border: none;">
+                        <i class="fas fa-download me-2"></i>Instalar Ahora
+                    </button>
+                    <button class="btn btn-link text-muted text-decoration-none" data-bs-dismiss="modal">Quizás más tarde</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- PWA Script -->
     <script>
         // Registrar Service Worker
@@ -237,24 +255,33 @@
         let deferredPrompt;
         const installContainer = document.getElementById('installAppContainer');
         const installBtn = document.getElementById('installAppBtn');
+        const confirmInstallBtn = document.getElementById('confirmInstallBtn');
+        const installModal = new bootstrap.Modal(document.getElementById('pwaInstallModal'));
 
         window.addEventListener('beforeinstallprompt', (e) => {
             // Prevenir que el navegador muestre el prompt automáticamente
             e.preventDefault();
             deferredPrompt = e;
-            // Mostrar nuestro botón personalizado
+            // Mostrar nuestro botón personalizado en el navbar
             installContainer.classList.remove('d-none');
         });
 
-        installBtn.addEventListener('click', async () => {
+        // Al hacer click en navbar, abrir modal
+        installBtn.addEventListener('click', () => {
+            installModal.show();
+        });
+
+        // Al hacer click en "Instalar Ahora" dentro del modal
+        confirmInstallBtn.addEventListener('click', async () => {
+            installModal.hide();
             if (!deferredPrompt) return;
             // Mostrar el prompt nativo
             deferredPrompt.prompt();
-            // Esperar a que el usuario responda
             const { outcome } = await deferredPrompt.userChoice;
-            console.log(`El usuario decidió: ${outcome}`);
+            if (outcome === 'accepted') {
+                installContainer.classList.add('d-none');
+            }
             deferredPrompt = null;
-            installContainer.classList.add('d-none');
         });
 
         window.addEventListener('appinstalled', () => {

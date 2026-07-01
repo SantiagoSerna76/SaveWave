@@ -631,8 +631,8 @@ def api_download_multiple():
     from io import BytesIO
 
     plan_info = get_user_plan(current_user)
-    if plan_info["plan"] != "premium":
-        return jsonify({"success": False, "error": "Funcion solo disponible para plan Premium."}), 403
+    if plan_info["plan"] not in ["pro", "premium"]:
+        return jsonify({"success": False, "error": "Funcion disponible para planes Pro y Premium."}), 403
 
     data = request.get_json()
     if not data or "urls" not in data:

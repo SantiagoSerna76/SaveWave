@@ -58,7 +58,11 @@ echo -e "${GREEN}   Usuario: savewave | Password: ${DB_PASSWORD}${NC}"
 # ============================================================
 echo -e "${YELLOW}[4/8] Clonando repositorio...${NC}"
 cd /opt
-git clone https://github.com/SantiagoSerna76/SaveWave.git
+if [ ! -d "SaveWave" ]; then
+    git clone https://github.com/SantiagoSerna76/SaveWave.git
+else
+    echo -e "${GREEN}   El repositorio ya existe, saltando clonación...${NC}"
+fi
 cd SaveWave
 
 # ============================================================
@@ -66,11 +70,12 @@ cd SaveWave
 # ============================================================
 echo -e "${YELLOW}[5/8] Configurando .env...${NC}"
 
-# Generar claves secretas
-SECRET_KEY=$(openssl rand -hex 32)
-JWT_SECRET_KEY=$(openssl rand -hex 32)
+if [ ! -f "/opt/SaveWave/.env" ]; then
+    # Generar claves secretas
+    SECRET_KEY=$(openssl rand -hex 32)
+    JWT_SECRET_KEY=$(openssl rand -hex 32)
 
-cat > /opt/SaveWave/.env <<EOF
+    cat > /opt/SaveWave/.env <<EOF
 # SaveWave - Variables de entorno (produccion)
 SECRET_KEY=${SECRET_KEY}
 JWT_SECRET_KEY=${JWT_SECRET_KEY}
@@ -85,10 +90,12 @@ REDIS_URL=redis://localhost:6379/0
 ADSENSE_CLIENT_ID=
 RATELIMIT_DEFAULT=200 per minute
 RATELIMIT_STORAGE_URL=memory://
-BASE_URL=http://159.223.178.155
+BASE_URL=https://savewave.software
 EOF
-
-echo -e "${GREEN}   .env creado con claves seguras${NC}"
+    echo -e "${GREEN}   .env creado con claves seguras${NC}"
+else
+    echo -e "${GREEN}   El archivo .env ya existe, conservando configuración actual...${NC}"
+fi
 
 # ============================================================
 # 5. IMPORTAR ESQUEMA DE BASE DE DATOS

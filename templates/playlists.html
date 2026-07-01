@@ -331,7 +331,7 @@
 {% endblock %}
 
 {% block content %}
-</div><!-- Close the container from base.html to allow full width -->
+</div></main><!-- Close container and main from base.html to go full-width -->
 
 <div class="playlist-container">
     <!-- SIDEBAR -->
@@ -349,7 +349,7 @@
         
         <div id="sidebarPlaylists">
             {% for pl in playlists %}
-            <a href="#" class="playlist-nav-item" onclick="loadPlaylist({{ pl.id }})">
+            <a href="#" class="playlist-nav-item" onclick="loadPlaylist({{ pl.id }}, event)">
                 {{ pl.name }}
             </a>
             {% else %}
@@ -426,8 +426,8 @@
     </div>
 </div>
 
-<!-- Container opening to match base.html expectation (since we closed it at the top) -->
-<div class="container d-none">
+<!-- Re-open main and container to match base.html closing tags -->
+<main class="d-none"><div class="container d-none">
 {% endblock %}
 
 {% block extra_scripts %}
@@ -440,9 +440,9 @@
     let isPlaying = false;
 
     // Load Playlist Data
-    async function loadPlaylist(id) {
+    async function loadPlaylist(id, evt) {
         document.querySelectorAll('.playlist-nav-item').forEach(el => el.classList.remove('active'));
-        event.currentTarget.classList.add('active');
+        if (evt && evt.currentTarget) evt.currentTarget.classList.add('active');
 
         try {
             const res = await fetch(`/api/playlists/${id}`);
@@ -467,25 +467,25 @@
 
         let rows = '';
         playlist.items.forEach((item, index) => {
+            const safeUrl = encodeURIComponent(item.url);
             rows += `
                 <tr class="track-row" ondblclick="playTrack(${index})">
                     <td class="track-number">
                         <span class="num">${index + 1}</span>
-                        <button class="btn btn-link text-white p-0 track-play-btn d-none" onclick="playTrack(${index})"><i class="fas fa-play"></i></button>
                     </td>
                     <td>
                         <div class="d-flex align-items-center">
-                            <img src="${item.thumbnail}" width="40" height="40" class="me-3 rounded object-fit-cover">
+                            <img src="${item.thumbnail || ''}" width="40" height="40" class="me-3 rounded" style="object-fit:cover; background:#333;">
                             <div>
                                 <div class="track-title">${item.title}</div>
                                 <div class="text-muted small">${item.platform}</div>
                             </div>
                         </div>
                     </td>
-                    <td class="text-end text-muted">${item.duration_formatted}</td>
+                    <td class="text-end text-muted">${item.duration_formatted || '—'}</td>
                     <td class="text-end">
                         <div class="track-actions">
-                            <button class="btn btn-link text-muted p-0 me-3" title="Descargar como MP3" onclick="downloadTrack('${item.url}')"><i class="fas fa-download"></i></button>
+                            <button class="btn btn-link text-muted p-0" title="Descargar MP3" onclick="downloadTrack(decodeURIComponent('${safeUrl}'))"><i class="fas fa-download"></i></button>
                         </div>
                     </td>
                 </tr>
@@ -523,23 +523,67 @@
         `;
     }
 
-    // Audio Controls
-    function playTrack(index) {
+    // Download a single track as MP3
+    async function downloadTrack(url) {
+        try {
+            const res = await fetch('/api/download-audio', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: 'url=' + encodeURIComponent(url) + '&quality=320'
+            });
+            const data = await res.json();
+            if (data.success) {
+                window.location.href = data.download_url;
+            } else {
+                alert(data.error);
+            }
+        } catch(e) {
+            alert('Error al descargar la canción.');
+        }
+    }
+
+    // Audio Controls — Download MP3 and play in browser
+    async function playTrack(index) {
         if (index < 0 || index >= currentPlaylistItems.length) return;
         currentTrackIndex = index;
         const track = currentPlaylistItems[index];
         
-        // Update UI
+        // Update player UI immediately
         document.getElementById('playerTitle').textContent = track.title;
-        document.getElementById('playerCover').src = track.thumbnail;
+        document.getElementById('playerArtist').textContent = track.platform;
+        document.getElementById('playerCover').src = track.thumbnail || '';
         document.getElementById('playerCover').classList.remove('d-none');
-        
-        // Fetch audio stream URL (We simulate this by calling download API or using a dedicated streaming endpoint if available. 
-        // For now, if we don't have a direct media URL, we alert the user that streaming requires extraction first)
-        alert("En producción, esto llamaría a un endpoint de streaming que devuelva el audio directo. Por ahora puedes usar Descargar Todo.");
-        
-        // Mock UI play
-        isPlaying = true;
+
+        // Highlight current row
+        document.querySelectorAll('.track-row').forEach((row, i) => {
+            row.style.backgroundColor = i === index ? 'rgba(255,255,255,0.1)' : '';
+        });
+
+        // Show loading state
+        isPlaying = false;
+        updatePlayPauseUI();
+        document.getElementById('playerTitle').textContent = '⏳ Cargando: ' + track.title;
+
+        try {
+            // Request the server to convert to MP3 and return the download URL
+            const res = await fetch('/api/download-audio', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: 'url=' + encodeURIComponent(track.url) + '&quality=128'
+            });
+            const data = await res.json();
+            if (data.success) {
+                // Set audio source and play
+                audioPlayer.src = data.download_url;
+                audioPlayer.play();
+                isPlaying = true;
+                document.getElementById('playerTitle').textContent = track.title;
+            } else {
+                document.getElementById('playerTitle').textContent = '❌ Error: ' + (data.error || 'No disponible');
+            }
+        } catch(e) {
+            document.getElementById('playerTitle').textContent = '❌ Error de conexión';
+        }
         updatePlayPauseUI();
     }
 
@@ -563,11 +607,45 @@
     }
 
     function playNext() {
-        playTrack(currentTrackIndex + 1);
+        if (currentTrackIndex < currentPlaylistItems.length - 1) {
+            playTrack(currentTrackIndex + 1);
+        }
     }
 
     function playPrev() {
-        playTrack(currentTrackIndex - 1);
+        if (currentTrackIndex > 0) {
+            playTrack(currentTrackIndex - 1);
+        }
+    }
+
+    // Seek in audio
+    function seekAudio(e) {
+        if (!audioPlayer.duration) return;
+        const bar = document.getElementById('progressBarContainer');
+        const rect = bar.getBoundingClientRect();
+        const percent = (e.clientX - rect.left) / rect.width;
+        audioPlayer.currentTime = percent * audioPlayer.duration;
+    }
+
+    // Update progress bar as audio plays
+    audioPlayer.addEventListener('timeupdate', function() {
+        if (!audioPlayer.duration) return;
+        const pct = (audioPlayer.currentTime / audioPlayer.duration) * 100;
+        document.getElementById('progressBar').style.width = pct + '%';
+        document.getElementById('timeCurrent').textContent = formatTime(audioPlayer.currentTime);
+        document.getElementById('timeTotal').textContent = formatTime(audioPlayer.duration);
+    });
+
+    // Auto-play next track when current ends
+    audioPlayer.addEventListener('ended', function() {
+        playNext();
+    });
+
+    function formatTime(seconds) {
+        if (!seconds || isNaN(seconds)) return '0:00';
+        const m = Math.floor(seconds / 60);
+        const s = Math.floor(seconds % 60);
+        return m + ':' + (s < 10 ? '0' : '') + s;
     }
 
     // Create Playlist

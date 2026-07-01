@@ -115,8 +115,8 @@ def _get_ydl_opts(extra_opts: dict = None) -> dict:
         "http_headers": {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         },
-        # tv_embedded + mweb evita el bot-check de YouTube sin requerir cookies en la mayoria de casos
-        "extractor_args": {"youtube": {"player_client": ["tv_embedded", "mweb"]}},
+        # ios client bypasses JS signature challenges and works well on VPS with cookies
+        "extractor_args": {"youtube": {"player_client": ["ios", "web"]}},
     }
 
     # Usar cookies de YouTube si existe el archivo (necesario en VPS)

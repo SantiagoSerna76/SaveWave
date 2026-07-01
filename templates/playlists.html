@@ -804,6 +804,10 @@
                 <button class="btn-action" onclick="downloadPlaylistAll(${playlist.id})">
                     <i class="fas fa-download"></i> Descargar Todo
                 </button>
+                <button class="btn-action ms-2" onclick="document.getElementById('uploadFileInput').click()">
+                    <i class="fas fa-upload"></i> Subir MP3/MP4
+                </button>
+                <input type="file" id="uploadFileInput" class="d-none" accept=".mp3,.mp4,.wav,.m4a,.aac,.ogg,.webm" onchange="uploadLocalFile(${playlist.id})">
             </div>
 
             ${playlist.items.length > 0 ? `
@@ -1249,6 +1253,51 @@
                 break;
         }
     });
+
+    // ========== UPLOAD LOCAL FILE ==========
+    async function uploadLocalFile(playlistId) {
+        const fileInput = document.getElementById('uploadFileInput');
+        if (!fileInput.files || fileInput.files.length === 0) return;
+        
+        const file = fileInput.files[0];
+        const formData = new FormData();
+        formData.append('playlist_id', playlistId);
+        formData.append('file', file);
+
+        // Change button to indicate uploading
+        const btns = document.querySelectorAll('.btn-action');
+        let uploadBtn = null;
+        btns.forEach(b => { if(b.innerHTML.includes('fa-upload')) uploadBtn = b; });
+        const originalHTML = uploadBtn ? uploadBtn.innerHTML : '';
+        if(uploadBtn) {
+            uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Subiendo...';
+            uploadBtn.disabled = true;
+        }
+
+        try {
+            const res = await fetch('/api/playlists/upload', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await res.json();
+            
+            if (data.success) {
+                // Reload the playlist to show the new file
+                loadPlaylist(playlistId);
+            } else {
+                alert(data.error || 'Error al subir el archivo.');
+            }
+        } catch (e) {
+            alert('Error de conexión al subir el archivo.');
+        } finally {
+            if(uploadBtn) {
+                uploadBtn.innerHTML = originalHTML;
+                uploadBtn.disabled = false;
+            }
+            // Clear input so same file can be uploaded again if needed
+            fileInput.value = '';
+        }
+    }
 
     // ========== DOWNLOAD ==========
     async function downloadTrack(url) {

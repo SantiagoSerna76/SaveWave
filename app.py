@@ -216,6 +216,19 @@ def privacy():
 
 
 # ============================================================
+# RUTAS - PWA (Progressive Web App)
+# ============================================================
+
+@app.route('/manifest.json')
+def serve_manifest():
+    return current_app.send_static_file('manifest.json')
+
+@app.route('/sw.js')
+def serve_sw():
+    return current_app.send_static_file('sw.js')
+
+
+# ============================================================
 # RUTAS - AUTENTICACION WEB (Flask-Login)
 # ============================================================
 

@@ -27,6 +27,13 @@
     <!-- Canonical URL -->
     <link rel="canonical" href="{{ request.url }}">
     
+    <!-- PWA Meta Tags -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#1e1e2e">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SaveWave">
+    
     <!-- Favicon con el logo -->
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='Savewave.png') }}">
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='Savewave.png') }}">
@@ -67,6 +74,11 @@
                     </li>
                 </ul>
                 <ul class="navbar-nav align-items-center">
+                    <li class="nav-item me-2 d-none" id="installAppContainer">
+                        <button class="btn btn-sm fw-bold" id="installAppBtn" style="background:#a6e3a1; border:none; color:#1e1e2e;">
+                            <i class="fas fa-download me-1"></i>Instalar App
+                        </button>
+                    </li>
                     <li class="nav-item">
                         <button id="darkModeToggle" title="Modo oscuro">
                             <i class="fas fa-moon"></i>
@@ -195,5 +207,49 @@
 
     <!-- Custom Scripts -->
     {% block extra_scripts %}{% endblock %}
+
+    <!-- PWA Script -->
+    <script>
+        // Registrar Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js').then(registration => {
+                    console.log('SW registrado con éxito:', registration.scope);
+                }).catch(err => {
+                    console.log('Error al registrar SW:', err);
+                });
+            });
+        }
+
+        // Lógica de instalación PWA
+        let deferredPrompt;
+        const installContainer = document.getElementById('installAppContainer');
+        const installBtn = document.getElementById('installAppBtn');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // Prevenir que el navegador muestre el prompt automáticamente
+            e.preventDefault();
+            deferredPrompt = e;
+            // Mostrar nuestro botón personalizado
+            installContainer.classList.remove('d-none');
+        });
+
+        installBtn.addEventListener('click', async () => {
+            if (!deferredPrompt) return;
+            // Mostrar el prompt nativo
+            deferredPrompt.prompt();
+            // Esperar a que el usuario responda
+            const { outcome } = await deferredPrompt.userChoice;
+            console.log(`El usuario decidió: ${outcome}`);
+            deferredPrompt = null;
+            installContainer.classList.add('d-none');
+        });
+
+        window.addEventListener('appinstalled', () => {
+            console.log('SaveWave fue instalado como PWA');
+            installContainer.classList.add('d-none');
+            deferredPrompt = null;
+        });
+    </script>
 </body>
 </html>

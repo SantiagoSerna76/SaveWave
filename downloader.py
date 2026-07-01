@@ -69,12 +69,12 @@ PLATFORM_PATTERNS = {
 #   /b     = fallback: best overall si no se puede separar
 # Esto funciona con YouTube, Instagram y TikTok.
 QUALITY_MAP = {
-    "144p": "bv*[height<=144]+ba/b[height<=144]",
-    "360p": "bv*[height<=360]+ba/b[height<=360]",
-    "480p": "bv*[height<=480]+ba/b[height<=480]",
-    "720p": "bv*[height<=720]+ba/b[height<=720]",
-    "1080p": "bv*[height<=1080]+ba/b[height<=1080]",
-    "2160p": "bv*[height<=2160]+ba/b[height<=2160]",  # 4K
+    "144p": "bv*[height<=144]+ba/b[height<=144]/best/bv+ba",
+    "360p": "bv*[height<=360]+ba/b[height<=360]/best/bv+ba",
+    "480p": "bv*[height<=480]+ba/b[height<=480]/best/bv+ba",
+    "720p": "bv*[height<=720]+ba/b[height<=720]/best/bv+ba",
+    "1080p": "bv*[height<=1080]+ba/b[height<=1080]/best/bv+ba",
+    "2160p": "bv*[height<=2160]+ba/b[height<=2160]/best/bv+ba",  # 4K
 }
 
 

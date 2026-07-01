@@ -115,8 +115,10 @@ def _get_ydl_opts(extra_opts: dict = None) -> dict:
         "http_headers": {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         },
-        # web client supports cookies; Node.js on the server handles JS signature challenges
+        # web client soporta cookies; Deno en el servidor resuelve los challenges de firma de YouTube
         "extractor_args": {"youtube": {"player_client": ["web"]}},
+        # Descarga automáticamente el script solver de firmas (usa Deno, instalado en el VPS)
+        "remote_components": {"ejs:github"},
     }
 
     # Usar cookies de YouTube si existe el archivo (necesario en VPS)
@@ -160,14 +162,14 @@ def get_video_info(url: str) -> dict:
                 for entry in info["entries"]:
                     if not entry:
                         continue
-                    
+
                     item_url = entry.get("url", "")
                     if not item_url and entry.get("id"):
                         if platform == "youtube":
                             item_url = f"https://www.youtube.com/watch?v={entry['id']}"
                         else:
                             item_url = url # Fallback
-                            
+
                     playlist_items.append({
                         "title": entry.get("title", "Sin título"),
                         "duration": entry.get("duration", 0),
@@ -175,7 +177,7 @@ def get_video_info(url: str) -> dict:
                         "thumbnail": entry.get("thumbnail") or info.get("thumbnail", ""),
                         "platform": platform
                     })
-                    
+
                 return {
                     "is_playlist": True,
                     "title": info.get("title", "Lista de reproducción"),
@@ -230,7 +232,7 @@ def download_audio(url: str, quality: str = "128", output_path: str = None) -> d
     os.makedirs(output_path, exist_ok=True)
 
     url_hash = hashlib.md5(url.encode()).hexdigest()
-    
+
     # Fast path: check if we already downloaded this exact audio
     existing_files = glob.glob(os.path.join(output_path, f"audio_{url_hash}_*.mp3"))
     if existing_files:

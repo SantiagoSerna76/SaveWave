@@ -105,7 +105,7 @@ python3 -m venv venv
 source venv/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt
-pip install gunicorn pymysql
+pip install gunicorn pymysql gevent
 
 echo -e "${GREEN}   Dependencias instaladas${NC}"
 

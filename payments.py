@@ -10,6 +10,7 @@ Funciones:
 """
 
 import stripe
+from stripe import checkout
 from flask import current_app
 from models import db, User, Subscription, PlanType
 from config import Config
@@ -60,7 +61,7 @@ def create_checkout_session(plan_type: PlanType, user: User) -> dict:
             return {"success": False, "error": "Plan no configurado en Stripe."}
 
         # Crear la sesión de checkout
-        checkout_session = stripe.checkout.Session.create(
+        checkout_session = checkout.Session.create(
             payment_method_types=["card"],
             line_items=[
                 {

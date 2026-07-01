@@ -5,59 +5,54 @@
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-lg-8">
-        <!-- ==================== HERO / TITULO ==================== -->
-        <div class="text-center mb-5">
-            <h1 class="hero-title display-4 fw-bold">
-                <i class="fas fa-download text-primary me-2"></i>
-                Descarga videos y MP3 gratis
+        <!-- ==================== HERO / TITULO (ELEGANT SAAS UI) ==================== -->
+        <div class="text-center py-5 mt-3 mb-4">
+            <h1 class="display-4 fw-bold mb-3" style="letter-spacing: -1.5px; color: var(--text-color);">
+                Descarga de video <span class="text-primary">sin límites</span>
             </h1>
-            <p class="lead text-muted">
-                De cualquier plataforma. Rapido, facil y sin registro. Tambien extrae audio a MP3.
+            <p class="lead mb-4 mx-auto" style="max-width: 600px; color: var(--text-muted); font-size: 1.15rem; font-weight: 400;">
+                Guarda videos y audio en alta calidad desde cualquier plataforma. 
+                Rápido, seguro y diseñado para profesionales.
             </p>
         </div>
 
         <!-- ==================== FORMULARIO DE DESCARGA ==================== -->
-        <div class="card glass-card shadow-lg border-0">
-            <div class="card-body p-4">
+        <div class="card shadow-md border-0" style="border-radius: 24px; background: var(--card-bg);">
+            <div class="card-body p-4 p-md-5">
                 <form id="downloadForm" method="POST">
-                    <div class="mb-3">
-                        <label for="urlInput" class="form-label fw-semibold">
-                            <i class="fas fa-link me-1"></i>Pega el enlace del video
-                        </label>
-                        <div class="url-input-wrapper input-group input-group-lg">
+                    <div class="mb-4">
+                        <div class="input-group input-group-lg" style="box-shadow: var(--shadow-sm); border-radius: 12px; overflow: hidden; border: 1px solid var(--card-border);">
+                            <span class="input-group-text bg-transparent border-0 text-muted ps-4" style="background: var(--card-bg) !important;">
+                                <i class="fas fa-link"></i>
+                            </span>
                             <input
                                 type="url"
-                                class="form-control"
+                                class="form-control border-0 px-3"
                                 id="urlInput"
-                                placeholder="https://www.youtube.com/watch?v=..."
+                                placeholder="Pega el enlace del video aquí..."
+                                style="box-shadow: none; background: var(--card-bg);"
                                 required
                             >
-                            <button type="submit" class="btn btn-primary px-4 btn-pulse" id="submitBtn">
-                                <i class="fas fa-search me-1"></i>Obtener video
+                            <button type="submit" class="btn btn-primary px-5 fw-semibold border-0" id="submitBtn" style="border-radius: 0;">
+                                Iniciar
                             </button>
-                        </div>
-                        <div class="form-text">
-                            Funciona con YouTube, Instagram, TikTok, Facebook, Twitter, Vimeo y cientos de sitios mas
                         </div>
                     </div>
                 </form>
 
                 <!-- ==================== PLATAFORMAS SOPORTADAS ==================== -->
-                <div class="text-center mt-3">
-                    <span class="badge bg-danger me-1">
-                        <i class="fab fa-youtube me-1"></i>YouTube
-                    </span>
-                    <span class="badge bg-warning text-dark me-1">
-                        <i class="fab fa-instagram me-1"></i>Instagram
-                    </span>
-                    <span class="badge bg-dark me-1">
-                        <i class="fab fa-tiktok me-1"></i>TikTok
-                    </span>
+                <div class="d-flex align-items-center justify-content-center flex-wrap gap-3 mt-4">
+                    <span class="text-muted small fw-medium text-uppercase" style="letter-spacing: 1px;">Soporta:</span>
+                    <div class="d-flex gap-4 opacity-75">
+                        <div class="d-flex align-items-center gap-2"><i class="fab fa-youtube text-muted fs-5"></i><span class="small fw-medium text-muted">YouTube</span></div>
+                        <div class="d-flex align-items-center gap-2"><i class="fab fa-instagram text-muted fs-5"></i><span class="small fw-medium text-muted">Instagram</span></div>
+                        <div class="d-flex align-items-center gap-2"><i class="fab fa-tiktok text-muted fs-5"></i><span class="small fw-medium text-muted">TikTok</span></div>
+                    </div>
                     {% if ads_enabled %}
-                    <div class="ad-inline ms-2">
-                        <div class="ad-label">Ad</div>
+                    <div class="ad-inline ms-3">
+                        <div class="ad-label" style="font-size: 0.55rem;">Ad</div>
                         <ins class="adsbygoogle"
-                             style="display:inline-block;width:200px;height:50px"
+                             style="display:inline-block;width:120px;height:30px"
                              data-ad-client="{{ adsense_client }}"
                              data-ad-slot="1111111111"></ins>
                         <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>

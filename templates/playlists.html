@@ -571,6 +571,81 @@
         border-color: var(--text-muted);
     }
 
+    /* ---- OFFLINE INDICATOR ---- */
+    .offline-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 0.7rem;
+        color: var(--success-color);
+        background: rgba(16, 185, 129, 0.1);
+        padding: 2px 8px;
+        border-radius: 20px;
+        font-weight: 600;
+        margin-left: 6px;
+        vertical-align: middle;
+    }
+    .offline-badge i {
+        font-size: 0.65rem;
+    }
+
+    /* ---- DOWNLOAD OPTIONS MODAL ---- */
+    .dl-option {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 16px 20px;
+        border-radius: 12px;
+        border: 1px solid var(--card-border);
+        background: var(--card-bg);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-align: left;
+        width: 100%;
+    }
+    .dl-option:hover {
+        border-color: var(--primary-color);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .dl-option-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        flex-shrink: 0;
+    }
+    .dl-option-text h6 {
+        margin: 0 0 2px;
+        font-weight: 700;
+        font-size: 0.95rem;
+    }
+    .dl-option-text p {
+        margin: 0;
+        font-size: 0.8rem;
+        color: var(--text-muted);
+    }
+
+    /* ---- PROGRESS BAR FOR OFFLINE DOWNLOAD ---- */
+    .offline-progress {
+        width: 100%;
+        height: 6px;
+        background: var(--card-border);
+        border-radius: 3px;
+        overflow: hidden;
+        margin-top: 12px;
+    }
+    .offline-progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--primary-color), var(--success-color));
+        border-radius: 3px;
+        transition: width 0.3s ease;
+        width: 0%;
+    }
+
     /* Responsive */
     @media (max-width: 768px) {
         .playlist-sidebar { width: 100%; min-width: unset; border-right: none; border-bottom: 1px solid var(--card-border); max-height: 200px; }
@@ -696,6 +771,47 @@
     </div>
 </div>
 
+<!-- MODAL DOWNLOAD OPTIONS -->
+<div class="modal fade" id="downloadOptionsModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content pl-modal">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">Descargar Playlist</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body d-flex flex-column gap-3" id="downloadOptionsBody">
+                <button class="dl-option" onclick="downloadPlaylistOffline()">
+                    <div class="dl-option-icon" style="background: rgba(16,185,129,0.15); color: var(--success-color);">
+                        <i class="fas fa-wifi-slash fa-lg"></i>
+                    </div>
+                    <div class="dl-option-text">
+                        <h6>Guardar en SaveWave</h6>
+                        <p>Escucha sin conexión desde la app</p>
+                    </div>
+                </button>
+                <button class="dl-option" id="downloadZipBtn">
+                    <div class="dl-option-icon" style="background: rgba(59,130,246,0.15); color: #3b82f6;">
+                        <i class="fas fa-file-archive fa-lg"></i>
+                    </div>
+                    <div class="dl-option-text">
+                        <h6>Descargar como ZIP</h6>
+                        <p>Guardar archivos en tu dispositivo</p>
+                    </div>
+                </button>
+                <div id="offlineProgressContainer" class="d-none">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="small fw-semibold" id="offlineProgressText">Preparando...</span>
+                        <span class="small text-muted" id="offlineProgressCount">0/0</span>
+                    </div>
+                    <div class="offline-progress">
+                        <div class="offline-progress-fill" id="offlineProgressBar"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Re-open main and container to match base.html closing tags -->
 <main class="d-none"><div class="container d-none">
 {% endblock %}
@@ -768,7 +884,7 @@
                             <div class="d-flex align-items-center gap-3">
                                 <img src="${item.thumbnail || ''}" class="track-thumb" alt="">
                                 <div>
-                                    <div class="track-title">${item.title}</div>
+                                    <div class="track-title">${item.title} <span class="offline-badge d-none" id="offlineBadge${index}"><i class="fas fa-check-circle"></i> Offline</span></div>
                                     <div class="text-muted" style="font-size: 0.8rem;">${platformLabel}</div>
                                 </div>
                             </div>
@@ -801,7 +917,7 @@
                 <button class="btn-play-main" onclick="playTrack(0)" title="Reproducir todo">
                     <i class="fas fa-play" style="margin-left: 3px;"></i>
                 </button>
-                <button class="btn-action" onclick="downloadPlaylistAll(${playlist.id})">
+                <button class="btn-action" onclick="showDownloadOptions(${playlist.id})">
                     <i class="fas fa-download"></i> Descargar Todo
                 </button>
                 <button class="btn-action ms-2" onclick="document.getElementById('uploadFileInput').click()">
@@ -835,6 +951,8 @@
 
         // Re-highlight if a track is already playing
         highlightCurrentTrack();
+        // Check which tracks are available offline
+        checkOfflineStatus();
     }
 
     // ========== CREATE PLAYLIST ==========
@@ -945,6 +1063,30 @@
             }
             updatePlayPauseUI();
             return;
+        }
+
+        // --- CHECK OFFLINE CACHE (Cache API) ---
+        const offlineCacheKey = 'savewave-offline-' + track.url;
+        try {
+            const offlineCache = await caches.open('savewave-offline');
+            const cachedResponse = await offlineCache.match(offlineCacheKey);
+            if (cachedResponse) {
+                const blob = await cachedResponse.blob();
+                const blobUrl = URL.createObjectURL(blob);
+                track.cached_url = blobUrl;
+                audioPlayer.src = blobUrl;
+                try {
+                    await audioPlayer.play();
+                    isPlaying = true;
+                    document.getElementById('playerTitle').textContent = track.title;
+                } catch(err) {
+                    document.getElementById('playerTitle').textContent = '❌ Error al reproducir';
+                }
+                updatePlayPauseUI();
+                return;
+            }
+        } catch(cacheErr) {
+            console.log('Cache API not available, falling back to network');
         }
 
         // --- REMOTE URLS: download audio via API then play ---
@@ -1300,6 +1442,130 @@
     }
 
     // ========== DOWNLOAD ==========
+    const OFFLINE_CACHE_NAME = 'savewave-offline';
+
+    function showDownloadOptions(playlistId) {
+        // Wire up ZIP button with the playlist ID
+        document.getElementById('downloadZipBtn').onclick = function() {
+            bootstrap.Modal.getInstance(document.getElementById('downloadOptionsModal')).hide();
+            downloadPlaylistAll(playlistId);
+        };
+        // Reset progress UI
+        document.getElementById('offlineProgressContainer').classList.add('d-none');
+        new bootstrap.Modal(document.getElementById('downloadOptionsModal')).show();
+    }
+
+    async function checkOfflineStatus() {
+        try {
+            const offlineCache = await caches.open(OFFLINE_CACHE_NAME);
+            for (let i = 0; i < currentPlaylistItems.length; i++) {
+                const track = currentPlaylistItems[i];
+                const cacheKey = 'savewave-offline-' + track.url;
+                const cached = await offlineCache.match(cacheKey);
+                const badge = document.getElementById('offlineBadge' + i);
+                if (badge) {
+                    if (cached || track.platform === 'audio_local' || track.platform === 'video_local') {
+                        badge.classList.remove('d-none');
+                    } else {
+                        badge.classList.add('d-none');
+                    }
+                }
+            }
+        } catch(e) {
+            // Cache API not available
+        }
+    }
+
+    async function downloadPlaylistOffline() {
+        if (currentPlaylistItems.length === 0) return;
+
+        const progressContainer = document.getElementById('offlineProgressContainer');
+        const progressBar = document.getElementById('offlineProgressBar');
+        const progressText = document.getElementById('offlineProgressText');
+        const progressCount = document.getElementById('offlineProgressCount');
+
+        // Hide option buttons and show progress
+        document.querySelectorAll('#downloadOptionsBody .dl-option').forEach(b => b.classList.add('d-none'));
+        progressContainer.classList.remove('d-none');
+
+        const total = currentPlaylistItems.length;
+        let completed = 0;
+        let errors = 0;
+
+        try {
+            const offlineCache = await caches.open(OFFLINE_CACHE_NAME);
+
+            for (let i = 0; i < total; i++) {
+                const track = currentPlaylistItems[i];
+                const cacheKey = 'savewave-offline-' + track.url;
+
+                // Skip if already cached or local
+                const existing = await offlineCache.match(cacheKey);
+                if (existing || track.platform === 'audio_local' || track.platform === 'video_local') {
+                    completed++;
+                    progressCount.textContent = `${completed}/${total}`;
+                    progressBar.style.width = `${(completed / total) * 100}%`;
+                    progressText.textContent = `Descargando: ${track.title.substring(0, 30)}...`;
+                    continue;
+                }
+
+                progressText.textContent = `Descargando: ${track.title.substring(0, 30)}...`;
+                progressCount.textContent = `${completed}/${total}`;
+
+                try {
+                    // Download from our API
+                    const res = await fetch('/api/download-audio', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                        body: 'url=' + encodeURIComponent(track.url) + '&quality=128'
+                    });
+                    const data = await res.json();
+
+                    if (data.success && data.download_url) {
+                        // Download the actual audio file
+                        const audioRes = await fetch(data.download_url);
+                        if (audioRes.ok) {
+                            // Store in Cache API
+                            await offlineCache.put(cacheKey, audioRes.clone());
+                        }
+                    } else {
+                        errors++;
+                    }
+                } catch(trackErr) {
+                    errors++;
+                }
+
+                completed++;
+                progressCount.textContent = `${completed}/${total}`;
+                progressBar.style.width = `${(completed / total) * 100}%`;
+            }
+
+            // Done
+            if (errors > 0) {
+                progressText.textContent = `Listo. ${completed - errors} guardadas, ${errors} con error.`;
+            } else {
+                progressText.textContent = 'Todas las canciones guardadas para escucha offline.';
+            }
+            progressBar.style.width = '100%';
+
+            // Update offline badges
+            checkOfflineStatus();
+
+            // Auto-close modal after 2.5 seconds
+            setTimeout(() => {
+                const modal = bootstrap.Modal.getInstance(document.getElementById('downloadOptionsModal'));
+                if (modal) modal.hide();
+                // Restore buttons
+                document.querySelectorAll('#downloadOptionsBody .dl-option').forEach(b => b.classList.remove('d-none'));
+                progressContainer.classList.add('d-none');
+                progressBar.style.width = '0%';
+            }, 2500);
+
+        } catch(e) {
+            progressText.textContent = 'Error: tu navegador no soporta almacenamiento offline.';
+        }
+    }
+
     async function downloadTrack(url) {
         try {
             const res = await fetch('/api/download-audio', {
@@ -1345,5 +1611,6 @@
             btn.disabled = false;
         }
     }
+
 </script>
 {% endblock %}

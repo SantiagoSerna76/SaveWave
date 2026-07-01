@@ -1,12 +1,14 @@
-const CACHE_NAME = 'savewave-v1';
+const CACHE_NAME = 'savewave-v2';
 const ASSETS_TO_CACHE = [
     '/',
     '/static/style.css',
     '/static/script.js',
-    '/static/Savewave.png'
+    '/static/Savewave.png',
+    '/static/icon-192.png',
+    '/static/icon-512.png'
 ];
 
-// Instalar Service Worker y cachear recursos estáticos
+// Install Service Worker and cache static assets
 self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_NAME)
@@ -14,32 +16,45 @@ self.addEventListener('install', (event) => {
                 return cache.addAll(ASSETS_TO_CACHE);
             })
     );
+    self.skipWaiting();
 });
 
-// Activar el SW y limpiar caches viejos
+// Activate the SW and clean old caches (but preserve offline audio cache)
 self.addEventListener('activate', (event) => {
     event.waitUntil(
         caches.keys().then((cacheNames) => {
             return Promise.all(
                 cacheNames.map((cacheName) => {
-                    if (cacheName !== CACHE_NAME) {
+                    // Keep the offline audio cache and the current static cache
+                    if (cacheName !== CACHE_NAME && cacheName !== 'savewave-offline') {
                         return caches.delete(cacheName);
                     }
                 })
             );
         })
     );
+    self.clients.claim();
 });
 
-// Interceptar peticiones
+// Intercept requests
 self.addEventListener('fetch', (event) => {
-    // Si la petición es hacia la API, no usamos caché, vamos a la red
+    // If the request is for the API, always go to network
     if (event.request.url.includes('/api/')) {
         event.respondWith(fetch(event.request));
         return;
     }
 
-    // Para el resto (archivos estáticos, páginas html), intentamos red primero, luego caché
+    // For downloaded audio files, try cache first (offline playback), then network
+    if (event.request.url.includes('/downloads/')) {
+        event.respondWith(
+            caches.match(event.request).then(cached => {
+                return cached || fetch(event.request);
+            })
+        );
+        return;
+    }
+
+    // For the rest (static files, html pages), try network first, then cache
     event.respondWith(
         fetch(event.request).catch(() => caches.match(event.request))
     );

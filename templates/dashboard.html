@@ -175,9 +175,95 @@
                     </div>
                 {% endif %}
             </div>
+            </div>
+        </div>
+
+        <!-- ==================== API INTEGRATION (PREMIUM) ==================== -->
+        <div class="card shadow-sm border-0 mt-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="fw-bold mb-0"><i class="fas fa-code me-2 text-primary"></i>Integración API</h6>
+                    {% if plan_info.plan == 'premium' %}
+                        <span class="badge bg-success">Acceso Activo</span>
+                    {% else %}
+                        <span class="badge bg-warning text-dark"><i class="fas fa-lock me-1"></i>Premium</span>
+                    {% endif %}
+                </div>
+
+                {% if plan_info.plan == 'premium' %}
+                    <p class="text-muted small">Genera un token JWT para acceder a la API de SaveWave desde tus propias aplicaciones.</p>
+                    <div id="apiTokenContainer" style="display: none;">
+                        <div class="input-group mb-2">
+                            <input type="text" id="apiTokenInput" class="form-control text-muted" readonly style="font-family: monospace; font-size: 0.85rem;">
+                            <button class="btn btn-outline-secondary" type="button" onclick="copyApiToken()"><i class="fas fa-copy"></i> Copiar</button>
+                        </div>
+                        <p class="text-success small"><i class="fas fa-check-circle me-1"></i>Token generado exitosamente. Válido por 30 días.</p>
+                    </div>
+                    <button id="generateTokenBtn" class="btn btn-primary btn-sm" onclick="generateApiToken()">
+                        <i class="fas fa-key me-1"></i>Generar Token API
+                    </button>
+                    <a href="{{ url_for('api_docs') }}" class="btn btn-outline-secondary btn-sm ms-2">
+                        <i class="fas fa-book me-1"></i>Ver Documentación
+                    </a>
+                {% else %}
+                    <div class="alert alert-secondary border-0 mb-0">
+                        <p class="small mb-2"><strong>La API de SaveWave te permite:</strong></p>
+                        <ul class="small text-muted mb-3 ps-3">
+                            <li>Automatizar descargas desde tus propios scripts</li>
+                            <li>Integrar nuestro motor en tu propia página web o app</li>
+                            <li>Descargar metadatos completos en formato JSON</li>
+                        </ul>
+                        <p class="small text-muted mb-3">Esta es una función exclusiva del <strong>Plan Premium</strong>.</p>
+                        <a href="{{ url_for('pricing') }}" class="btn btn-warning btn-sm fw-bold">
+                            <i class="fas fa-arrow-up me-1"></i>Actualizar a Premium
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function generateApiToken() {
+    const btn = document.getElementById('generateTokenBtn');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Generando...';
+    btn.disabled = true;
+
+    fetch('{{ url_for("api_generate_token") }}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('apiTokenInput').value = data.token;
+            document.getElementById('apiTokenContainer').style.display = 'block';
+            btn.style.display = 'none';
+        } else {
+            alert(data.error);
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    })
+    .catch(() => {
+        alert("Error de conexión al generar token.");
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    });
+}
+
+function copyApiToken() {
+    const input = document.getElementById('apiTokenInput');
+    input.select();
+    input.setSelectionRange(0, 99999);
+    document.execCommand("copy");
+    alert("¡Token copiado al portapapeles!");
+}
+</script>
 {% endblock %}
 
 {% block extra_head %}

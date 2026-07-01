@@ -166,6 +166,23 @@ def _get_api_user():
     return None, False
 
 
+@app.context_processor
+def inject_ads_enabled():
+    """
+    Inyecta globalmente si los anuncios deben mostrarse o no.
+    Se ocultan para planes Pro y Premium.
+    """
+    ads_enabled = Config.ADS_ENABLED
+    if ads_enabled and current_user.is_authenticated:
+        plan_info = get_user_plan(current_user)
+        if plan_info["plan"] in ("pro", "premium"):
+            ads_enabled = False
+    
+    return dict(
+        ads_enabled=ads_enabled,
+        adsense_client=Config.ADSENSE_CLIENT_ID
+    )
+
 # ============================================================
 # RUTAS - PAGINAS PUBLICAS
 # ============================================================
@@ -174,9 +191,7 @@ def _get_api_user():
 def index():
     """Pagina principal con formulario de descarga."""
     return render_template(
-        "index.html",
-        ads_enabled=Config.ADS_ENABLED,
-        adsense_client=Config.ADSENSE_CLIENT_ID,
+        "index.html"
     )
 
 
@@ -184,9 +199,7 @@ def index():
 def pricing():
     """Pagina de precios y planes."""
     return render_template(
-        "pricing.html",
-        ads_enabled=Config.ADS_ENABLED,
-        adsense_client=Config.ADSENSE_CLIENT_ID,
+        "pricing.html"
     )
 
 
@@ -289,7 +302,7 @@ def dashboard():
         "dashboard.html",
         plan_info=plan_info,
         limit_info=limit_info,
-        recent_downloads=recent_downloads,
+        recent_downloads=recent_downloads
     )
 
 
@@ -741,9 +754,7 @@ def google_verification():
 def api_docs():
     """Pagina de documentacion de la API para usuarios Premium."""
     return render_template(
-        "api_docs.html",
-        ads_enabled=Config.ADS_ENABLED,
-        adsense_client=Config.ADSENSE_CLIENT_ID,
+        "api_docs.html"
     )
 
 

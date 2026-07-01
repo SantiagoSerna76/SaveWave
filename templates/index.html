@@ -19,26 +19,66 @@
         <!-- ==================== FORMULARIO DE DESCARGA ==================== -->
         <div class="card shadow-md border-0" style="border-radius: 24px; background: var(--card-bg);">
             <div class="card-body p-4 p-md-5">
-                <form id="downloadForm" method="POST">
-                    <div class="mb-4">
-                        <div class="input-group input-group-lg" style="box-shadow: var(--shadow-sm); border-radius: 12px; overflow: hidden; border: 1px solid var(--card-border);">
-                            <span class="input-group-text bg-transparent border-0 text-muted ps-4" style="background: var(--card-bg) !important;">
-                                <i class="fas fa-link"></i>
-                            </span>
-                            <input
-                                type="url"
-                                class="form-control border-0 px-3"
-                                id="urlInput"
-                                placeholder="Pega el enlace del video aquí..."
-                                style="box-shadow: none; background: var(--card-bg);"
-                                required
-                            >
-                            <button type="submit" class="btn btn-primary px-5 fw-semibold border-0" id="submitBtn" style="border-radius: 0;">
-                                Iniciar
-                            </button>
-                        </div>
+                <!-- TABS -->
+                <ul class="nav nav-pills mb-4 justify-content-center" id="downloadTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active rounded-pill px-4 fw-semibold" id="single-tab" data-bs-toggle="pill" data-bs-target="#single" type="button" role="tab">
+                            <i class="fas fa-link me-2"></i>Descarga Individual
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link rounded-pill px-4 fw-semibold text-warning" id="batch-tab" data-bs-toggle="pill" data-bs-target="#batch" type="button" role="tab">
+                            <i class="fas fa-layer-group me-2"></i>Descarga Masiva <i class="fas fa-crown ms-1"></i>
+                        </button>
+                    </li>
+                </ul>
+
+                <!-- TAB CONTENT -->
+                <div class="tab-content" id="downloadTabsContent">
+                    <!-- SINGLE DOWNLOAD -->
+                    <div class="tab-pane fade show active" id="single" role="tabpanel">
+                        <form id="downloadForm" method="POST">
+                            <div class="mb-2">
+                                <div class="input-group input-group-lg" style="box-shadow: var(--shadow-sm); border-radius: 12px; overflow: hidden; border: 1px solid var(--card-border);">
+                                    <span class="input-group-text bg-transparent border-0 text-muted ps-4" style="background: var(--card-bg) !important;">
+                                        <i class="fas fa-link"></i>
+                                    </span>
+                                    <input
+                                        type="url"
+                                        class="form-control border-0 px-3"
+                                        id="urlInput"
+                                        placeholder="Pega el enlace del video aquí..."
+                                        style="box-shadow: none; background: var(--card-bg);"
+                                        required
+                                    >
+                                    <button type="submit" class="btn btn-primary px-5 fw-semibold border-0" id="submitBtn" style="border-radius: 0;">
+                                        Iniciar
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
                     </div>
-                </form>
+
+                    <!-- BATCH DOWNLOAD (PREMIUM) -->
+                    <div class="tab-pane fade" id="batch" role="tabpanel">
+                        <form id="batchDownloadForm" method="POST">
+                            <div class="mb-3">
+                                <label class="form-label text-muted small fw-semibold">Pega hasta 10 enlaces (uno por línea)</label>
+                                <textarea class="form-control" id="batchUrlsInput" rows="4" style="background: var(--light-bg); border-color: var(--card-border); border-radius: 12px; resize: none;" placeholder="https://youtube.com/...&#10;https://instagram.com/..."></textarea>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <select class="form-select form-select-lg w-auto border-0" id="batchQuality" style="background: var(--light-bg); border-radius: 12px;">
+                                    <option value="720p">Video 720p</option>
+                                    <option value="1080p">Video 1080p</option>
+                                    <option value="mp3_320">Audio MP3</option>
+                                </select>
+                                <button type="button" class="btn btn-warning flex-grow-1 fw-bold fs-5 text-dark" id="batchSubmitBtn" style="border-radius: 12px;">
+                                    <i class="fas fa-file-archive me-2"></i>Descargar todo en .ZIP
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
 
                 <!-- ==================== PLATAFORMAS SOPORTADAS ==================== -->
                 <div class="d-flex align-items-center justify-content-center flex-wrap gap-3 mt-4">
@@ -721,6 +761,62 @@ $(document).ready(function() {
         loadUserPlaylists();
         new bootstrap.Modal(document.getElementById('selectPlaylistModal')).show();
     };
+
+    // ============================================================
+    // BATCH DOWNLOAD LOGIC
+    // ============================================================
+    const userPlan = '{{ current_user.subscription.plan.value if current_user.is_authenticated and current_user.subscription else "free" }}';
+
+    $('#batchSubmitBtn').on('click', function() {
+        if (userPlan !== 'premium') {
+            $('#upgradeMessage').text('La descarga masiva (varios enlaces a la vez) es una función exclusiva del plan Premium. Mejora tu plan para ahorrar tiempo descargando listas enteras con un solo clic.');
+            $upgradeContainer.show();
+            // Scroll to upgrade container
+            $('html, body').animate({
+                scrollTop: $upgradeContainer.offset().top - 100
+            }, 500);
+            return;
+        }
+
+        const urlsText = $('#batchUrlsInput').val().trim();
+        if (!urlsText) {
+            alert('Por favor, ingresa al menos un enlace.');
+            return;
+        }
+
+        const urls = urlsText.split('\n').map(u => u.trim()).filter(u => u);
+        if (urls.length === 0) return;
+        if (urls.length > 10) {
+            alert('Puedes descargar un máximo de 10 enlaces a la vez.');
+            return;
+        }
+
+        const quality = $('#batchQuality').val();
+        const $btn = $(this);
+        const originalHtml = $btn.html();
+
+        $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>Comprimiendo ZIP...');
+
+        $.ajax({
+            url: '{{ url_for("api_download_multiple") }}',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ urls: urls, quality: quality }),
+            success: function(response) {
+                if (response.success) {
+                    window.location.href = response.download_url;
+                } else {
+                    alert('Error: ' + response.error);
+                }
+            },
+            error: function() {
+                alert('Error de conexión al procesar la descarga masiva.');
+            },
+            complete: function() {
+                $btn.prop('disabled', false).html(originalHtml);
+            }
+        });
+    });
 });
 </script>
 {% endblock %}

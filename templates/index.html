@@ -164,29 +164,110 @@
             </div>
         </div>
 
-        <!-- ==================== PLAYLIST PROMO BANNER ==================== -->
-        <div class="mt-4 text-center">
-            <div class="card glass-card shadow-sm border-0 bg-dark text-white overflow-hidden position-relative">
-                <div class="card-body p-5" style="background: linear-gradient(135deg, #1db954 0%, #191414 100%);">
-                    <span class="badge bg-danger position-absolute top-0 end-0 m-3 fw-bold px-3 py-2">NUEVO</span>
-                    <i class="fas fa-headphones fa-4x mb-3 text-white"></i>
-                    <h2 class="fw-bold">Descubre tu nueva Biblioteca Musical</h2>
-                    <p class="lead text-light mb-4">
-                        Guarda tus videos y canciones favoritas en <strong>Playlists</strong> estilo Spotify. 
-                        Escúchalos en el reproductor integrado o descarga la playlist completa con un solo clic.
+        <!-- ==================== PLAYLIST PROMO BANNER (EXOTIC UI) ==================== -->
+        <div class="mt-5 mb-4 position-relative promo-banner-wrapper">
+            <!-- Decorative floating background elements -->
+            <div class="position-absolute top-0 start-0 w-100 h-100 overflow-hidden rounded-4" style="z-index: 0;">
+                <div class="promo-blob blob-1"></div>
+                <div class="promo-blob blob-2"></div>
+            </div>
+            
+            <div class="card shadow-lg border-0 bg-transparent overflow-hidden position-relative" style="z-index: 1; border-radius: 20px;">
+                <div class="card-body p-5 text-center promo-glass">
+                    <span class="badge position-absolute top-0 end-0 m-3 fw-bold px-3 py-2 promo-badge">⚡ NUEVO</span>
+                    
+                    <div class="promo-icon-wrapper mb-4 mx-auto">
+                        <i class="fas fa-compact-disc fa-spin-slow fa-4x text-white"></i>
+                    </div>
+                    
+                    <h2 class="fw-bold promo-title mb-3">Tu Universo Musical, Sin Límites</h2>
+                    <p class="lead text-light mb-5 mx-auto" style="max-width: 600px; font-weight: 300;">
+                        Colecciona tus videos y canciones en <strong>Playlists exclusivas</strong>. 
+                        Disfrútalas en nuestro reproductor inmersivo o descárgalas en alta calidad con un solo clic.
                     </p>
+                    
                     {% if current_user.is_authenticated %}
-                        <a href="{{ url_for('playlists_view') }}" class="btn btn-light btn-lg px-5 fw-bold text-dark rounded-pill">
-                            <i class="fas fa-play me-2"></i>Ir a mis Playlists
+                        <a href="{{ url_for('playlists_view') }}" class="btn promo-btn btn-lg px-5 fw-bold rounded-pill">
+                            <i class="fas fa-play-circle me-2"></i>Entrar a mis Playlists
                         </a>
                     {% else %}
-                        <a href="{{ url_for('register') }}" class="btn btn-light btn-lg px-5 fw-bold text-dark rounded-pill">
-                            <i class="fas fa-user-plus me-2"></i>Regístrate para probar
+                        <a href="{{ url_for('register') }}" class="btn promo-btn btn-lg px-5 fw-bold rounded-pill">
+                            <i class="fas fa-rocket me-2"></i>Regístrate y descúbrelo
                         </a>
                     {% endif %}
                 </div>
             </div>
         </div>
+
+        <style>
+            .promo-banner-wrapper {
+                perspective: 1000px;
+            }
+            .promo-glass {
+                background: rgba(20, 20, 35, 0.6);
+                backdrop-filter: blur(20px);
+                -webkit-backdrop-filter: blur(20px);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                box-shadow: 0 30px 60px rgba(0,0,0,0.3);
+            }
+            .promo-blob {
+                position: absolute;
+                border-radius: 50%;
+                filter: blur(60px);
+                opacity: 0.7;
+                animation: floatBlob 10s infinite alternate ease-in-out;
+            }
+            .blob-1 {
+                width: 300px; height: 300px;
+                background: #ff007f; /* Exotic pink */
+                top: -50px; left: -50px;
+            }
+            .blob-2 {
+                width: 250px; height: 250px;
+                background: #7000ff; /* Deep purple */
+                bottom: -50px; right: -50px;
+                animation-delay: -5s;
+            }
+            .promo-icon-wrapper {
+                width: 100px; height: 100px;
+                background: linear-gradient(135deg, #ff007f, #7000ff);
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-shadow: 0 10px 30px rgba(255, 0, 127, 0.4);
+            }
+            .fa-spin-slow {
+                animation: fa-spin 8s infinite linear;
+            }
+            .promo-title {
+                background: linear-gradient(to right, #ffffff, #ffb3d9);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                letter-spacing: -1px;
+            }
+            .promo-btn {
+                background: linear-gradient(45deg, #ff007f, #7000ff);
+                color: white !important;
+                border: none;
+                transition: all 0.3s ease;
+                box-shadow: 0 10px 20px rgba(112, 0, 255, 0.3);
+            }
+            .promo-btn:hover {
+                transform: translateY(-3px) scale(1.05);
+                box-shadow: 0 15px 30px rgba(255, 0, 127, 0.5);
+            }
+            .promo-badge {
+                background: linear-gradient(45deg, #ff8c00, #ff003c);
+                box-shadow: 0 4px 15px rgba(255, 0, 60, 0.4);
+                color: white;
+                letter-spacing: 1px;
+            }
+            @keyframes floatBlob {
+                0% { transform: translate(0, 0) scale(1); }
+                100% { transform: translate(30px, 50px) scale(1.2); }
+            }
+        </style>
 
         <!-- ==================== ERROR ==================== -->
         <div id="errorContainer" class="mt-4" style="display: none;">

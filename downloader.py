@@ -15,6 +15,8 @@ import os
 import re
 import time
 import shutil
+import hashlib
+import glob
 from datetime import datetime
 from pathlib import Path
 import yt_dlp
@@ -222,8 +224,25 @@ def download_audio(url: str, quality: str = "128", output_path: str = None) -> d
 
     os.makedirs(output_path, exist_ok=True)
 
-    timestamp = int(time.time())
-    output_template = os.path.join(output_path, f"audio_{timestamp}_%(title)s.%(ext)s")
+    url_hash = hashlib.md5(url.encode()).hexdigest()
+    
+    # Fast path: check if we already downloaded this exact audio
+    existing_files = glob.glob(os.path.join(output_path, f"audio_{url_hash}_*.mp3"))
+    if existing_files:
+        downloaded_file = existing_files[0]
+        file_size = os.path.getsize(downloaded_file)
+        return {
+            "success": True,
+            "file_path": downloaded_file,
+            "file_size": file_size,
+            "file_size_formatted": _format_file_size(file_size),
+            "title": os.path.basename(downloaded_file).replace(f"audio_{url_hash}_", "").replace(".mp3", ""),
+            "platform": detect_platform(url),
+            "duration": 0,
+            "filename": os.path.basename(downloaded_file),
+        }
+
+    output_template = os.path.join(output_path, f"audio_{url_hash}_%(title)s.%(ext)s")
 
     # Formato: extraer mejor audio y convertirlo a mp3 (con fallbacks si bestaudio no esta disponible)
     format_spec = "bestaudio[abr<=128]/bestaudio/best/bv+ba" if quality == "128" else "bestaudio/best/bv+ba"
@@ -244,7 +263,7 @@ def download_audio(url: str, quality: str = "128", output_path: str = None) -> d
             info = ydl.extract_info(url, download=True)
 
             # Buscar el archivo .mp3 generado
-            downloaded_file = _find_audio_file(output_path, timestamp)
+            downloaded_file = _find_audio_file(output_path, url_hash)
 
             file_size = os.path.getsize(downloaded_file) if downloaded_file else 0
 
@@ -286,9 +305,25 @@ def download_video(url: str, quality: str = "720p", output_path: str = None) -> 
     # Crear carpeta si no existe
     os.makedirs(output_path, exist_ok=True)
 
-    # Generar nombre de archivo unico con timestamp
-    timestamp = int(time.time())
-    output_template = os.path.join(output_path, f"video_{timestamp}_%(title)s.%(ext)s")
+    url_hash = hashlib.md5(f"{url}_{quality}".encode()).hexdigest()
+
+    # Fast path: check if we already downloaded this exact video at this quality
+    existing_files = glob.glob(os.path.join(output_path, f"video_{url_hash}_*.*"))
+    if existing_files:
+        downloaded_file = existing_files[0]
+        file_size = os.path.getsize(downloaded_file)
+        return {
+            "success": True,
+            "file_path": downloaded_file,
+            "file_size": file_size,
+            "file_size_formatted": _format_file_size(file_size),
+            "title": os.path.basename(downloaded_file).replace(f"video_{url_hash}_", "").rsplit('.', 1)[0],
+            "platform": detect_platform(url),
+            "duration": 0,
+            "filename": os.path.basename(downloaded_file),
+        }
+
+    output_template = os.path.join(output_path, f"video_{url_hash}_%(title)s.%(ext)s")
 
     # Mapear calidad al formato de yt-dlp
     format_spec = QUALITY_MAP.get(quality, "bv*[height<=720]+ba/b[height<=720]")
@@ -305,7 +340,7 @@ def download_video(url: str, quality: str = "720p", output_path: str = None) -> 
             info = ydl.extract_info(url, download=True)
 
             # Buscar el archivo descargado
-            downloaded_file = _find_downloaded_file(output_path, timestamp)
+            downloaded_file = _find_downloaded_file(output_path, url_hash)
 
             # Obtener tamano del archivo
             file_size = os.path.getsize(downloaded_file) if downloaded_file else 0
@@ -384,9 +419,9 @@ def _progress_hook(d):
         print("[OK] Descarga completada. Procesando archivo...")
 
 
-def _find_audio_file(download_folder: str, timestamp: int) -> str:
+def _find_audio_file(download_folder: str, url_hash: str) -> str:
     """Busca el archivo .mp3 generado por la conversion de audio."""
-    prefix = f"audio_{timestamp}_"
+    prefix = f"audio_{url_hash}_"
     for filename in os.listdir(download_folder):
         if filename.endswith(".mp3") and filename.startswith(prefix):
             return os.path.join(download_folder, filename)
@@ -397,18 +432,18 @@ def _find_audio_file(download_folder: str, timestamp: int) -> str:
     return None
 
 
-def _find_downloaded_file(download_folder: str, timestamp: int) -> str:
+def _find_downloaded_file(download_folder: str, url_hash: str) -> str:
     """
-    Busca el archivo descargado mas reciente que coincida con el timestamp.
+    Busca el archivo descargado mas reciente que coincida con el hash.
 
     Args:
         download_folder: Carpeta donde se busco.
-        timestamp: Timestamp usado en el nombre del archivo.
+        url_hash: Hash usado en el nombre del archivo.
 
     Returns:
         Ruta completa del archivo encontrado, o None si no se encuentra.
     """
-    prefix = f"video_{timestamp}_"
+    prefix = f"video_{url_hash}_"
     for filename in os.listdir(download_folder):
         if filename.startswith(prefix):
             return os.path.join(download_folder, filename)

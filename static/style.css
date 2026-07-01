@@ -110,6 +110,11 @@ body.dark-mode .ad-square {
     border-color: #444;
 }
 
+/* Fix text-dark visibility in dark mode, except for yellow backgrounds */
+body.dark-mode .text-dark:not(.bg-warning):not(.btn-warning) {
+    color: var(--text-color) !important;
+}
+
 /* Dark mode toggle button */
 #darkModeToggle {
     cursor: pointer;
@@ -138,6 +143,26 @@ body {
 
 main {
     flex: 1;
+}
+
+/* Custom Navbar Pills */
+.nav-pill-btn {
+    background: var(--light-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    padding: 8px 16px !important;
+    margin: 0 4px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    color: var(--text-color) !important;
+    display: inline-flex;
+    align-items: center;
+}
+.nav-pill-btn:hover {
+    background: var(--card-border);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
 }
 
 /* -------------------- TARJETAS (CARDS) -------------------- */

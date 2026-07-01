@@ -63,12 +63,12 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('index') }}">
+                        <a class="nav-pill-btn text-decoration-none" href="{{ url_for('index') }}">
                             <i class="fas fa-home me-1"></i>Inicio
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('pricing') }}">
+                        <a class="nav-pill-btn text-decoration-none" href="{{ url_for('pricing') }}">
                             <i class="fas fa-tags me-1"></i>Planes
                         </a>
                     </li>
@@ -98,33 +98,33 @@
                     </li>
                     {% if current_user.is_authenticated %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('dashboard') }}">
+                            <a class="nav-pill-btn text-decoration-none" href="{{ url_for('dashboard') }}">
                                 <i class="fas fa-tachometer-alt me-1"></i>Panel
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('playlists_view') }}">
+                            <a class="nav-pill-btn text-decoration-none" href="{{ url_for('playlists_view') }}">
                                 <i class="fas fa-headphones me-1"></i>Mis Playlists
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('logout') }}">
+                            <a class="nav-pill-btn text-decoration-none" href="{{ url_for('logout') }}">
                                 <i class="fas fa-sign-out-alt me-1"></i>Cerrar sesión
                             </a>
                         </li>
                         <li class="nav-item">
-                            <span class="nav-link text-success">
+                            <span class="nav-pill-btn text-decoration-none text-success bg-transparent border-0 shadow-none">
                                 <i class="fas fa-user me-1"></i>{{ current_user.username }}
                             </span>
                         </li>
                     {% else %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('login') }}">
+                            <a class="nav-pill-btn text-decoration-none" href="{{ url_for('login') }}">
                                 <i class="fas fa-sign-in-alt me-1"></i>Iniciar sesión
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link btn btn-outline-light btn-sm px-3 ms-2" href="{{ url_for('register') }}">
+                            <a class="nav-pill-btn text-decoration-none bg-primary text-white border-primary ms-2" href="{{ url_for('register') }}" style="color: white !important;">
                                 <i class="fas fa-user-plus me-1"></i>Registrarse
                             </a>
                         </li>

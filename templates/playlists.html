@@ -806,6 +806,16 @@
                 </button>
             </div>
 
+            ${playlist.items.length > 0 ? `
+            <div class="alert alert-dark d-flex align-items-center mb-4" style="background: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-muted); font-size: 0.85rem;" role="alert">
+                <i class="fas fa-info-circle me-3 fs-5" style="color: var(--primary-color);"></i>
+                <div>
+                    <strong>Nota sobre la reproducción:</strong> La primera vez que reproduces una canción desde un link externo (como YouTube), puede tardar un poco mientras nuestro servidor descarga el audio. <br>
+                    Para evitar estos retrasos y disfrutar como una app nativa, te recomendamos <strong>Instalar SaveWave</strong> desde el menú de inicio y usar el botón de <strong>Descargar Todo</strong>.
+                </div>
+            </div>
+            ` : ''}
+
             <table class="tracklist">
                 <thead>
                     <tr>

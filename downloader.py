@@ -115,10 +115,15 @@ def _get_ydl_opts(extra_opts: dict = None) -> dict:
         "http_headers": {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         },
-        # Usar android como player client evita muchos bloqueos de YouTube sin requerir cookies
-        "extractor_args": {"youtube": {"player_client": ["android", "web"]}},
+        # tv_embedded + mweb evita el bot-check de YouTube sin requerir cookies en la mayoria de casos
+        "extractor_args": {"youtube": {"player_client": ["tv_embedded", "mweb"]}},
     }
-    
+
+    # Usar cookies de YouTube si existe el archivo (necesario en VPS)
+    cookies_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'youtube_cookies.txt')
+    if os.path.exists(cookies_path):
+        opts['cookiefile'] = cookies_path
+
     # Usar ffmpeg local si existe en la carpeta bin
     bin_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'bin')
     if os.path.exists(os.path.join(bin_dir, 'ffmpeg.exe')):

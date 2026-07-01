@@ -244,10 +244,7 @@ def download_audio(url: str, quality: str = "128", output_path: str = None) -> d
             info = ydl.extract_info(url, download=True)
 
             # Buscar el archivo .mp3 generado
-            downloaded_file = _find_downloaded_file(output_path, timestamp)
-            # Si no encuentra con el timestamp, buscar el .mp3 mas reciente
-            if not downloaded_file:
-                downloaded_file = _find_audio_file(output_path, timestamp)
+            downloaded_file = _find_audio_file(output_path, timestamp)
 
             file_size = os.path.getsize(downloaded_file) if downloaded_file else 0
 
@@ -389,8 +386,9 @@ def _progress_hook(d):
 
 def _find_audio_file(download_folder: str, timestamp: int) -> str:
     """Busca el archivo .mp3 generado por la conversion de audio."""
+    prefix = f"audio_{timestamp}_"
     for filename in os.listdir(download_folder):
-        if filename.endswith(".mp3") and filename.startswith("audio_"):
+        if filename.endswith(".mp3") and filename.startswith(prefix):
             return os.path.join(download_folder, filename)
     # Si no encuentra por prefix, buscar cualquier mp3 recien creado
     mp3_files = [f for f in os.listdir(download_folder) if f.endswith(".mp3")]

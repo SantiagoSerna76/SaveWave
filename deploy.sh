@@ -28,8 +28,8 @@ echo -e "${GREEN}========================================${NC}"
 echo -e "${YELLOW}[1/8] Actualizando sistema...${NC}"
 apt update && apt upgrade -y
 
-echo -e "${YELLOW}[2/8] Instalando Python, MySQL, Nginx, Redis...${NC}"
-apt install -y python3 python3-pip python3-venv mysql-server nginx redis-server git curl
+echo -e "${YELLOW}[2/8] Instalando Python, MySQL, Nginx, Redis, FFmpeg...${NC}"
+apt install -y python3 python3-pip python3-venv mysql-server nginx redis-server git curl ffmpeg
 
 # ============================================================
 # 2. CONFIGURAR MYSQL

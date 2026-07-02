@@ -611,7 +611,7 @@ def api_download_audio():
                 "file_size": result["file_size_formatted"],
                 "title": result["title"],
                 "platform": result["platform"],
-                "download_url": url_for("download_file", filename=result["filename"], _external=True),
+                "download_url": url_for("download_file", filename=result["filename"]),
             })
         else:
             return jsonify({"success": False, "error": result["error"]})

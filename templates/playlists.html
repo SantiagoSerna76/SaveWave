@@ -1222,7 +1222,7 @@
 
         currentTrackIndex = index;
         const track = currentPlaylistItems[index];
-        audioPlayer.src = ''; // Clear previous source
+        audioPlayer.removeAttribute('src'); // Clear previous source
 
         // Update player UI immediately
         document.getElementById('playerTitle').textContent = track.title;
@@ -1520,6 +1520,10 @@
 
     // Handle audio loading errors
     audioPlayer.addEventListener('error', function(e) {
+        // Ignore errors when clearing src or actively fetching
+        if (!audioPlayer.src || audioPlayer.src === window.location.href) return;
+        if (currentFetchController !== null) return;
+
         if (currentTrackIndex >= 0) {
             document.getElementById('playerTitle').innerHTML = `<span style="color:#f87171;"><i class="fas fa-exclamation-triangle me-1"></i>Error al cargar el audio. Intenta de nuevo.</span>`;
         }

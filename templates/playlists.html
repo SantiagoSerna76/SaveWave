@@ -1211,7 +1211,10 @@
         // If same track is paused, just resume (only if it has valid data and no error)
         if (currentTrackIndex === index && audioPlayer.src && audioPlayer.paused && currentFetchController === null) {
             if (audioPlayer.readyState >= 1 && !audioPlayer.error) {
-                audioPlayer.play().then(() => { isPlaying = true; updatePlayPauseUI(); }).catch(() => {});
+                audioPlayer.play().then(() => { isPlaying = true; updatePlayPauseUI(); }).catch((err) => {
+                    console.error("Play error:", err);
+                    document.getElementById('playerTitle').innerHTML = '<span style="color:#f87171;"><i class="fas fa-exclamation-triangle me-1"></i>Error al reproducir el archivo</span>';
+                });
                 return;
             }
             // If it had an error or wasn't loaded, let it fall through and try fetching again
@@ -1358,7 +1361,10 @@
             audioPlayer.play().then(() => {
                 isPlaying = true;
                 updatePlayPauseUI();
-            }).catch(() => {});
+            }).catch((err) => {
+                console.error("Play error:", err);
+                document.getElementById('playerTitle').innerHTML = '<span style="color:#f87171;"><i class="fas fa-exclamation-triangle me-1"></i>Error al reproducir el archivo</span>';
+            });
         } else {
             audioPlayer.pause();
             isPlaying = false;

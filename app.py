@@ -1076,6 +1076,40 @@ def api_playlist_upload():
     })
 
 # ============================================================
+# BACKGROUND CLEANUP TASK
+# ============================================================
+import threading
+import glob
+
+def cleanup_old_files():
+    """Borra archivos en DOWNLOAD_FOLDER que tengan mas de 7 dias de antiguedad"""
+    while True:
+        try:
+            now = time.time()
+            cutoff = now - (7 * 24 * 60 * 60) # 7 dias en segundos
+            os.makedirs(Config.DOWNLOAD_FOLDER, exist_ok=True)
+            files = glob.glob(os.path.join(Config.DOWNLOAD_FOLDER, '*'))
+            for f in files:
+                if os.path.isfile(f):
+                    # check last modified time
+                    if os.path.getmtime(f) < cutoff:
+                        try:
+                            os.remove(f)
+                            print(f"[CLEANUP] Archivo borrado por antiguedad: {f}")
+                        except Exception as e:
+                            print(f"[CLEANUP] Error borrando {f}: {e}")
+        except Exception as e:
+            print(f"[CLEANUP] Error en hilo de limpieza: {e}")
+        
+        # Dormir por 12 horas antes de volver a revisar
+        time.sleep(12 * 60 * 60)
+
+# Iniciar el hilo daemonico para que no bloquee el cierre de la app
+cleanup_thread = threading.Thread(target=cleanup_old_files, daemon=True)
+cleanup_thread.start()
+
+
+# ============================================================
 # INICIO DE LA APLICACION
 # ============================================================
 

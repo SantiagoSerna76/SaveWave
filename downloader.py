@@ -267,8 +267,8 @@ def download_audio(url: str, quality: str = "128", output_path: str = None) -> d
     if existing_files:
         downloaded_file = existing_files[0]
         file_size = os.path.getsize(downloaded_file)
-        if file_size < 1024:
-            # File is corrupt or empty, delete it to force re-download
+        if file_size < 100 * 1024:
+            # File is corrupt or empty (under 100KB), delete it to force re-download
             os.remove(downloaded_file)
         else:
             return {

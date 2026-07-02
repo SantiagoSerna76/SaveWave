@@ -5,15 +5,25 @@
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-lg-8">
-        <!-- ==================== HERO / TITULO (ELEGANT SAAS UI) ==================== -->
-        <div class="text-center py-5 mt-3 mb-4">
-            <h1 class="display-4 fw-bold mb-3 hero-title" style="letter-spacing: -1.5px;">
-                Descarga de video <span class="text-primary">sin límites</span>
-            </h1>
-            <p class="lead mb-4 mx-auto" style="max-width: 600px; color: var(--text-muted); font-size: 1.15rem; font-weight: 400;">
-                Guarda videos y audio en alta calidad desde cualquier plataforma. 
-                Rápido, seguro y diseñado para profesionales.
-            </p>
+        <!-- ==================== HERO / TITULO (PREMIUM SAAS UI) ==================== -->
+        <div class="text-center position-relative py-5 mt-4 mb-5 hero-section-wrapper">
+            <!-- Glow background effect -->
+            <div class="position-absolute top-50 start-50 translate-middle" style="width: 300px; height: 300px; background: radial-gradient(circle, rgba(102,126,234,0.3) 0%, rgba(118,75,162,0) 70%); z-index: 0; pointer-events: none; mix-blend-mode: screen;"></div>
+            
+            <div class="position-relative" style="z-index: 1;">
+                <div class="badge rounded-pill mb-3 px-3 py-2" style="background: rgba(102,126,234,0.1); border: 1px solid rgba(102,126,234,0.2); color: #667eea; font-weight: 600; letter-spacing: 1px; font-size: 0.75rem;">
+                    <i class="fas fa-bolt me-1 text-warning"></i> LA FORMA MÁS RÁPIDA DE DESCARGAR
+                </div>
+                
+                <h1 class="display-3 fw-bold mb-3 hero-title" style="letter-spacing: -2px; line-height: 1.1;">
+                    Todo el internet,<br>
+                    <span style="background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">en tu bolsillo.</span>
+                </h1>
+                
+                <p class="lead mb-4 mx-auto" style="max-width: 650px; color: var(--text-muted); font-size: 1.2rem; font-weight: 400; line-height: 1.6;">
+                    Guarda videos y música en calidad original desde <strong style="color: var(--text-color);">YouTube, Instagram, TikTok</strong> y más de 1,000 plataformas. Sin límites, sin instalación.
+                </p>
+            </div>
         </div>
 
         <!-- ==================== FORMULARIO DE DESCARGA ==================== -->
@@ -38,21 +48,21 @@
                     <!-- SINGLE DOWNLOAD -->
                     <div class="tab-pane fade show active" id="single" role="tabpanel">
                         <form id="downloadForm" method="POST">
-                            <div class="mb-2">
-                                <div class="input-group input-group-lg" style="box-shadow: var(--shadow-sm); border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
-                                    <span class="input-group-text bg-transparent border-0 text-muted ps-4" style="background: rgba(0,0,0,0.2) !important;">
-                                        <i class="fas fa-link"></i>
+                            <div class="mb-2 position-relative url-input-wrapper">
+                                <div class="input-group input-group-lg" style="box-shadow: var(--shadow-lg); border-radius: 16px; overflow: hidden; border: 2px solid var(--primary-color); background: var(--card-bg);">
+                                    <span class="input-group-text bg-transparent border-0 ps-4" style="color: var(--primary-color);">
+                                        <i class="fas fa-link fa-lg"></i>
                                     </span>
                                     <input
                                         type="url"
-                                        class="form-control border-0 px-3"
+                                        class="form-control border-0 px-3 py-4"
                                         id="urlInput"
-                                        placeholder="Pega el enlace del video aquí..."
-                                        style="box-shadow: none; background: rgba(0,0,0,0.2); color: white;"
+                                        placeholder="Pega el enlace del video o audio aquí..."
+                                        style="box-shadow: none; background: transparent; color: var(--text-color); font-size: 1.1rem; font-weight: 500;"
                                         required
                                     >
-                                    <button type="submit" class="btn btn-primary px-5 fw-semibold border-0 btn-pulse" id="submitBtn">
-                                        Iniciar
+                                    <button type="submit" class="btn btn-primary px-5 fw-bold fs-5 border-0 btn-pulse" id="submitBtn" style="border-radius: 0 14px 14px 0;">
+                                        <i class="fas fa-arrow-right"></i>
                                     </button>
                                 </div>
                             </div>
@@ -93,10 +103,10 @@
                         </a>
                     </div>
                     {% if ads_enabled %}
-                    <div class="ad-inline ms-3">
-                        <div class="ad-label" style="font-size: 0.55rem;">Ad</div>
-                        <ins class="adsbygoogle"
-                             style="display:inline-block;width:120px;height:30px"
+                    <div class="ad-inline mt-4 pt-3 border-top w-100 text-center" style="border-color: var(--card-border) !important;">
+                        <span class="badge bg-secondary mb-2" style="font-size: 0.6rem; opacity: 0.6;">Patrocinado</span>
+                        <ins class="adsbygoogle mx-auto"
+                             style="display:inline-block;width:320px;height:50px"
                              data-ad-client="{{ adsense_client }}"
                              data-ad-slot="1111111111"></ins>
                         <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
@@ -530,15 +540,14 @@
 
         <!-- ==================== ANUNCIO INFERIOR ==================== -->
         {% if ads_enabled %}
-        <div class="text-center mt-4 py-3 bg-light rounded">
-            <small class="text-muted">Publicidad</small>
-            <div class="ad-container mx-auto" style="max-width: 728px; min-height: 90px;">
+        <div class="text-center mt-5 py-4 rounded glass-card" style="border: 1px solid var(--card-border);">
+            <div class="badge bg-secondary mb-3" style="font-size: 0.7rem; opacity: 0.6; letter-spacing: 1px;">ESPACIO PUBLICITARIO</div>
+            <div class="ad-container mx-auto" style="max-width: 728px; height: 90px; overflow: hidden;">
                 <ins class="adsbygoogle"
-                     style="display:block"
+                     style="display:inline-block;width:728px;height:90px"
                      data-ad-client="{{ adsense_client }}"
                      data-ad-slot="0987654321"
-                     data-ad-format="horizontal"
-                     data-full-width-responsive="true"></ins>
+                     data-ad-format="horizontal"></ins>
                 <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
             </div>
         </div>

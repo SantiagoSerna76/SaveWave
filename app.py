@@ -622,7 +622,7 @@ def api_download_audio():
 def debug_download():
     import traceback
     try:
-        test_url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+        test_url = request.args.get("url", "https://www.youtube.com/watch?v=dQw4w9WgXcQ")
         output = []
         output.append(f"Testing URL: {test_url}")
         

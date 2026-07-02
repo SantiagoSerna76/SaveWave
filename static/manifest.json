@@ -1,12 +1,14 @@
 {
   "name": "SaveWave",
   "short_name": "SaveWave",
-  "description": "Descarga de videos y audios de múltiples plataformas.",
-  "start_url": "/",
+  "description": "Descarga y escucha música offline desde múltiples plataformas.",
+  "start_url": "/playlists",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#1e1e2e",
   "theme_color": "#11111b",
   "orientation": "portrait",
+  "categories": ["music", "entertainment"],
   "icons": [
     {
       "src": "/static/icon-192.png",

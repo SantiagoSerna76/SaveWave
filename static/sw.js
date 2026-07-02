@@ -1,12 +1,18 @@
-const CACHE_NAME = 'savewave-v5';
+const CACHE_NAME = 'savewave-v6';
 const ASSETS_TO_CACHE = [
     '/',
     '/playlists',
+    '/manifest.json',
     '/static/style.css',
     '/static/script.js',
     '/static/Savewave.png',
     '/static/icon-192.png',
-    '/static/icon-512.png'
+    '/static/icon-512.png',
+    // CDN dependencies (critical for offline rendering)
+    'https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css',
+    'https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css',
+    'https://code.jquery.com/jquery-3.7.1.min.js'
 ];
 
 // Install Service Worker and cache static assets

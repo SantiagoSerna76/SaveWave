@@ -32,58 +32,118 @@
     <!-- Bootstrap 5 + Font Awesome -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <!-- Estilos personalizados (no reemplaza Bootstrap, lo complementa) -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=4">
+    <!-- Estilos personalizados -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=5">
+    <style>
+    /* =============================================
+       NAVBAR PREMIUM — visible pill buttons
+       ============================================= */
+    .navbar {
+        background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%) !important;
+        border-bottom: 1px solid rgba(255,255,255,0.07) !important;
+        padding: 10px 0;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    }
+    .navbar-brand { font-size: 1.1rem; font-weight: 800; color: #fff !important; }
+    .nav-link-main {
+        color: rgba(255,255,255,0.7) !important;
+        font-weight: 500; font-size: 0.9rem;
+        padding: 6px 14px !important;
+        border-radius: 8px;
+        transition: all 0.2s;
+        display: flex; align-items: center; gap: 6px;
+        text-decoration: none;
+    }
+    .nav-link-main:hover { color: #fff !important; background: rgba(255,255,255,0.08); }
+    .btn-nav-pill {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 7px 16px; border-radius: 20px;
+        font-size: 0.85rem; font-weight: 600;
+        border: none; cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+    .btn-nav-pill:hover { transform: translateY(-1px); text-decoration: none; }
+    .btn-nav-playlists { background: rgba(99,102,241,0.2); color: #a5b4fc; border: 1px solid rgba(99,102,241,0.4); }
+    .btn-nav-playlists:hover { background: rgba(99,102,241,0.35); color: #c7d2fe; box-shadow: 0 4px 15px rgba(99,102,241,0.3); }
+    .btn-nav-dashboard { background: rgba(20,184,166,0.15); color: #5eead4; border: 1px solid rgba(20,184,166,0.3); }
+    .btn-nav-dashboard:hover { background: rgba(20,184,166,0.25); color: #99f6e4; }
+    .btn-nav-login { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.85); border: 1px solid rgba(255,255,255,0.2); }
+    .btn-nav-login:hover { background: rgba(255,255,255,0.12); color: #fff; }
+    .btn-nav-register { background: linear-gradient(135deg, #10b981, #059669); color: #fff !important; border: none; box-shadow: 0 4px 12px rgba(16,185,129,0.3); }
+    .btn-nav-register:hover { box-shadow: 0 6px 18px rgba(16,185,129,0.4); color: #fff !important; }
+    .btn-nav-logout { background: rgba(239,68,68,0.1); color: rgba(239,68,68,0.8); border: 1px solid rgba(239,68,68,0.25); }
+    .btn-nav-logout:hover { background: rgba(239,68,68,0.2); color: #f87171; }
+    .btn-nav-app { background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none; }
+    .btn-nav-theme {
+        background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.7);
+        border: 1px solid rgba(255,255,255,0.15);
+        width: 36px; height: 36px; padding: 0;
+        justify-content: center; border-radius: 50%;
+    }
+    .btn-nav-theme:hover { background: rgba(255,255,255,0.14); color: #fff; }
+    /* Light mode */
+    body.light-mode { background-color: #f0f2f8 !important; color: #1e1e2e !important; }
+    body.light-mode .navbar { background: linear-gradient(135deg, #e8eaf6 0%, #c5cae9 100%) !important; border-bottom-color: rgba(0,0,0,0.1) !important; }
+    body.light-mode .navbar-brand { color: #1e1e2e !important; }
+    body.light-mode .nav-link-main { color: rgba(0,0,0,0.65) !important; }
+    body.light-mode .nav-link-main:hover { color: #1e1e2e !important; background: rgba(0,0,0,0.06); }
+    body.light-mode .glass-card { background: rgba(255,255,255,0.9) !important; border-color: rgba(0,0,0,0.1) !important; }
+    body.light-mode .btn-nav-theme { background: rgba(0,0,0,0.08); color: #555; border-color: rgba(0,0,0,0.15); }
+    </style>
 
     {% block extra_head %}{% endblock %}
 </head>
 <body>
     <!-- ==================== NAVBAR ==================== -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container">
             <a class="navbar-brand fw-bold" href="{{ url_for('index') }}">
-                <img src="{{ url_for('static', filename='Savewave.png') }}" alt="SaveWave" height="32" class="me-2" style="border-radius: 6px;">
+                <img src="{{ url_for('static', filename='Savewave.png') }}" alt="SaveWave" height="30" class="me-2" style="border-radius: 6px;">
                 SaveWave
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" style="background:rgba(255,255,255,0.1);">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
+                <!-- Left nav links -->
+                <ul class="navbar-nav me-auto gap-1">
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('index') }}"><i class="fas fa-home me-1"></i>Inicio</a>
+                        <a class="nav-link-main" href="{{ url_for('index') }}"><i class="fas fa-home"></i>Inicio</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('pricing') }}"><i class="fas fa-tags me-1"></i>Planes</a>
+                        <a class="nav-link-main" href="{{ url_for('pricing') }}"><i class="fas fa-tags"></i>Planes</a>
                     </li>
                 </ul>
-                <ul class="navbar-nav align-items-center">
+                <!-- Right action buttons -->
+                <ul class="navbar-nav align-items-center gap-2">
                     <li class="nav-item" id="installAppContainer">
-                        <button id="installAppBtn" class="btn btn-sm btn-premium me-2 px-3 fw-semibold" style="display:none;">
-                            <i class="fas fa-mobile-alt me-1"></i>App
+                        <button id="installAppBtn" class="btn-nav-pill btn-nav-app" style="display:none;">
+                            <i class="fas fa-mobile-alt"></i>App
                         </button>
                     </li>
                     <li class="nav-item">
-                        <button id="darkModeToggle" class="btn btn-sm btn-outline-light me-2" title="Modo oscuro">
-                            <i class="fas fa-moon"></i>
+                        <button id="darkModeToggle" class="btn-nav-pill btn-nav-theme" title="Cambiar tema">
+                            <i class="fas fa-sun"></i>
                         </button>
                     </li>
                     {% if current_user.is_authenticated %}
                         <li class="nav-item">
-                            <a class="nav-link nav-pill-btn" href="{{ url_for('playlists_view') }}"><i class="fas fa-headphones me-1"></i>Playlists</a>
+                            <a class="btn-nav-pill btn-nav-playlists" href="{{ url_for('playlists_view') }}"><i class="fas fa-headphones"></i>Playlists</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link nav-pill-btn" href="{{ url_for('dashboard') }}"><i class="fas fa-user me-1"></i>{{ current_user.username }}</a>
+                            <a class="btn-nav-pill btn-nav-dashboard" href="{{ url_for('dashboard') }}"><i class="fas fa-user"></i>{{ current_user.username }}</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link nav-pill-btn" href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt me-1"></i>Salir</a>
+                            <a class="btn-nav-pill btn-nav-logout" href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i>Salir</a>
                         </li>
                     {% else %}
                         <li class="nav-item">
-                            <a class="nav-link nav-pill-btn" href="{{ url_for('login') }}"><i class="fas fa-sign-in-alt me-1"></i>Entrar</a>
+                            <a class="btn-nav-pill btn-nav-login" href="{{ url_for('login') }}"><i class="fas fa-sign-in-alt"></i>Entrar</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link btn btn-success btn-sm text-white px-3 ms-2" href="{{ url_for('register') }}"><i class="fas fa-user-plus me-1"></i>Crear cuenta</a>
+                            <a class="btn-nav-pill btn-nav-register" href="{{ url_for('register') }}"><i class="fas fa-user-plus"></i>Crear cuenta</a>
                         </li>
                     {% endif %}
                 </ul>
@@ -110,31 +170,31 @@
     </main>
 
     <!-- Footer -->
-    <footer class="bg-dark text-light py-4 mt-5">
+    <footer class="py-4 mt-5" style="background:#0f0f1a; border-top:1px solid rgba(255,255,255,0.06);">
         <div class="container">
             <div class="row">
                 <div class="col-md-6">
-                    <h5><img src="{{ url_for('static', filename='Savewave.png') }}" alt="SaveWave" height="24" class="me-2" style="border-radius: 4px;">SaveWave</h5>
-                    <p class="text-muted small">Descarga videos de YouTube, Instagram y TikTok. Solo para uso personal.</p>
+                    <h5 class="text-white"><img src="{{ url_for('static', filename='Savewave.png') }}" alt="SaveWave" height="24" class="me-2" style="border-radius: 4px;">SaveWave</h5>
+                    <p class="small" style="color:rgba(255,255,255,0.4);">Descarga videos de YouTube, Instagram y TikTok. Solo para uso personal.</p>
                 </div>
                 <div class="col-md-3">
-                    <h6>Enlaces</h6>
+                    <h6 class="text-white">Enlaces</h6>
                     <ul class="list-unstyled small">
-                        <li><a href="{{ url_for('index') }}" class="text-light text-decoration-none">Inicio</a></li>
-                        <li><a href="{{ url_for('pricing') }}" class="text-light text-decoration-none">Planes</a></li>
-                        <li><a href="{{ url_for('login') }}" class="text-light text-decoration-none">Entrar</a></li>
+                        <li><a href="{{ url_for('index') }}" class="text-decoration-none" style="color:rgba(255,255,255,0.5);">Inicio</a></li>
+                        <li><a href="{{ url_for('pricing') }}" class="text-decoration-none" style="color:rgba(255,255,255,0.5);">Planes</a></li>
+                        <li><a href="{{ url_for('login') }}" class="text-decoration-none" style="color:rgba(255,255,255,0.5);">Entrar</a></li>
                     </ul>
                 </div>
                 <div class="col-md-3">
-                    <h6>Legal</h6>
+                    <h6 class="text-white">Legal</h6>
                     <ul class="list-unstyled small">
-                        <li><a href="{{ url_for('terms') }}" class="text-light text-decoration-none">Terminos</a></li>
-                        <li><a href="{{ url_for('privacy') }}" class="text-light text-decoration-none">Privacidad</a></li>
+                        <li><a href="{{ url_for('terms') }}" class="text-decoration-none" style="color:rgba(255,255,255,0.5);">Terminos</a></li>
+                        <li><a href="{{ url_for('privacy') }}" class="text-decoration-none" style="color:rgba(255,255,255,0.5);">Privacidad</a></li>
                     </ul>
                 </div>
             </div>
-            <hr class="border-secondary">
-            <p class="text-center text-muted small mb-0">&copy; 2026 SaveWave</p>
+            <hr style="border-color:rgba(255,255,255,0.06);">
+            <p class="text-center small mb-0" style="color:rgba(255,255,255,0.3);">&copy; 2026 SaveWave</p>
         </div>
     </footer>
 
@@ -142,11 +202,49 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="{{ url_for('static', filename='script.js') }}"></script>
     <script>
+    // ---- PWA Service Worker ----
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('/sw.js').catch(() => {});
         });
     }
+
+    // ---- Light / Dark Mode Toggle ----
+    (function() {
+        const toggle = document.getElementById('darkModeToggle');
+        const icon = toggle ? toggle.querySelector('i') : null;
+        // App is dark by default. Toggling adds 'light-mode' class.
+        const isLight = localStorage.getItem('lightMode') === 'true';
+        if (isLight) {
+            document.body.classList.add('light-mode');
+            if (icon) { icon.className = 'fas fa-moon'; }
+        }
+        if (toggle) {
+            toggle.addEventListener('click', function() {
+                const nowLight = document.body.classList.toggle('light-mode');
+                localStorage.setItem('lightMode', nowLight);
+                if (icon) { icon.className = nowLight ? 'fas fa-moon' : 'fas fa-sun'; }
+            });
+        }
+
+        // ---- Install App ----
+        let deferredPrompt;
+        const installBtn = document.getElementById('installAppBtn');
+        if (installBtn) installBtn.style.display = 'inline-flex';
+        window.addEventListener('beforeinstallprompt', function(e) {
+            e.preventDefault();
+            deferredPrompt = e;
+        });
+        if (installBtn) {
+            installBtn.addEventListener('click', async function() {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    await deferredPrompt.userChoice;
+                    deferredPrompt = null;
+                }
+            });
+        }
+    })();
     </script>
     {% block extra_scripts %}{% endblock %}
 </body>

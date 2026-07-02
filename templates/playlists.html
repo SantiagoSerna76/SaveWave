@@ -664,18 +664,75 @@
     .offline-progress {
         width: 100%;
         height: 6px;
-        background: var(--card-border);
+        background: rgba(255,255,255,0.1);
         border-radius: 3px;
         overflow: hidden;
         margin-top: 12px;
     }
     .offline-progress-fill {
         height: 100%;
-        background: linear-gradient(90deg, var(--primary-color), var(--success-color));
+        background: linear-gradient(90deg, #6366f1, #10b981);
         border-radius: 3px;
         transition: width 0.3s ease;
         width: 0%;
     }
+
+    /* ---- INFO NOTE ---- */
+    .info-note {
+        background: rgba(99,102,241,0.08);
+        border: 1px solid rgba(99,102,241,0.2);
+        border-radius: 12px;
+        padding: 14px 18px;
+        color: rgba(255,255,255,0.7);
+        font-size: 0.85rem;
+        margin-bottom: 24px;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    .info-note .info-icon { color: #6366f1; font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
+    .info-note strong { color: #a5b4fc; }
+
+    /* =========================================
+       LIGHT MODE OVERRIDES FOR PLAYLISTS
+       ========================================= */
+    body.light-mode .playlist-main { background: #f8f9fa; }
+    body.light-mode .playlist-sidebar { background: #ffffff; border-right-color: rgba(0,0,0,0.08); }
+    body.light-mode .sidebar-header h5 { color: #1e1e2e; }
+    body.light-mode .sidebar-item { color: #4b5563; }
+    body.light-mode .sidebar-item:hover { background: rgba(0,0,0,0.04); color: #1e1e2e; }
+    body.light-mode .sidebar-item-text { color: #1e1e2e; }
+    body.light-mode .btn-new-playlist { border-color: rgba(0,0,0,0.2); color: #4b5563; background: #fff; }
+    body.light-mode .btn-new-playlist:hover { border-color: #6366f1; color: #6366f1; background: rgba(99,102,241,0.05); }
+    body.light-mode .pl-header { border-bottom-color: rgba(0,0,0,0.08); }
+    body.light-mode .pl-meta h1 { color: #1e1e2e; }
+    body.light-mode .pl-meta .pl-stats { color: #6b7280; }
+    body.light-mode .btn-action { border-color: rgba(0,0,0,0.1); background: #fff; color: #1e1e2e; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+    body.light-mode .btn-action:hover { border-color: rgba(0,0,0,0.2); background: #f9fafb; }
+    body.light-mode .tracklist thead th { border-bottom-color: rgba(0,0,0,0.08); color: #6b7280; }
+    body.light-mode .track-title { color: #1e1e2e; }
+    body.light-mode .track-row:hover { background-color: rgba(0,0,0,0.03); }
+    body.light-mode .track-row.playing { background-color: rgba(99,102,241,0.1) !important; }
+    body.light-mode .track-row.playing .track-title { color: #4f46e5 !important; }
+    body.light-mode .track-thumb { background: rgba(0,0,0,0.05); }
+    body.light-mode .track-action-btn:hover { color: #1e1e2e; background: rgba(0,0,0,0.05); }
+    body.light-mode .sticky-player { background: #ffffff; border-top-color: rgba(0,0,0,0.08); box-shadow: 0 -4px 20px rgba(0,0,0,0.05); }
+    body.light-mode .player-track-name { color: #1e1e2e; }
+    body.light-mode .p-btn { color: #4b5563; }
+    body.light-mode .p-btn:hover { color: #1e1e2e; }
+    body.light-mode .p-btn-play { color: #fff; }
+    body.light-mode .prog-bar-track { background-color: rgba(0,0,0,0.1); }
+    body.light-mode .modal-content.pl-modal { background: #ffffff; color: #1e1e2e; border-color: rgba(0,0,0,0.1); }
+    body.light-mode .pl-modal .modal-header, body.light-mode .pl-modal .modal-footer { border-color: rgba(0,0,0,0.1); }
+    body.light-mode .pl-modal .btn-close { filter: none; }
+    body.light-mode .pl-modal .form-control { background: #fff; border-color: rgba(0,0,0,0.15); color: #1e1e2e; }
+    body.light-mode .pl-modal .btn-cancel { background: #fff; border-color: rgba(0,0,0,0.15); color: #4b5563; }
+    body.light-mode .pl-modal .btn-cancel:hover { background: #f9fafb; color: #1e1e2e; border-color: rgba(0,0,0,0.3); }
+    body.light-mode .dl-option { background: #fff; border-color: rgba(0,0,0,0.1); color: #1e1e2e; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
+    body.light-mode .dl-option-text h6 { color: #1e1e2e; }
+    body.light-mode .info-note { background: rgba(99,102,241,0.05); border-color: rgba(99,102,241,0.2); color: #4f46e5; }
+    body.light-mode .info-note strong { color: #4338ca; }
+    body.light-mode .empty-state h2 { color: #1e1e2e; }
 
     /* ---- MOBILE ---- */
     .mobile-menu-toggle {
@@ -1142,10 +1199,20 @@
 
     async function playTrack(index) {
         if (index < 0 || index >= currentPlaylistItems.length) return;
-        
-        // Prevent double loading the exact same track if it's already playing or loading
-        if (currentTrackIndex === index && currentFetchController !== null) return;
-        if (currentTrackIndex === index && !audioPlayer.paused) return;
+
+        // If same track already playing, just toggle pause/play
+        if (currentTrackIndex === index && audioPlayer.src && !audioPlayer.paused) {
+            audioPlayer.pause();
+            isPlaying = false;
+            updatePlayPauseUI();
+            return;
+        }
+
+        // If same track is paused, just resume
+        if (currentTrackIndex === index && audioPlayer.src && audioPlayer.paused && currentFetchController === null) {
+            audioPlayer.play().then(() => { isPlaying = true; updatePlayPauseUI(); }).catch(() => {});
+            return;
+        }
 
         // Abort previous fetch if any
         if (currentFetchController) {
@@ -1155,6 +1222,7 @@
 
         currentTrackIndex = index;
         const track = currentPlaylistItems[index];
+        audioPlayer.src = ''; // Clear previous source
 
         // Update player UI immediately
         document.getElementById('playerTitle').textContent = track.title;
@@ -1448,6 +1516,27 @@
         document.getElementById('progressBar').style.width = pct + '%';
         document.getElementById('timeCurrent').textContent = formatTime(audioPlayer.currentTime);
         document.getElementById('timeTotal').textContent = formatTime(audioPlayer.duration);
+    });
+
+    // Handle audio loading errors
+    audioPlayer.addEventListener('error', function(e) {
+        if (currentTrackIndex >= 0) {
+            document.getElementById('playerTitle').innerHTML = `<span style="color:#f87171;"><i class="fas fa-exclamation-triangle me-1"></i>Error al cargar el audio. Intenta de nuevo.</span>`;
+        }
+        isPlaying = false;
+        currentFetchController = null;
+        updatePlayPauseUI();
+    });
+
+    // Handle when audio is ready to play (canplay)
+    audioPlayer.addEventListener('canplay', function() {
+        if (currentTrackIndex >= 0 && currentPlaylistItems[currentTrackIndex]) {
+            const track = currentPlaylistItems[currentTrackIndex];
+            if (document.getElementById('playerTitle').innerHTML.includes('spinner-border') ||
+                document.getElementById('playerTitle').innerHTML.includes('fa-spinner')) {
+                document.getElementById('playerTitle').textContent = track.title;
+            }
+        }
     });
 
     // ========== AUTO-PLAY NEXT ON TRACK END ==========

@@ -659,6 +659,44 @@ def debug_download():
     except Exception as e:
         return jsonify({"status": "exception", "error": str(e), "trace": traceback.format_exc(), "log": output})
 
+@app.route("/api/clear-cache", methods=["GET"])
+def clear_cache():
+    import glob, os
+    files = glob.glob(os.path.join(Config.DOWNLOAD_FOLDER, "*.mp3"))
+    deleted = 0
+    for f in files:
+        try:
+            os.remove(f)
+            deleted += 1
+        except:
+            pass
+    return f"Se eliminaron {deleted} archivos de la cache."
+
+@app.route("/api/inspect-file", methods=["GET"])
+def inspect_file():
+    import glob, os, base64
+    url = request.args.get("url", "")
+    if not url: return "No URL"
+    import hashlib
+    url_hash = hashlib.md5(url.encode()).hexdigest()
+    files = glob.glob(os.path.join(Config.DOWNLOAD_FOLDER, f"audio_{url_hash}_*.mp3"))
+    if not files: return "No file found"
+    
+    file_path = files[0]
+    size = os.path.getsize(file_path)
+    
+    try:
+        with open(file_path, "rb") as f:
+            head = f.read(500)
+        return jsonify({
+            "file": os.path.basename(file_path),
+            "size": size,
+            "head_hex": head.hex(),
+            "head_ascii": repr(head)
+        })
+    except Exception as e:
+        return str(e)
+
 @app.route("/api/download-multiple", methods=["POST"])
 @login_required
 @limiter.limit("3 per minute")

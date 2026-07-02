@@ -759,6 +759,14 @@
     }
     .sidebar-overlay.show { display: block; }
 
+    /* ---- MOBILE FULLSCREEN PLAYER ---- */
+    .mobile-expand-btn {
+        display: none;
+    }
+    .mobile-collapse-btn {
+        display: none;
+    }
+
     @media (max-width: 768px) {
         .mobile-menu-toggle { display: flex; align-items: center; gap: 8px; }
         .playlist-sidebar {
@@ -779,12 +787,177 @@
         .pl-header { flex-direction: column; align-items: center; text-align: center; gap: 15px; margin-bottom: 20px; padding-bottom: 20px; }
         .pl-cover { width: 140px; height: 140px; }
         .pl-meta h1 { font-size: 1.6rem; }
-        .sticky-player { height: auto; padding: 10px 12px; flex-direction: column; gap: 6px; }
-        .player-left { width: 100%; }
-        .player-center { width: 100%; }
+        .pl-controls { flex-wrap: wrap; justify-content: center; gap: 10px; }
+        .track-actions { opacity: 1; }
+
+        /* Mini player bar (default mobile state) */
+        .sticky-player {
+            height: 64px;
+            padding: 0 12px;
+            flex-direction: row;
+            flex-wrap: nowrap;
+            gap: 0;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .player-left {
+            width: auto;
+            flex: 1;
+            min-width: 0;
+            gap: 10px;
+        }
+        .player-center { display: none; }
         .player-right { display: none; }
-        .player-track-name { max-width: calc(100vw - 80px); }
-        .player-btns { gap: 16px; }
+        .player-cover-img {
+            width: 42px;
+            height: 42px;
+            border-radius: 6px;
+        }
+        .player-track-name {
+            max-width: calc(100vw - 150px);
+            font-size: 0.85rem;
+        }
+        .player-track-artist {
+            font-size: 0.7rem;
+        }
+        .mobile-expand-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 1.3rem;
+            padding: 8px;
+            margin-left: 4px;
+        }
+
+        /* ========== FULLSCREEN EXPANDED STATE ========== */
+        .sticky-player.expanded {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh;
+            border-radius: 0;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            padding: 0;
+            cursor: default;
+            background: linear-gradient(180deg, #1a1a3e 0%, #0d0d1a 60%, #000 100%);
+            overflow-y: auto;
+            z-index: 9999;
+        }
+
+        .sticky-player.expanded .player-left {
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            gap: 0;
+            padding: 0 24px;
+            margin-top: 16px;
+        }
+
+        .sticky-player.expanded .player-cover-img {
+            width: 85vw;
+            max-width: 340px;
+            height: auto;
+            aspect-ratio: 1/1;
+            border-radius: 14px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+            margin-bottom: 28px;
+        }
+
+        .sticky-player.expanded .player-left > div {
+            text-align: center;
+            width: 100%;
+            overflow: visible;
+        }
+
+        .sticky-player.expanded .player-track-name {
+            max-width: 100%;
+            font-size: 1.25rem;
+            font-weight: 700;
+            white-space: normal;
+            line-height: 1.4;
+            margin-bottom: 4px;
+        }
+
+        .sticky-player.expanded .player-track-artist {
+            font-size: 0.9rem;
+            color: rgba(255,255,255,0.5);
+            margin-bottom: 24px;
+        }
+
+        .sticky-player.expanded .player-center {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            padding: 0 24px;
+            order: 3;
+        }
+
+        .sticky-player.expanded .player-progress-row {
+            margin-bottom: 20px;
+        }
+
+        .sticky-player.expanded .prog-bar-track {
+            height: 6px;
+        }
+
+        .sticky-player.expanded .player-btns {
+            gap: 32px;
+            margin-bottom: 12px;
+            justify-content: center;
+        }
+
+        .sticky-player.expanded .p-btn {
+            font-size: 1.4rem;
+            color: rgba(255,255,255,0.7);
+        }
+        .sticky-player.expanded .p-btn:hover,
+        .sticky-player.expanded .p-btn:active {
+            color: #fff;
+        }
+
+        .sticky-player.expanded .p-btn-play {
+            width: 64px;
+            height: 64px;
+            font-size: 1.5rem;
+            background: #fff;
+            color: #000;
+            box-shadow: 0 8px 30px rgba(255,255,255,0.15);
+        }
+
+        .sticky-player.expanded .player-right {
+            display: none;
+        }
+
+        .sticky-player.expanded .mobile-expand-btn {
+            display: none;
+        }
+
+        /* Collapse bar at top of fullscreen */
+        .mobile-collapse-btn {
+            display: none;
+        }
+        .sticky-player.expanded .mobile-collapse-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 16px 0 8px;
+            background: none;
+            border: none;
+            color: rgba(255,255,255,0.5);
+            font-size: 1.5rem;
+            order: -1;
+        }
+        .sticky-player.expanded .mobile-collapse-btn:active {
+            color: #fff;
+        }
     }
 </style>
 {% endblock %}
@@ -847,7 +1020,12 @@
 </div>
 
 <!-- STICKY PLAYER -->
-<div class="sticky-player">
+<div class="sticky-player" id="stickyPlayer">
+    <!-- Collapse button (visible only in expanded mobile) -->
+    <button class="mobile-collapse-btn" onclick="event.stopPropagation(); collapsePlayer();" aria-label="Minimizar">
+        <i class="fas fa-chevron-down"></i>
+    </button>
+
     <div class="player-section player-left">
         <img src="" id="playerCover" class="player-cover-img d-none" alt="Cover">
         <div style="overflow: hidden;">
@@ -855,6 +1033,11 @@
             <div class="player-track-artist" id="playerArtist">SaveWave Player</div>
         </div>
     </div>
+
+    <!-- Mobile: inline play/pause button (visible in mini bar) -->
+    <button class="mobile-expand-btn" id="mobilePlayBtn" onclick="event.stopPropagation(); togglePlay();" aria-label="Play/Pause">
+        <i class="fas fa-play"></i>
+    </button>
 
     <div class="player-section player-center">
         <div class="player-btns">
@@ -1087,7 +1270,8 @@
                 <i class="fas fa-info-circle" style="color: #6366f1; font-size: 1.1rem; flex-shrink: 0; margin-top: 1px;"></i>
                 <div>
                     <strong style="color: #a5b4fc;">Nota sobre la reproducción:</strong> La primera vez que reproduces una canción desde un link externo (como YouTube), puede tardar un momento mientras nuestro servidor procesa el audio. 
-                    Para escuchar sin retrasos, usa <strong style="color: #a5b4fc;">Descargar Todo</strong> primero.
+                    Para escuchar sin retrasos, usa <strong style="color: #a5b4fc;">Descargar Todo</strong> primero. 
+                    <strong style="color: #a5b4fc;">Descarga nuestra App</strong> para escuchar música sin conexión desde tu celular.
                 </div>
             </div>
             ` : ''}
@@ -1357,7 +1541,40 @@
         playPauseBtn.innerHTML = isPlaying
             ? '<i class="fas fa-pause"></i>'
             : '<i class="fas fa-play" style="margin-left:2px;"></i>';
+        // Sync mobile mini play button
+        const mobileBtn = document.getElementById('mobilePlayBtn');
+        if (mobileBtn) {
+            mobileBtn.innerHTML = isPlaying
+                ? '<i class="fas fa-pause"></i>'
+                : '<i class="fas fa-play"></i>';
+        }
     }
+
+    // ========== MOBILE FULLSCREEN PLAYER ==========
+    function expandPlayer() {
+        const player = document.getElementById('stickyPlayer');
+        if (player) {
+            player.classList.add('expanded');
+            document.body.style.overflow = 'hidden';
+        }
+    }
+
+    function collapsePlayer() {
+        const player = document.getElementById('stickyPlayer');
+        if (player) {
+            player.classList.remove('expanded');
+            document.body.style.overflow = '';
+        }
+    }
+
+    // Tap on mini player bar to expand (mobile only)
+    document.getElementById('stickyPlayer').addEventListener('click', function(e) {
+        if (window.innerWidth > 768) return;
+        if (this.classList.contains('expanded')) return;
+        // Don't expand if clicking a button
+        if (e.target.closest('button') || e.target.closest('input')) return;
+        expandPlayer();
+    });
 
     // ========== NEXT / PREV ==========
     function getNextIndex() {

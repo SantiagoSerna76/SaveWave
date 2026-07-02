@@ -304,28 +304,29 @@
 
         <!-- ==================== PLAYLIST PROMO BANNER (PROFESSIONAL UI) ==================== -->
         <div class="mt-5 mb-4 position-relative promo-banner-wrapper">
-            <div class="card shadow-md border-0 overflow-hidden position-relative" style="border-radius: 16px; background: var(--card-bg);">
-                <!-- Subtle background gradient -->
-                <div class="position-absolute top-0 start-0 w-100 h-100" style="background: linear-gradient(135deg, rgba(13, 110, 253, 0.05) 0%, rgba(13, 110, 253, 0) 100%); pointer-events: none;"></div>
+            <div class="card shadow-md border-0 overflow-hidden position-relative" style="border-radius: 20px; background: linear-gradient(135deg, #0f0c29 0%, #1a1a4e 50%, #24243e 100%);">
+                <!-- Glowing orbs -->
+                <div class="position-absolute" style="width:250px;height:250px;border-radius:50%;background:radial-gradient(circle, rgba(102,126,234,0.3) 0%, transparent 70%);top:-80px;right:-60px;pointer-events:none;"></div>
+                <div class="position-absolute" style="width:180px;height:180px;border-radius:50%;background:radial-gradient(circle, rgba(0,242,254,0.2) 0%, transparent 70%);bottom:-50px;left:-30px;pointer-events:none;"></div>
                 
-                <div class="card-body p-5 text-center position-relative" style="z-index: 1;">
-                    <div class="mb-4 mx-auto text-primary">
-                        <i class="fas fa-layer-group fa-3x"></i>
+                <div class="card-body p-4 p-md-5 text-center position-relative" style="z-index: 1;">
+                    <div class="mb-3 mx-auto d-inline-flex align-items-center justify-content-center" style="width:70px;height:70px;border-radius:18px;background:rgba(255,255,255,0.1);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.15);">
+                        <i class="fas fa-layer-group fa-2x" style="color:#4facfe;"></i>
                     </div>
                     
-                    <h2 class="fw-bold mb-3" style="letter-spacing: -0.5px;">Gestión Avanzada de Playlists</h2>
-                    <p class="lead text-muted mb-5 mx-auto" style="max-width: 650px;">
-                        Organiza tu contenido multimedia en bibliotecas personalizadas. 
-                        Reproduce tu colección directamente desde la plataforma o descarga listas completas en alta calidad de manera eficiente.
+                    <h2 class="fw-bold mb-2" style="letter-spacing: -0.5px; color: #fff !important;">Gestión Avanzada de Playlists</h2>
+                    <p class="mb-4 mx-auto" style="max-width: 600px; color: rgba(255,255,255,0.7); font-size: 1rem; line-height:1.6;">
+                        Organiza tu contenido en bibliotecas personalizadas.
+                        Reproduce tu colección offline o descarga listas completas.
                     </p>
                     
                     {% if current_user.is_authenticated %}
-                        <a href="{{ url_for('playlists_view') }}" class="btn btn-primary btn-lg px-5 fw-medium">
-                            Ir a mis Playlists
+                        <a href="{{ url_for('playlists_view') }}" class="btn btn-lg px-5 fw-bold" style="background:linear-gradient(135deg,#4facfe,#00f2fe);color:#0f0c29;border:none;border-radius:50px;box-shadow:0 8px 25px rgba(79,172,254,0.4);">
+                            <i class="fas fa-headphones me-2"></i>Ir a mis Playlists
                         </a>
                     {% else %}
-                        <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg px-5 fw-medium">
-                            Registrarse y probar
+                        <a href="{{ url_for('register') }}" class="btn btn-lg px-5 fw-bold" style="background:linear-gradient(135deg,#4facfe,#00f2fe);color:#0f0c29;border:none;border-radius:50px;box-shadow:0 8px 25px rgba(79,172,254,0.4);">
+                            <i class="fas fa-bolt me-2"></i>Registrarse gratis
                         </a>
                     {% endif %}
                 </div>

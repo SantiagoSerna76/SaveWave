@@ -27,6 +27,19 @@ body {
   color: var(--text-color) !important;
 }
 
+h1, h2, h3, h4, h5, h6, .text-body {
+  color: var(--text-color) !important;
+}
+
+.text-muted {
+  color: var(--text-muted) !important;
+}
+
+::-webkit-input-placeholder, ::placeholder {
+  color: var(--text-muted) !important;
+  opacity: 0.8 !important;
+}
+
 /* --- Clases Premium UI (Elegantes) --- */
 .hero-title {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);

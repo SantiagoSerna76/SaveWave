@@ -1198,7 +1198,12 @@
     }
 
     async function playTrack(index) {
-        if (index < 0 || index >= currentPlaylistItems.length) return;
+        const statusEl = document.getElementById('playerTitle');
+        
+        if (index < 0 || index >= currentPlaylistItems.length) {
+            statusEl.textContent = '⚠ Índice de pista inválido';
+            return;
+        }
 
         // If same track already playing, just toggle pause/play
         if (currentTrackIndex === index && audioPlayer.src && !audioPlayer.paused) {
@@ -1206,18 +1211,6 @@
             isPlaying = false;
             updatePlayPauseUI();
             return;
-        }
-
-        // If same track is paused, just resume (only if it has valid data and no error)
-        if (currentTrackIndex === index && audioPlayer.src && audioPlayer.paused && currentFetchController === null) {
-            if (audioPlayer.readyState >= 1 && !audioPlayer.error) {
-                audioPlayer.play().then(() => { isPlaying = true; updatePlayPauseUI(); }).catch((err) => {
-                    console.error("Play error:", err);
-                    document.getElementById('playerTitle').innerHTML = '<span style="color:#f87171;"><i class="fas fa-exclamation-triangle me-1"></i>Error al reproducir el archivo</span>';
-                });
-                return;
-            }
-            // If it had an error or wasn't loaded, let it fall through and try fetching again
         }
 
         // Abort previous fetch if any
@@ -1228,10 +1221,8 @@
 
         currentTrackIndex = index;
         const track = currentPlaylistItems[index];
-        audioPlayer.removeAttribute('src'); // Clear previous source
 
         // Update player UI immediately
-        document.getElementById('playerTitle').textContent = track.title;
         const platformLabel = track.platform === 'audio_local' ? 'Archivo local' : track.platform === 'video_local' ? 'Video local' : track.platform;
         document.getElementById('playerArtist').textContent = platformLabel;
         const coverEl = document.getElementById('playerCover');
@@ -1241,17 +1232,13 @@
         } else {
             coverEl.classList.add('d-none');
         }
-
-        // Highlight current row
         highlightCurrentTrack();
-        
-        // Setup Media Session API for background playback
         setupMediaSession(track);
 
         // Show loading state
         isPlaying = false;
         updatePlayPauseUI();
-        document.getElementById('playerTitle').innerHTML = '<span class="spinner-border spinner-border-sm text-primary me-2" role="status" style="width: 1rem; height: 1rem; border-width: 0.15em;"></span> <span style="opacity: 0.7;">Cargando...</span>';
+        statusEl.innerHTML = '⏳ Paso 1: Preparando...';
 
         // Reset progress
         document.getElementById('progressBar').style.width = '0%';
@@ -1260,117 +1247,75 @@
 
         // --- LOCAL FILES & CACHED URLS: play directly ---
         if (track.platform === 'audio_local' || track.platform === 'video_local' || track.cached_url) {
-            audioPlayer.src = track.cached_url || track.url;
+            const localSrc = track.cached_url || track.url;
+            statusEl.textContent = '⏳ Cargando archivo local...';
+            audioPlayer.src = localSrc;
+            audioPlayer.load();
             try {
                 await audioPlayer.play();
                 isPlaying = true;
-                document.getElementById('playerTitle').textContent = track.title;
+                statusEl.textContent = track.title;
             } catch(err) {
-                document.getElementById('playerTitle').textContent = '❌ Error al reproducir';
+                statusEl.textContent = '❌ Error reproduciendo archivo: ' + err.message;
             }
             updatePlayPauseUI();
             return;
         }
 
-        // --- CHECK OFFLINE CACHE (Cache API) ---
-        const offlineCacheKey = 'savewave-offline-' + track.url;
-        try {
-            const offlineCache = await caches.open('savewave-offline');
-            const cachedResponse = await offlineCache.match(offlineCacheKey);
-            if (cachedResponse) {
-                const blob = await cachedResponse.blob();
-                const blobUrl = URL.createObjectURL(blob);
-                track.cached_url = blobUrl;
-                audioPlayer.src = blobUrl;
-                try {
-                    await audioPlayer.play();
-                    isPlaying = true;
-                    document.getElementById('playerTitle').textContent = track.title;
-                } catch(err) {
-                    document.getElementById('playerTitle').textContent = '❌ Error al reproducir';
-                }
-                updatePlayPauseUI();
-                return;
-            }
-        } catch(cacheErr) {
-            console.log('Cache API not available, falling back to network');
-        }
-
         // --- REMOTE URLS: download audio via API then play ---
+        statusEl.innerHTML = '⏳ Paso 2: Descargando audio del servidor...';
         currentFetchController = new AbortController();
+        
         try {
-            console.log('[SaveWave] Fetching audio for:', track.url);
             const res = await fetch('/api/download-audio', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/x-www-form-urlencoded'},
                 body: 'url=' + encodeURIComponent(track.url) + '&quality=128',
                 signal: currentFetchController.signal
             });
+            
+            currentFetchController = null;
 
             if (!res.ok) {
-                currentFetchController = null;
-                console.error('[SaveWave] API responded with status:', res.status);
-                document.getElementById('playerTitle').innerHTML = `<span style="color:#f87171;"><i class="fas fa-exclamation-triangle me-1"></i>Error del servidor (${res.status})</span>`;
+                statusEl.textContent = '❌ Error del servidor: HTTP ' + res.status;
                 updatePlayPauseUI();
                 return;
             }
 
             const data = await res.json();
-            currentFetchController = null;
-            console.log('[SaveWave] API response:', data);
-
-            // Prevent race condition: ensure we are still trying to play the same track
+            
+            // Prevent race condition
             if (currentTrackIndex !== index) return;
 
-            if (data.success && data.download_url) {
-                track.cached_url = data.download_url;
-                console.log('[SaveWave] Setting audio src to:', data.download_url);
-                
-                // Use a promise to wait for the audio to be loadable
-                await new Promise((resolve, reject) => {
-                    const onCanPlay = () => {
-                        audioPlayer.removeEventListener('canplaythrough', onCanPlay);
-                        audioPlayer.removeEventListener('error', onError);
-                        resolve();
-                    };
-                    const onError = (e) => {
-                        audioPlayer.removeEventListener('canplaythrough', onCanPlay);
-                        audioPlayer.removeEventListener('error', onError);
-                        console.error('[SaveWave] Audio load error:', audioPlayer.error);
-                        reject(new Error('Audio load failed'));
-                    };
-                    audioPlayer.addEventListener('canplaythrough', onCanPlay, {once: true});
-                    audioPlayer.addEventListener('error', onError, {once: true});
-                    audioPlayer.src = data.download_url;
-                    audioPlayer.load();
-                });
+            if (!data.success || !data.download_url) {
+                statusEl.textContent = '❌ ' + (data.error || 'Sin URL de descarga');
+                updatePlayPauseUI();
+                return;
+            }
 
-                // Check we are still on same track after loading
-                if (currentTrackIndex !== index) return;
-
-                try {
-                    await audioPlayer.play();
-                    isPlaying = true;
-                    document.getElementById('playerTitle').textContent = track.title;
-                    console.log('[SaveWave] Playing successfully!');
-                } catch(playErr) {
-                    console.warn('[SaveWave] Autoplay blocked:', playErr);
-                    document.getElementById('playerTitle').innerHTML = `<span style="color: #a5b4fc; cursor:pointer;" onclick="audioPlayer.play().then(()=>{isPlaying=true;updatePlayPauseUI();document.getElementById('playerTitle').textContent='${track.title.replace(/'/g, "\\'")}';})">▶ Toca para reproducir: ${track.title}</span>`;
-                }
-            } else {
-                console.error('[SaveWave] API returned error:', data.error);
-                document.getElementById('playerTitle').innerHTML = `<span style="color:#f87171;"><i class="fas fa-exclamation-triangle me-1"></i>${data.error || 'No disponible. Intenta de nuevo.'}</span>`;
+            // Step 3: Set audio source and play
+            statusEl.innerHTML = '⏳ Paso 3: Cargando audio... (' + data.download_url + ')';
+            track.cached_url = data.download_url;
+            
+            audioPlayer.src = data.download_url;
+            audioPlayer.load();
+            
+            statusEl.innerHTML = '⏳ Paso 4: Reproduciendo...';
+            
+            try {
+                await audioPlayer.play();
+                isPlaying = true;
+                statusEl.textContent = '🎵 ' + track.title;
+            } catch(playErr) {
+                statusEl.textContent = '❌ Play falló: ' + playErr.message;
             }
         } catch(e) {
-            // Only show error if it wasn't an abort
             if (e.name !== 'AbortError') {
-                console.error('[SaveWave] Fetch/play error:', e);
-                document.getElementById('playerTitle').innerHTML = `<span style="color:#f87171;"><i class="fas fa-wifi me-1"></i>Error: ${e.message}</span>`;
+                statusEl.textContent = '❌ Error: ' + e.message;
             }
             currentFetchController = null;
         }
         
-        // Only update UI if we're still on this track
         if (currentTrackIndex === index) {
             updatePlayPauseUI();
         }

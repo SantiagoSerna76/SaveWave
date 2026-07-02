@@ -154,7 +154,6 @@ def get_video_info(url: str) -> dict:
         return cached
 
     ydl_opts = _get_ydl_opts({
-        "extract_flat": "in_playlist",
         "noplaylist": False,
     })
 
@@ -191,17 +190,21 @@ def get_video_info(url: str) -> dict:
                     "platform": platform,
                     "items": playlist_items
                 }
-                # Cachear playlists por 5 min (cambian mas seguido)
                 set_cached_video_info(url, result, ttl=300)
                 return result
 
             # Flujo normal para un solo video
+            # Obtener calidades desde los formatos
             available_qualities = set()
             if "formats" in info:
                 for fmt in info["formats"]:
                     height = fmt.get("height")
                     if height:
                         available_qualities.add(f"{height}p")
+
+            # Si no hay formatos con altura, agregar calidades comunes
+            if not available_qualities:
+                available_qualities = {"360p", "720p", "1080p"}
 
             sorted_qualities = sorted(
                 available_qualities,
@@ -219,7 +222,6 @@ def get_video_info(url: str) -> dict:
                 "view_count": info.get("view_count", 0),
             }
 
-            # Guardar en cache por 15 minutos
             set_cached_video_info(url, result, ttl=900)
             return result
 

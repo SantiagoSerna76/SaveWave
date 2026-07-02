@@ -104,33 +104,43 @@ def detect_platform(url: str) -> str:
 def _get_ydl_opts(extra_opts: dict = None) -> dict:
     """
     Construye las opciones base para yt-dlp.
-    Usa android como player client principal (evita el bloqueo "Sign in to confirm you're not a bot").
+    Usa web como player client principal (requiere cookies, pero da formatos completos).
+    Si hay cookies, usa web. Si no hay cookies, usa android (sin formatos de altura).
     """
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    has_cookies = False
+
     opts = {
         "quiet": True,
         "no_warnings": True,
         "nocheckcertificate": True,
         "restrictfilenames": True,
         "noplaylist": True,
-        # android no requiere cookies ni firma, evita el bloqueo en VPS
-        "extractor_args": {"youtube": {"player_client": ["android"]}},
-        # User agent de Android para que sea consistente con el player client
-        "http_headers": {
-            "User-Agent": "com.google.android.youtube/19.09.37 (Linux; U; Android 11) gzip"
-        },
     }
 
-    # Usar cookies de YouTube si existe el archivo (necesario en VPS)
-    # Buscar tanto youtube_cookies.txt como www.youtube.com_cookies.txt
-    base_dir = os.path.dirname(os.path.abspath(__file__))
+    # Buscar archivo de cookies
     for cookie_name in ['youtube_cookies.txt', 'www.youtube.com_cookies.txt']:
         cookies_path = os.path.join(base_dir, cookie_name)
         if os.path.exists(cookies_path):
             opts['cookiefile'] = cookies_path
+            has_cookies = True
             break
 
+    if has_cookies:
+        # Con cookies: usar web client (formatos completos, sin bloqueo)
+        opts["extractor_args"] = {"youtube": {"player_client": ["web"]}}
+        opts["http_headers"] = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        }
+    else:
+        # Sin cookies: usar android (no requiere auth, pero formatos limitados)
+        opts["extractor_args"] = {"youtube": {"player_client": ["android"]}}
+        opts["http_headers"] = {
+            "User-Agent": "com.google.android.youtube/19.09.37 (Linux; U; Android 11) gzip"
+        }
+
     # Usar ffmpeg local si existe en la carpeta bin
-    bin_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'bin')
+    bin_dir = os.path.join(base_dir, 'bin')
     if os.path.exists(os.path.join(bin_dir, 'ffmpeg.exe')):
         opts['ffmpeg_location'] = bin_dir
 

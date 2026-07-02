@@ -47,14 +47,21 @@
     .navbar-brand { font-size: 1.1rem; font-weight: 800; color: #fff !important; }
     .nav-link-main {
         color: rgba(255,255,255,0.7) !important;
-        font-weight: 500; font-size: 0.9rem;
-        padding: 6px 14px !important;
-        border-radius: 8px;
-        transition: all 0.2s;
-        display: flex; align-items: center; gap: 6px;
+        font-weight: 600; font-size: 0.95rem;
+        padding: 8px 18px !important;
+        border-radius: 12px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        display: flex; align-items: center; gap: 8px;
         text-decoration: none;
+        border: 1px solid transparent;
     }
-    .nav-link-main:hover { color: #fff !important; background: rgba(255,255,255,0.08); }
+    .nav-link-main:hover { 
+        color: #fff !important; 
+        background: rgba(255,255,255,0.1); 
+        border-color: rgba(255,255,255,0.15);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        transform: translateY(-1px);
+    }
     .btn-nav-pill {
         display: inline-flex; align-items: center; gap: 6px;
         padding: 7px 16px; border-radius: 20px;
@@ -99,9 +106,38 @@
     body.light-mode .navbar { background: linear-gradient(135deg, #e8eaf6 0%, #c5cae9 100%) !important; border-bottom-color: var(--card-border) !important; }
     body.light-mode .navbar-brand { color: var(--text-color) !important; }
     body.light-mode .nav-link-main { color: var(--text-muted) !important; }
-    body.light-mode .nav-link-main:hover { color: var(--text-color) !important; background: rgba(0,0,0,0.06); }
+    body.light-mode .nav-link-main:hover { 
+        color: var(--text-color) !important; 
+        background: rgba(0,0,0,0.04);
+        border-color: rgba(0,0,0,0.08);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
     body.light-mode .glass-card { background: rgba(255,255,255,0.9) !important; border-color: var(--card-border) !important; }
     body.light-mode .btn-nav-theme { background: rgba(0,0,0,0.08); color: #555; border-color: rgba(0,0,0,0.15); }
+    
+    /* Mobile Menu Toggle Premium */
+    .btn-mobile-menu {
+        border: none;
+        background: rgba(255,255,255,0.1);
+        color: var(--text-color);
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+    }
+    .btn-mobile-menu:hover {
+        background: rgba(255,255,255,0.2);
+    }
+    body.light-mode .btn-mobile-menu {
+        background: rgba(0,0,0,0.05);
+        color: var(--text-color);
+    }
+    body.light-mode .btn-mobile-menu:hover {
+        background: rgba(0,0,0,0.1);
+    }
     body.light-mode .form-label { color: var(--text-color) !important; }
     body.light-mode .text-muted { color: var(--text-muted) !important; }
     </style>
@@ -116,8 +152,8 @@
                 <img src="{{ url_for('static', filename='Savewave.png') }}" alt="SaveWave" height="30" class="me-2" style="border-radius: 6px;">
                 SaveWave
             </a>
-            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" style="background:rgba(255,255,255,0.1);">
-                <span class="navbar-toggler-icon"></span>
+            <button class="navbar-toggler btn-mobile-menu" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <i class="fas fa-bars fs-5"></i>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <!-- Left nav links -->

@@ -233,10 +233,10 @@ body {
   padding: 4px 12px;
 }
 
-/* --- Fix para tablas en modo oscuro --- */
-.table { color: #fff !important; }
-.table thead th { border-color: #333 !important; }
-.table td { border-color: #333 !important; }
+/* --- Fix para tablas en modo oscuro / claro --- */
+.table { color: var(--text-color) !important; }
+.table thead th { border-color: var(--card-border) !important; }
+.table td { border-color: var(--card-border) !important; }
 
 /* --- Animaciones --- */
 @keyframes fadeIn {

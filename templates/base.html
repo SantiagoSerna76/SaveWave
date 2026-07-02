@@ -84,13 +84,26 @@
     }
     .btn-nav-theme:hover { background: rgba(255,255,255,0.14); color: #fff; }
     /* Light mode */
-    body.light-mode { background-color: #f0f2f8 !important; color: #1e1e2e !important; }
-    body.light-mode .navbar { background: linear-gradient(135deg, #e8eaf6 0%, #c5cae9 100%) !important; border-bottom-color: rgba(0,0,0,0.1) !important; }
-    body.light-mode .navbar-brand { color: #1e1e2e !important; }
-    body.light-mode .nav-link-main { color: rgba(0,0,0,0.65) !important; }
-    body.light-mode .nav-link-main:hover { color: #1e1e2e !important; background: rgba(0,0,0,0.06); }
-    body.light-mode .glass-card { background: rgba(255,255,255,0.9) !important; border-color: rgba(0,0,0,0.1) !important; }
+    body.light-mode { 
+        --spotify-dark: #f0f2f8;
+        --spotify-card: #ffffff;
+        --spotify-hover: rgba(0,0,0,0.04);
+        --text-color: #1e1e2e;
+        --text-muted: #6b7280;
+        --card-bg: #ffffff;
+        --card-border: rgba(0,0,0,0.1);
+        
+        background-color: var(--spotify-dark) !important; 
+        color: var(--text-color) !important; 
+    }
+    body.light-mode .navbar { background: linear-gradient(135deg, #e8eaf6 0%, #c5cae9 100%) !important; border-bottom-color: var(--card-border) !important; }
+    body.light-mode .navbar-brand { color: var(--text-color) !important; }
+    body.light-mode .nav-link-main { color: var(--text-muted) !important; }
+    body.light-mode .nav-link-main:hover { color: var(--text-color) !important; background: rgba(0,0,0,0.06); }
+    body.light-mode .glass-card { background: rgba(255,255,255,0.9) !important; border-color: var(--card-border) !important; }
     body.light-mode .btn-nav-theme { background: rgba(0,0,0,0.08); color: #555; border-color: rgba(0,0,0,0.15); }
+    body.light-mode .form-label { color: var(--text-color) !important; }
+    body.light-mode .text-muted { color: var(--text-muted) !important; }
     </style>
 
     {% block extra_head %}{% endblock %}

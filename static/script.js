@@ -30,39 +30,33 @@ $(document).ready(function() {
     }
 
     // ============================================================
-    // PWA - INSTALAR APP
+    // PWA - INSTALAR APP (siempre visible)
     // ============================================================
     let deferredPrompt;
     const installBtn = document.getElementById("installAppBtn");
 
-    // Ocultar si ya esta instalada
-    if (window.matchMedia("(display-mode: standalone)").matches || navigator.standalone) {
-        if (installBtn) installBtn.style.display = "none";
+    // Mostrar el boton siempre (no importa si ya esta instalado o no)
+    if (installBtn) {
+        installBtn.style.display = "inline-block";
     }
 
     window.addEventListener("beforeinstallprompt", function(e) {
         e.preventDefault();
         deferredPrompt = e;
-        if (installBtn) installBtn.style.display = "inline-block";
     });
 
     if (installBtn) {
         installBtn.addEventListener("click", async function() {
             if (deferredPrompt) {
                 deferredPrompt.prompt();
-                const result = await deferredPrompt.userChoice;
-                if (result.outcome === "accepted") {
-                    installBtn.style.display = "none";
-                }
+                await deferredPrompt.userChoice;
                 deferredPrompt = null;
+            } else {
+                // Si no hay prompt disponible, ir al manifest
+                window.open("/manifest.json", "_blank");
             }
         });
     }
-
-    window.addEventListener("appinstalled", function() {
-        if (installBtn) installBtn.style.display = "none";
-        deferredPrompt = null;
-    });
 
     // ============================================================
     // PLAYLISTS - Reproducir

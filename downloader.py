@@ -121,9 +121,13 @@ def _get_ydl_opts(extra_opts: dict = None) -> dict:
     }
 
     # Usar cookies de YouTube si existe el archivo (necesario en VPS)
-    cookies_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'youtube_cookies.txt')
-    if os.path.exists(cookies_path):
-        opts['cookiefile'] = cookies_path
+    # Buscar tanto youtube_cookies.txt como www.youtube.com_cookies.txt
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    for cookie_name in ['youtube_cookies.txt', 'www.youtube.com_cookies.txt']:
+        cookies_path = os.path.join(base_dir, cookie_name)
+        if os.path.exists(cookies_path):
+            opts['cookiefile'] = cookies_path
+            break
 
     # Usar ffmpeg local si existe en la carpeta bin
     bin_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'bin')

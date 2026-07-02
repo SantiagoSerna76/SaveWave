@@ -207,70 +207,89 @@
 
         <!-- ==================== INFORMACIÓN DEL VIDEO (se muestra después de pegar URL) ==================== -->
         <div id="videoInfo" class="mt-4" style="display: none;">
-            <div class="card glass-card shadow-sm border-0">
-                <div class="card-body">
-                    <div class="row">
+            <div class="card border-0" style="border-radius: 20px; background: linear-gradient(135deg, #0d0d1f 0%, #1a1a2e 100%); overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.5);">
+                <!-- Glow top border -->
+                <div style="height:2px; background: linear-gradient(90deg, #4facfe, #a78bfa, #00f2fe);"></div>
+
+                <div class="card-body p-4">
+                    <div class="row g-4 align-items-start">
+                        <!-- Thumbnail -->
                         <div class="col-md-4">
-                            <img id="videoThumbnail" src="" alt="Thumbnail" class="img-fluid rounded">
+                            <div class="position-relative">
+                                <img id="videoThumbnail" src="" alt="Thumbnail" class="img-fluid w-100" style="border-radius:14px; object-fit:cover; aspect-ratio:16/9;">
+                                <div class="position-absolute bottom-0 start-0 end-0" style="background:linear-gradient(transparent, rgba(0,0,0,0.7)); border-radius: 0 0 14px 14px; padding:8px 10px;">
+                                    <span id="videoPlatformBadge" class="badge" style="background:rgba(255,255,255,0.15); backdrop-filter:blur(5px); font-size:0.7rem;">
+                                        <i class="fas fa-globe me-1"></i><span id="videoPlatform"></span>
+                                    </span>
+                                </div>
+                            </div>
                         </div>
+
+                        <!-- Info + Controls -->
                         <div class="col-md-8">
-                            <h5 id="videoTitle" class="fw-bold"></h5>
-                            <p class="text-muted mb-1">
-                                <i class="fas fa-user me-1"></i><span id="videoUploader"></span>
-                            </p>
-                            <p class="text-muted mb-1">
-                                <i class="fas fa-clock me-1"></i><span id="videoDuration"></span>
-                                &nbsp;&nbsp;
-                                <i class="fas fa-eye me-1"></i><span id="videoViews"></span>
-                            </p>
-                            <p class="text-muted mb-1">
-                                <i class="fas fa-globe me-1"></i><span id="videoPlatform"></span>
-                            </p>
-                            <hr>
-                            <!-- Formato: Video o MP3 -->
+                            <h5 id="videoTitle" class="fw-bold mb-2" style="color:#fff; font-size:1.1rem; line-height:1.4;"></h5>
+                            <div class="d-flex flex-wrap gap-3 mb-3">
+                                <span class="small" style="color:rgba(255,255,255,0.5);">
+                                    <i class="fas fa-user me-1" style="color:#4facfe;"></i><span id="videoUploader"></span>
+                                </span>
+                                <span class="small" style="color:rgba(255,255,255,0.5);">
+                                    <i class="fas fa-clock me-1" style="color:#a78bfa;"></i><span id="videoDuration"></span>
+                                </span>
+                                <span class="small" style="color:rgba(255,255,255,0.5);">
+                                    <i class="fas fa-eye me-1" style="color:#00f2fe;"></i><span id="videoViews"></span>
+                                </span>
+                            </div>
+
+                            <!-- Format Toggle -->
                             <div class="mb-3">
-                                <div class="btn-group w-100" role="group">
+                                <p class="small mb-2" style="color:rgba(255,255,255,0.4); font-weight:600; letter-spacing:0.05em; text-transform:uppercase; font-size:0.7rem;">Formato</p>
+                                <div class="d-flex gap-2">
                                     <input type="radio" class="btn-check" name="formatType" id="formatVideo" value="video" checked>
-                                    <label class="btn btn-outline-primary btn-sm" for="formatVideo">
-                                        <i class="fas fa-video me-1"></i>Video
+                                    <label class="btn fw-semibold px-4" for="formatVideo" style="border-radius:50px; border:1px solid rgba(79,172,254,0.4); color:#4facfe; background:rgba(79,172,254,0.08); transition:all 0.2s;">
+                                        <i class="fas fa-video me-2"></i>Video
                                     </label>
                                     <input type="radio" class="btn-check" name="formatType" id="formatMP3" value="mp3">
-                                    <label class="btn btn-outline-primary btn-sm" for="formatMP3">
-                                        <i class="fas fa-music me-1"></i>MP3
+                                    <label class="btn fw-semibold px-4" for="formatMP3" style="border-radius:50px; border:1px solid rgba(167,139,250,0.4); color:#a78bfa; background:rgba(167,139,250,0.08); transition:all 0.2s;">
+                                        <i class="fas fa-music me-2"></i>MP3
                                     </label>
                                 </div>
                             </div>
-                            <div class="row align-items-end">
-                                <div class="col-md-6 mb-2 mb-md-0">
-                                    <label for="qualitySelect" class="form-label small">Calidad:</label>
-                                    <select id="qualitySelect" class="form-select form-select-sm">
+
+                            <!-- Quality + Download -->
+                            <div class="row g-2 align-items-end">
+                                <div class="col-5">
+                                    <p class="small mb-1" style="color:rgba(255,255,255,0.4); font-weight:600; letter-spacing:0.05em; text-transform:uppercase; font-size:0.7rem;">Calidad</p>
+                                    <select id="qualitySelect" class="form-select border-0 fw-semibold" style="background:rgba(255,255,255,0.06); color:#fff; border-radius:12px; padding:10px 14px;">
                                         <option value="720p">720p</option>
                                     </select>
                                 </div>
-                                <div class="col-md-6">
-                                    <button id="downloadBtn" class="btn btn-success w-100">
-                                        <i class="fas fa-download me-1"></i>Descargar
+                                <div class="col-7">
+                                    <button id="downloadBtn" class="btn w-100 fw-bold py-2" style="background:linear-gradient(135deg,#10b981,#059669); color:#fff; border:none; border-radius:12px; font-size:1rem; box-shadow: 0 6px 20px rgba(16,185,129,0.35); transition:all 0.2s;">
+                                        <i class="fas fa-download me-2"></i>Descargar
                                     </button>
                                 </div>
                             </div>
+
                             {% if current_user.is_authenticated %}
                             <div class="mt-2">
-                                <button id="saveToPlaylistBtn" class="btn btn-outline-success btn-sm w-100" style="display:none;">
-                                    <i class="fas fa-plus me-1"></i>Guardar en Playlist
+                                <button id="saveToPlaylistBtn" class="btn w-100 fw-semibold py-2" style="display:none; background:linear-gradient(135deg,rgba(167,139,250,0.15),rgba(139,92,246,0.15)); border:1px solid rgba(167,139,250,0.35); color:#a78bfa; border-radius:12px; transition:all 0.2s;">
+                                    <i class="fas fa-plus-circle me-2"></i>Guardar en Playlist
                                 </button>
                             </div>
                             {% endif %}
-                            <div id="mp3Info" class="mt-2 small text-muted" style="display: none;">
-                                <i class="fas fa-info-circle me-1"></i>MP3 128kbps para planes gratuitos, 320kbps para Pro/Premium
+
+                            <div id="mp3Info" class="mt-2 small" style="display: none; color:rgba(167,139,250,0.7);">
+                                <i class="fas fa-info-circle me-1"></i>MP3 128kbps gratis · 320kbps Pro/Premium
                             </div>
-                            <div id="qualityNote" class="mt-2 small text-muted">
-                                <i class="fas fa-info-circle me-1"></i>La calidad maxima disponible depende del video original. No todos los videos existen en 4K.
+                            <div id="qualityNote" class="mt-2 small" style="color:rgba(255,255,255,0.3);">
+                                <i class="fas fa-info-circle me-1"></i>La calidad depende del video original. No todos existen en 4K.
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+
 
         <!-- ==================== BARRA DE PROGRESO ==================== -->
         <div id="progressContainer" class="mt-4" style="display: none;">

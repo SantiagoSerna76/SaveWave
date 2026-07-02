@@ -285,7 +285,7 @@ def download_audio(url: str, quality: str = "128", output_path: str = None) -> d
     output_template = os.path.join(output_path, f"audio_{url_hash}.%(ext)s")
 
     # Formato: extraer mejor audio y convertirlo a mp3 (con fallbacks si bestaudio no esta disponible)
-    format_spec = "bestaudio[abr<=128]/bestaudio/best/bv+ba" if quality == "128" else "bestaudio/best/bv+ba"
+    format_spec = "bestaudio[abr<=128]/bestaudio/best" if quality == "128" else "bestaudio/best"
 
     ydl_opts = _get_ydl_opts({
         "format": format_spec,

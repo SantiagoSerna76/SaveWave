@@ -1,4 +1,4 @@
-const CACHE_NAME = 'savewave-v3';
+const CACHE_NAME = 'savewave-v4';
 const ASSETS_TO_CACHE = [
     '/',
     '/static/style.css',
@@ -54,8 +54,20 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // For the rest (static files, html pages), try network first, then cache
+    // For the rest (static files, html pages), try network first, then fallback to cache
     event.respondWith(
-        fetch(event.request).catch(() => caches.match(event.request))
+        fetch(event.request).then(response => {
+            // Update the cache with the new version if it's a valid response
+            if (response && response.status === 200 && event.request.method === 'GET') {
+                const responseClone = response.clone();
+                caches.open(CACHE_NAME).then(cache => {
+                    cache.put(event.request, responseClone);
+                });
+            }
+            return response;
+        }).catch(() => {
+            // Fallback to cache if network fails (offline)
+            return caches.match(event.request);
+        })
     );
 });

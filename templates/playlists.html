@@ -77,24 +77,21 @@
     }
 
     .sidebar-item:hover {
-        background-color: rgba(13, 110, 253, 0.06);
+        background-color: rgba(255, 255, 255, 0.08);
         color: var(--text-color);
     }
 
     .sidebar-item.active {
-        background-color: rgba(13, 110, 253, 0.1);
-        color: var(--primary-color);
+        background-color: rgba(99, 102, 241, 0.2);
+        color: #a5b4fc;
         font-weight: 600;
     }
-
-    body.dark-mode .sidebar-item:hover { background-color: rgba(255, 255, 255, 0.06); }
-    body.dark-mode .sidebar-item.active { background-color: rgba(59, 130, 246, 0.15); }
 
     .sidebar-item-icon {
         width: 40px;
         height: 40px;
         border-radius: 8px;
-        background: linear-gradient(135deg, var(--primary-color), #6366f1);
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -148,6 +145,36 @@
     }
 
     /* Empty State */
+    .btn-new-playlist {
+        margin: 12px;
+        padding: 12px 16px;
+        border-radius: 10px;
+        border: 1px dashed rgba(255,255,255,0.2);
+        background: rgba(255,255,255,0.03);
+        color: var(--text-muted);
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s;
+        width: calc(100% - 24px);
+    }
+    .btn-new-playlist:hover {
+        border-color: #6366f1;
+        color: #a5b4fc;
+        background: rgba(99,102,241,0.1);
+    }
+
+    .playlist-main {
+        flex: 1;
+        overflow-y: auto;
+        padding: 32px 40px;
+        min-width: 0;
+        background: var(--spotify-dark);
+    }
+
     .empty-state {
         display: flex;
         flex-direction: column;
@@ -307,19 +334,17 @@
     }
 
     .track-row:hover {
-        background-color: rgba(13, 110, 253, 0.04);
-    }
-
-    body.dark-mode .track-row:hover {
-        background-color: rgba(255, 255, 255, 0.04);
+        background-color: rgba(255, 255, 255, 0.06);
     }
 
     .track-row.playing {
-        background-color: rgba(13, 110, 253, 0.08) !important;
+        background-color: rgba(99, 102, 241, 0.12) !important;
     }
+    .track-row.playing .track-title { color: #a5b4fc !important; }
+    .track-row.playing .track-number { color: #6366f1 !important; }
 
     .track-title {
-        color: var(--text-color);
+        color: #ffffff;
         font-weight: 500;
         font-size: 0.95rem;
     }
@@ -364,16 +389,16 @@
         background: rgba(13, 110, 253, 0.08);
     }
 
-    /* ---- STICKY PLAYER ---- */
+    /* ---- STICKY PLAYER (Spotify Bottom Bar) ---- */
     .sticky-player {
         position: fixed;
         bottom: 0;
         left: 0;
         width: 100%;
-        height: 80px;
-        background-color: var(--card-bg);
-        border-top: 1px solid var(--card-border);
-        box-shadow: 0 -2px 16px rgba(0,0,0,0.06);
+        height: 90px;
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        border-top: 1px solid rgba(255,255,255,0.08);
+        box-shadow: 0 -4px 30px rgba(0,0,0,0.5);
         display: flex;
         align-items: center;
         padding: 0 24px;
@@ -446,20 +471,22 @@
     .p-btn:hover { color: var(--text-color); }
 
     .p-btn-play {
-        width: 34px;
-        height: 34px;
+        width: 40px;
+        height: 40px;
         border-radius: 50%;
-        background-color: var(--text-color);
-        color: var(--card-bg);
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        color: #fff;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 0.85rem;
-        transition: transform 0.15s;
+        font-size: 0.95rem;
+        transition: transform 0.15s, box-shadow 0.15s;
+        box-shadow: 0 4px 15px rgba(99,102,241,0.4);
     }
 
     .p-btn-play:hover {
-        transform: scale(1.08);
+        transform: scale(1.1);
+        box-shadow: 0 6px 20px rgba(99,102,241,0.6);
     }
 
     .player-progress-row {
@@ -474,11 +501,12 @@
     .prog-bar-track {
         flex: 1;
         height: 4px;
-        background-color: var(--card-border);
+        background-color: rgba(255,255,255,0.15);
         border-radius: 2px;
         position: relative;
         cursor: pointer;
         overflow: hidden;
+        transition: height 0.1s;
     }
 
     .prog-bar-track:hover { height: 6px; }
@@ -488,7 +516,7 @@
         top: 0;
         left: 0;
         height: 100%;
-        background-color: var(--primary-color);
+        background: linear-gradient(90deg, #6366f1, #8b5cf6);
         border-radius: 2px;
         width: 0%;
         pointer-events: none;
@@ -502,45 +530,48 @@
 
     /* ---- MODAL ---- */
     .modal-content.pl-modal {
-        background-color: var(--card-bg);
-        color: var(--text-color);
-        border: 1px solid var(--card-border);
+        background: #1e1e2e;
+        color: #fff;
+        border: 1px solid rgba(255,255,255,0.1);
         border-radius: 16px;
-        box-shadow: var(--shadow-lg);
+        box-shadow: 0 25px 50px rgba(0,0,0,0.6);
     }
 
     .pl-modal .modal-header {
-        border-bottom: 1px solid var(--card-border);
+        border-bottom: 1px solid rgba(255,255,255,0.08);
         padding: 20px 24px;
     }
 
+    .pl-modal .btn-close { filter: invert(1); }
     .pl-modal .modal-body { padding: 24px; }
 
     .pl-modal .modal-footer {
-        border-top: 1px solid var(--card-border);
+        border-top: 1px solid rgba(255,255,255,0.08);
         padding: 16px 24px;
     }
 
     .pl-modal .form-control {
-        background-color: var(--light-bg);
-        border: 1px solid var(--card-border);
-        color: var(--text-color);
+        background: rgba(255,255,255,0.07);
+        border: 1px solid rgba(255,255,255,0.15);
+        color: #fff;
         border-radius: 10px;
         padding: 12px 16px;
         font-size: 0.95rem;
     }
 
     .pl-modal .form-control:focus {
-        border-color: var(--primary-color);
-        box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.12);
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99,102,241,0.2);
+        background: rgba(255,255,255,0.1);
+        color: #fff;
     }
 
     .pl-modal .form-control::placeholder {
-        color: var(--text-muted);
+        color: rgba(255,255,255,0.3);
     }
 
     .pl-modal .btn-create {
-        background-color: var(--primary-color);
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
         color: #fff;
         border: none;
         border-radius: 10px;
@@ -556,9 +587,9 @@
     }
 
     .pl-modal .btn-cancel {
-        background: var(--light-bg);
+        background: rgba(255,255,255,0.07);
         color: var(--text-muted);
-        border: 1px solid var(--card-border);
+        border: 1px solid rgba(255,255,255,0.1);
         border-radius: 10px;
         padding: 10px 20px;
         font-weight: 500;
@@ -567,8 +598,8 @@
     }
 
     .pl-modal .btn-cancel:hover {
-        color: var(--text-color);
-        border-color: var(--text-muted);
+        color: #fff;
+        border-color: rgba(255,255,255,0.3);
     }
 
     /* ---- OFFLINE INDICATOR ---- */
@@ -646,79 +677,57 @@
         width: 0%;
     }
 
-    /* Responsive Mobile Overhaul */
+    /* ---- MOBILE ---- */
     .mobile-menu-toggle {
         display: none;
         position: absolute;
         top: 15px;
         left: 15px;
-        background: var(--card-bg);
-        border: 1px solid var(--card-border);
+        background: rgba(255,255,255,0.08);
+        border: 1px solid rgba(255,255,255,0.12);
         border-radius: 8px;
         padding: 8px 16px;
         font-weight: 600;
         font-size: 0.9rem;
         color: var(--text-color);
         z-index: 1030;
-        box-shadow: var(--shadow-sm);
     }
     .sidebar-overlay {
         display: none;
         position: fixed;
-        top: 0; left: 0; right: 0; bottom: 80px;
-        background: rgba(0,0,0,0.6);
+        top: 0; left: 0; right: 0; bottom: 90px;
+        background: rgba(0,0,0,0.7);
         z-index: 1035;
-        backdrop-filter: blur(2px);
+        backdrop-filter: blur(4px);
     }
     .sidebar-overlay.show { display: block; }
 
     @media (max-width: 768px) {
         .mobile-menu-toggle { display: flex; align-items: center; gap: 8px; }
-        
-        .playlist-sidebar { 
+        .playlist-sidebar {
             position: fixed;
             top: 0;
             left: -100%;
             width: 85%;
             max-width: 320px;
-            height: calc(100vh - 80px);
+            height: calc(100vh - 90px);
             z-index: 1040;
             transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            background: var(--card-bg);
-            border-right: 1px solid var(--card-border);
-            border-bottom: none;
-            max-height: none;
+            background: #1a1a2e;
+            border-right: 1px solid rgba(255,255,255,0.08);
         }
         .playlist-sidebar.show { left: 0; }
-        
         .playlist-container { flex-direction: column; position: relative; }
         .playlist-main { padding: 15px; padding-top: 60px; }
         .pl-header { flex-direction: column; align-items: center; text-align: center; gap: 15px; margin-bottom: 20px; padding-bottom: 20px; }
         .pl-cover { width: 140px; height: 140px; }
         .pl-meta h1 { font-size: 1.6rem; }
-        
-        /* Mobile Premium Player Redesign */
-        .premium-player {
-            height: auto;
-            padding: 8px 12px;
-            flex-direction: column;
-            gap: 6px;
-            justify-content: center;
-        }
-        .player-left { 
-            display: flex !important; 
-            width: 100%; 
-            margin-bottom: 4px;
-        }
-        #playerCover { width: 40px; height: 40px; border-radius: 6px; }
-        .player-info { max-width: calc(100vw - 80px); }
-        #playerTitle { font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
-        #playerArtist { font-size: 0.75rem; margin-top: 2px; }
-        
-        .player-center { width: 100%; gap: 5px; }
-        .player-controls { margin-bottom: 2px; gap: 16px; }
-        .btn-play-main { width: 40px; height: 40px; font-size: 1rem; }
+        .sticky-player { height: auto; padding: 10px 12px; flex-direction: column; gap: 6px; }
+        .player-left { width: 100%; }
+        .player-center { width: 100%; }
         .player-right { display: none; }
+        .player-track-name { max-width: calc(100vw - 80px); }
+        .player-btns { gap: 16px; }
     }
 </style>
 {% endblock %}
@@ -1017,11 +1026,11 @@
             </div>
 
             ${playlist.items.length > 0 ? `
-            <div class="alert alert-dark d-flex align-items-center mb-4" style="background: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-muted); font-size: 0.85rem;" role="alert">
-                <i class="fas fa-info-circle me-3 fs-5" style="color: var(--primary-color);"></i>
+            <div class="info-note" style="background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.2); border-radius: 12px; padding: 14px 18px; color: rgba(255,255,255,0.7); font-size: 0.85rem; margin-bottom: 24px; display: flex; align-items: flex-start; gap: 12px;">
+                <i class="fas fa-info-circle" style="color: #6366f1; font-size: 1.1rem; flex-shrink: 0; margin-top: 1px;"></i>
                 <div>
-                    <strong>Nota sobre la reproducción:</strong> La primera vez que reproduces una canción desde un link externo (como YouTube), puede tardar un poco mientras nuestro servidor descarga el audio. <br>
-                    Para evitar estos retrasos y disfrutar como una app nativa, te recomendamos <strong>Instalar SaveWave</strong> desde el menú de inicio y usar el botón de <strong>Descargar Todo</strong>.
+                    <strong style="color: #a5b4fc;">Nota sobre la reproducción:</strong> La primera vez que reproduces una canción desde un link externo (como YouTube), puede tardar un momento mientras nuestro servidor procesa el audio. 
+                    Para escuchar sin retrasos, usa <strong style="color: #a5b4fc;">Descargar Todo</strong> primero.
                 </div>
             </div>
             ` : ''}
@@ -1168,7 +1177,7 @@
         // Show loading state
         isPlaying = false;
         updatePlayPauseUI();
-        document.getElementById('playerTitle').textContent = '⏳ ' + track.title;
+        document.getElementById('playerTitle').innerHTML = '<span class="spinner-border spinner-border-sm text-primary me-2" role="status" style="width: 1rem; height: 1rem; border-width: 0.15em;"></span> <span style="opacity: 0.7;">Cargando...</span>';
 
         // Reset progress
         document.getElementById('progressBar').style.width = '0%';
@@ -1236,15 +1245,17 @@
                     isPlaying = true;
                     document.getElementById('playerTitle').textContent = track.title;
                 } catch(playErr) {
-                    document.getElementById('playerTitle').textContent = '❌ Error al reproducir';
+                    console.warn('Autoplay blocked:', playErr);
+                    // Show a tap-to-play prompt rather than an error
+                    document.getElementById('playerTitle').innerHTML = `<span style="color: #a5b4fc; cursor:pointer;" onclick="togglePlay()">▶ ${track.title} (toca para reproducir)</span>`;
                 }
             } else {
-                document.getElementById('playerTitle').textContent = '❌ ' + (data.error || 'No disponible');
+                document.getElementById('playerTitle').innerHTML = `<span style="color:#f87171;"><i class="fas fa-exclamation-triangle me-1"></i>${data.error || 'No disponible. Intenta de nuevo.'}</span>`;
             }
         } catch(e) {
             // Only show error if it wasn't an abort
             if (e.name !== 'AbortError') {
-                document.getElementById('playerTitle').textContent = '❌ Error de conexión';
+                document.getElementById('playerTitle').innerHTML = `<span style="color:#f87171;"><i class="fas fa-wifi me-1"></i>Error de conexión. Intenta de nuevo.</span>`;
             }
             currentFetchController = null;
         }

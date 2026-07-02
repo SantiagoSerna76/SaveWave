@@ -1455,11 +1455,13 @@
                         await audioPlayer.play();
                         isPlaying = true;
                         statusEl.textContent = track.title;
+                        updatePlayPauseUI();
+                        return; // Success, exit function
                     } catch(err) {
-                        statusEl.textContent = '❌ Error offline: ' + err.message;
+                        console.warn('Caché offline corrupto detectado, eliminando y usando red...', err);
+                        await offlineCache.delete('/offline-cache/?url=' + encodeURIComponent(track.url));
+                        // Don't return, let the code continue to the network block below
                     }
-                    updatePlayPauseUI();
-                    return;
                 }
             }
         } catch(e) { /* ignore cache errors */ }

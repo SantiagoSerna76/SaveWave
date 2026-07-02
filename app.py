@@ -618,6 +618,29 @@ def api_download_audio():
     except Exception as e:
         return jsonify({"success": False, "error": f"Error al convertir a MP3: {str(e)}"})
 
+@app.route("/api/debug-download", methods=["GET"])
+def debug_download():
+    import traceback
+    try:
+        test_url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+        output = []
+        output.append(f"Testing URL: {test_url}")
+        
+        # Check ffmpeg
+        import subprocess
+        try:
+            ffmpeg_res = subprocess.run(["ffmpeg", "-version"], capture_output=True, text=True)
+            output.append(f"FFMPEG: {ffmpeg_res.stdout.splitlines()[0]}")
+        except Exception as e:
+            output.append(f"FFMPEG ERROR: {e}")
+            
+        output.append("Starting download_audio...")
+        result = download_audio(test_url, "128")
+        output.append(f"Result: {result}")
+        
+        return jsonify({"status": "done", "log": output})
+    except Exception as e:
+        return jsonify({"status": "exception", "error": str(e), "trace": traceback.format_exc(), "log": output})
 
 @app.route("/api/download-multiple", methods=["POST"])
 @login_required

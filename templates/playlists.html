@@ -1299,37 +1299,73 @@
         // --- REMOTE URLS: download audio via API then play ---
         currentFetchController = new AbortController();
         try {
+            console.log('[SaveWave] Fetching audio for:', track.url);
             const res = await fetch('/api/download-audio', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/x-www-form-urlencoded'},
                 body: 'url=' + encodeURIComponent(track.url) + '&quality=128',
                 signal: currentFetchController.signal
             });
+
+            if (!res.ok) {
+                currentFetchController = null;
+                console.error('[SaveWave] API responded with status:', res.status);
+                document.getElementById('playerTitle').innerHTML = `<span style="color:#f87171;"><i class="fas fa-exclamation-triangle me-1"></i>Error del servidor (${res.status})</span>`;
+                updatePlayPauseUI();
+                return;
+            }
+
             const data = await res.json();
             currentFetchController = null;
+            console.log('[SaveWave] API response:', data);
 
             // Prevent race condition: ensure we are still trying to play the same track
             if (currentTrackIndex !== index) return;
 
-            if (data.success) {
-                track.cached_url = data.download_url; // Cache the URL
-                audioPlayer.src = data.download_url;
+            if (data.success && data.download_url) {
+                track.cached_url = data.download_url;
+                console.log('[SaveWave] Setting audio src to:', data.download_url);
+                
+                // Use a promise to wait for the audio to be loadable
+                await new Promise((resolve, reject) => {
+                    const onCanPlay = () => {
+                        audioPlayer.removeEventListener('canplaythrough', onCanPlay);
+                        audioPlayer.removeEventListener('error', onError);
+                        resolve();
+                    };
+                    const onError = (e) => {
+                        audioPlayer.removeEventListener('canplaythrough', onCanPlay);
+                        audioPlayer.removeEventListener('error', onError);
+                        console.error('[SaveWave] Audio load error:', audioPlayer.error);
+                        reject(new Error('Audio load failed'));
+                    };
+                    audioPlayer.addEventListener('canplaythrough', onCanPlay, {once: true});
+                    audioPlayer.addEventListener('error', onError, {once: true});
+                    audioPlayer.src = data.download_url;
+                    audioPlayer.load();
+                });
+
+                // Check we are still on same track after loading
+                if (currentTrackIndex !== index) return;
+
                 try {
                     await audioPlayer.play();
                     isPlaying = true;
                     document.getElementById('playerTitle').textContent = track.title;
+                    console.log('[SaveWave] Playing successfully!');
                 } catch(playErr) {
-                    console.warn('Autoplay blocked:', playErr);
-                    // Show a tap-to-play prompt rather than an error
-                    document.getElementById('playerTitle').innerHTML = `<span style="color: #a5b4fc; cursor:pointer;" onclick="togglePlay()">▶ ${track.title} (toca para reproducir)</span>`;
+                    console.warn('[SaveWave] Autoplay blocked:', playErr);
+                    document.getElementById('playerTitle').innerHTML = `<span style="color: #a5b4fc; cursor:pointer;" onclick="audioPlayer.play().then(()=>{isPlaying=true;updatePlayPauseUI();document.getElementById('playerTitle').textContent='${track.title.replace(/'/g, "\\'")}';})">▶ Toca para reproducir: ${track.title}</span>`;
                 }
             } else {
+                console.error('[SaveWave] API returned error:', data.error);
                 document.getElementById('playerTitle').innerHTML = `<span style="color:#f87171;"><i class="fas fa-exclamation-triangle me-1"></i>${data.error || 'No disponible. Intenta de nuevo.'}</span>`;
             }
         } catch(e) {
             // Only show error if it wasn't an abort
             if (e.name !== 'AbortError') {
-                document.getElementById('playerTitle').innerHTML = `<span style="color:#f87171;"><i class="fas fa-wifi me-1"></i>Error de conexión. Intenta de nuevo.</span>`;
+                console.error('[SaveWave] Fetch/play error:', e);
+                document.getElementById('playerTitle').innerHTML = `<span style="color:#f87171;"><i class="fas fa-wifi me-1"></i>Error: ${e.message}</span>`;
             }
             currentFetchController = null;
         }

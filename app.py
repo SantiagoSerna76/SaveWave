@@ -499,6 +499,23 @@ def download_file(filename):
     return send_file(file_path, as_attachment=True)
 
 
+@app.route("/stream/<filename>")
+def stream_file(filename):
+    """Sirve el archivo para reproduccion en el navegador (sin as_attachment)."""
+    if ".." in filename or "/" in filename or "\\" in filename:
+        abort(400)
+
+    file_path = os.path.join(Config.DOWNLOAD_FOLDER, filename)
+    real_path = os.path.realpath(file_path)
+    download_folder = os.path.realpath(Config.DOWNLOAD_FOLDER)
+    if not real_path.startswith(download_folder):
+        abort(403)
+
+    if not os.path.exists(file_path):
+        abort(404)
+    return send_file(file_path, as_attachment=False, mimetype="audio/mpeg")
+
+
 # ============================================================
 # API - JWT (para autenticacion de API externa)
 # ============================================================
@@ -611,7 +628,7 @@ def api_download_audio():
                 "file_size": result["file_size_formatted"],
                 "title": result["title"],
                 "platform": result["platform"],
-                "download_url": url_for("download_file", filename=result["filename"]),
+                "download_url": url_for("stream_file", filename=result["filename"]),
             })
         else:
             return jsonify({"success": False, "error": result["error"]})

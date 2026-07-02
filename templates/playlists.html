@@ -1208,10 +1208,13 @@
             return;
         }
 
-        // If same track is paused, just resume
+        // If same track is paused, just resume (only if it has valid data and no error)
         if (currentTrackIndex === index && audioPlayer.src && audioPlayer.paused && currentFetchController === null) {
-            audioPlayer.play().then(() => { isPlaying = true; updatePlayPauseUI(); }).catch(() => {});
-            return;
+            if (audioPlayer.readyState >= 1 && !audioPlayer.error) {
+                audioPlayer.play().then(() => { isPlaying = true; updatePlayPauseUI(); }).catch(() => {});
+                return;
+            }
+            // If it had an error or wasn't loaded, let it fall through and try fetching again
         }
 
         // Abort previous fetch if any
@@ -1341,7 +1344,15 @@
             playTrack(0);
             return;
         }
-        if (!audioPlayer.src) return;
+
+        // If currently fetching, do nothing
+        if (currentFetchController !== null) return;
+
+        // If no src, has error, or is not loaded, retry loading
+        if (!audioPlayer.src || audioPlayer.error || audioPlayer.readyState < 1) {
+            playTrack(currentTrackIndex);
+            return;
+        }
 
         if (audioPlayer.paused) {
             audioPlayer.play().then(() => {

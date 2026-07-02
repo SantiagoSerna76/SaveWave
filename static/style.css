@@ -2,17 +2,59 @@
    SAVEWAVE - ESTILOS ADICIONALES (NO reemplaza Bootstrap)
    ============================================================ */
 
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
 :root {
   --spotify-green: #1db954;
   --spotify-dark: #121212;
   --spotify-card: #181818;
   --spotify-hover: #282828;
+  --light-bg: #f8f9fa;
+  --text-color: #fff;
+  --card-bg: #181818;
 }
 
 /* --- Tema oscuro base --- */
 body {
+  font-family: 'Inter', sans-serif;
   background-color: var(--spotify-dark) !important;
-  color: #fff !important;
+  color: var(--text-color) !important;
+}
+
+/* --- Clases Premium UI (Elegantes) --- */
+.hero-title {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.glass-card {
+  background: rgba(24, 24, 24, 0.7) !important;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.4); }
+  70% { box-shadow: 0 0 0 15px rgba(13, 110, 253, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0); }
+}
+
+.btn-pulse {
+  animation: pulse 2s infinite;
+  background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%) !important;
+  border-radius: 12px !important;
+}
+
+.nav-pill-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+  padding: 8px 16px !important;
+  margin: 0 4px;
+  transition: all 0.2s;
+}
+.nav-pill-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
 }
 
 /* --- Cards estilo Spotify --- */
@@ -29,6 +71,7 @@ body {
 /* --- Navbar oscuro --- */
 .navbar {
   border-bottom: 1px solid #333 !important;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%) !important;
 }
 
 /* --- Playlist grid (Spotify style) --- */

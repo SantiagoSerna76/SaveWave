@@ -620,6 +620,22 @@
         font-size: 0.65rem;
     }
 
+    /* ---- PLAYER BUTTON ACTIVE DOT (Shuffle / Repeat) ---- */
+    .p-btn {
+        position: relative;
+    }
+    .p-btn .active-dot {
+        display: block;
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background: var(--primary-color);
+        position: absolute;
+        bottom: -1px;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+
     /* ---- DOWNLOAD OPTIONS MODAL ---- */
     .dl-option {
         display: flex;
@@ -1711,6 +1727,15 @@
         const btn = document.getElementById('shuffleBtn');
         btn.style.color = isShuffled ? 'var(--primary-color)' : '';
         btn.style.opacity = isShuffled ? '1' : '';
+        // Toggle active dot
+        const existingDot = btn.querySelector('.active-dot');
+        if (isShuffled && !existingDot) {
+            const dot = document.createElement('span');
+            dot.className = 'active-dot';
+            btn.appendChild(dot);
+        } else if (!isShuffled && existingDot) {
+            existingDot.remove();
+        }
         if (isShuffled) {
             generateShuffleOrder();
             // Put current track at the beginning of shuffle so "next" goes to a new song
@@ -1725,31 +1750,34 @@
     }
 
     // ========== REPEAT (3 modes: off → all → one → off) ==========
-    function toggleRepeat() {
-        repeatMode = (repeatMode + 1) % 3;
+    function updateRepeatUI() {
         const btn = document.getElementById('repeatBtn');
-        const icon = btn.querySelector('i');
+        // Clear previous state
+        btn.style.color = '';
+        btn.style.opacity = '';
+        btn.innerHTML = '<i class="fas fa-redo"></i>';
 
         if (repeatMode === 0) {
-            // Off
-            btn.style.color = '';
-            btn.style.opacity = '';
-            icon.className = 'fas fa-redo';
+            // Off - no dot
             btn.title = 'Repetir: Desactivado';
         } else if (repeatMode === 1) {
-            // Repeat all
+            // Repeat all - colored + dot
             btn.style.color = 'var(--primary-color)';
             btn.style.opacity = '1';
-            icon.className = 'fas fa-redo';
+            btn.innerHTML = '<i class="fas fa-redo"></i><span class="active-dot"></span>';
             btn.title = 'Repetir: Toda la playlist';
         } else {
-            // Repeat one
+            // Repeat one - colored + dot + small '1' badge inside icon
             btn.style.color = 'var(--primary-color)';
             btn.style.opacity = '1';
-            icon.className = 'fas fa-redo';
-            btn.innerHTML = '<i class="fas fa-redo"></i><span style="font-size:0.6em;position:absolute;margin-left:-4px;margin-top:2px;font-weight:bold;">1</span>';
+            btn.innerHTML = '<i class="fas fa-redo"></i><span style="font-size:0.55em;font-weight:900;line-height:1;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;">1</span><span class="active-dot"></span>';
             btn.title = 'Repetir: Una canción';
         }
+    }
+
+    function toggleRepeat() {
+        repeatMode = (repeatMode + 1) % 3;
+        updateRepeatUI();
     }
 
     // ========== SEEK ==========

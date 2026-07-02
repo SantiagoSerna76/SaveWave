@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="{% block meta_description %}SaveWave - Descargar videos MP4 gratis y convertir a MP3 de YouTube, Instagram, TikTok, Facebook y mas. Rapido, facil y sin programas.{% endblock %}">
-    <meta name="keywords" content="{% block meta_keywords %}descargar videos, convertir a mp3, descargar mp4, youtube downloader mp3, savewave{% endblock %}">
+    <meta name="description" content="{% block meta_description %}SaveWave - Descarga videos de YouTube, Instagram, TikTok, Facebook y cientos de plataformas mas. Rapido, gratis y seguro.{% endblock %}">
+    <meta name="keywords" content="{% block meta_keywords %}descargar videos, YouTube downloader, Instagram video downloader, TikTok downloader, SaveWave{% endblock %}">
     <meta name="author" content="SaveWave">
     <meta name="robots" content="index, follow">
+    
     <meta property="og:title" content="{% block og_title %}SaveWave - Descarga videos gratis{% endblock %}">
     <meta property="og:description" content="Descarga videos de cualquier plataforma. Rapido, facil y seguro.">
     <meta property="og:type" content="website">
@@ -16,97 +17,129 @@
     <meta name="twitter:description" content="Descarga videos de cualquier plataforma.">
     <meta name="google-site-verification" content="">
     <link rel="canonical" href="{{ request.url }}">
+    
+    <!-- PWA -->
     <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#121212">
+    <meta name="theme-color" content="#1e1e2e">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="SaveWave">
+    
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='Savewave.png') }}">
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='Savewave.png') }}">
+    
     <title>{% block title %}SaveWave{% endblock %}</title>
+
+    <!-- Bootstrap 5 + Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Estilos personalizados (no reemplaza Bootstrap, lo complementa) -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
     {% block extra_head %}{% endblock %}
 </head>
 <body>
-    <!-- ==================== NAVBAR MODERNA ==================== -->
-    <nav class="navbar">
-        <div class="navbar-inner">
-            <a class="navbar-brand" href="{{ url_for('index') }}">
-                <img src="{{ url_for('static', filename='Savewave.png') }}" alt="SaveWave">
+    <!-- ==================== NAVBAR ==================== -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="{{ url_for('index') }}">
+                <img src="{{ url_for('static', filename='Savewave.png') }}" alt="SaveWave" height="32" class="me-2" style="border-radius: 6px;">
                 SaveWave
             </a>
-            <div class="navbar-links">
-                <a href="{{ url_for('index') }}" title="Inicio"><i class="fas fa-home"></i></a>
-                <a href="{{ url_for('pricing') }}" title="Planes"><i class="fas fa-tags"></i></a>
-                <button id="darkModeToggle" title="Modo oscuro"><i class="fas fa-moon"></i></button>
-                {% if current_user.is_authenticated %}
-                    <a href="{{ url_for('playlists_view') }}" title="Playlists"><i class="fas fa-list"></i></a>
-                    <a href="{{ url_for('dashboard') }}" title="Panel"><i class="fas fa-user"></i></a>
-                    <a href="{{ url_for('logout') }}" title="Salir"><i class="fas fa-sign-out-alt"></i></a>
-                {% else %}
-                    <a href="{{ url_for('login') }}">Entrar</a>
-                    <a href="{{ url_for('register') }}" style="background:var(--primary);color:#000!important;border-radius:20px;padding:6px 14px;font-weight:600;">Crear</a>
-                {% endif %}
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('index') }}"><i class="fas fa-home me-1"></i>Inicio</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('pricing') }}"><i class="fas fa-tags me-1"></i>Planes</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav align-items-center">
+                    <li class="nav-item">
+                        <button id="darkModeToggle" class="btn btn-sm btn-outline-light me-2" title="Modo oscuro">
+                            <i class="fas fa-moon"></i>
+                        </button>
+                    </li>
+                    {% if current_user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('playlists_view') }}"><i class="fas fa-headphones me-1"></i>Playlists</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('dashboard') }}"><i class="fas fa-user me-1"></i>{{ current_user.username }}</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt me-1"></i>Salir</a>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('login') }}"><i class="fas fa-sign-in-alt me-1"></i>Entrar</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link btn btn-success btn-sm text-white px-3 ms-2" href="{{ url_for('register') }}"><i class="fas fa-user-plus me-1"></i>Crear cuenta</a>
+                        </li>
+                    {% endif %}
+                </ul>
             </div>
         </div>
     </nav>
 
-    <!-- ==================== MENSAJES FLASH ==================== -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            <div class="container" style="margin-top:12px;">
-            {% for category, message in messages %}
-                <div class="alert alert-{{ category }}">{{ message }}</div>
-            {% endfor %}
-            </div>
-        {% endif %}
-    {% endwith %}
+    <!-- Mensajes flash -->
+    <div class="container mt-3">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show">{{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
 
-    <!-- ==================== CONTENIDO PRINCIPAL ==================== -->
-    <main class="container" style="padding-top:16px;padding-bottom:40px;">
+    <!-- Contenido principal -->
+    <main class="container py-4">
         {% block content %}{% endblock %}
     </main>
 
-    <!-- ==================== FOOTER ==================== -->
-    <footer class="footer">
+    <!-- Footer -->
+    <footer class="bg-dark text-light py-4 mt-5">
         <div class="container">
-            <div class="footer-grid">
-                <div>
-                    <h5><img src="{{ url_for('static', filename='Savewave.png') }}" alt="SaveWave" style="height:24px;border-radius:4px;vertical-align:middle;margin-right:8px;">SaveWave</h5>
-                    <p>Descarga videos de YouTube, Instagram y TikTok. Solo para uso personal.</p>
+            <div class="row">
+                <div class="col-md-6">
+                    <h5><img src="{{ url_for('static', filename='Savewave.png') }}" alt="SaveWave" height="24" class="me-2" style="border-radius: 4px;">SaveWave</h5>
+                    <p class="text-muted small">Descarga videos de YouTube, Instagram y TikTok. Solo para uso personal.</p>
                 </div>
-                <div>
+                <div class="col-md-3">
                     <h6>Enlaces</h6>
-                    <ul>
-                        <li><a href="{{ url_for('index') }}">Inicio</a></li>
-                        <li><a href="{{ url_for('pricing') }}">Planes</a></li>
-                        <li><a href="{{ url_for('login') }}">Iniciar sesion</a></li>
+                    <ul class="list-unstyled small">
+                        <li><a href="{{ url_for('index') }}" class="text-light text-decoration-none">Inicio</a></li>
+                        <li><a href="{{ url_for('pricing') }}" class="text-light text-decoration-none">Planes</a></li>
+                        <li><a href="{{ url_for('login') }}" class="text-light text-decoration-none">Entrar</a></li>
                     </ul>
                 </div>
-                <div>
+                <div class="col-md-3">
                     <h6>Legal</h6>
-                    <ul>
-                        <li><a href="{{ url_for('terms') }}">Terminos de uso</a></li>
-                        <li><a href="{{ url_for('privacy') }}">Privacidad</a></li>
+                    <ul class="list-unstyled small">
+                        <li><a href="{{ url_for('terms') }}" class="text-light text-decoration-none">Terminos</a></li>
+                        <li><a href="{{ url_for('privacy') }}" class="text-light text-decoration-none">Privacidad</a></li>
                     </ul>
                 </div>
             </div>
-            <hr>
-            <p class="footer-copy">&copy; 2026 SaveWave. No almacenamos videos en nuestros servidores.</p>
+            <hr class="border-secondary">
+            <p class="text-center text-muted small mb-0">&copy; 2026 SaveWave</p>
         </div>
     </footer>
 
-    <!-- ==================== SCRIPTS ==================== -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="{{ url_for('static', filename='script.js') }}"></script>
     <script>
-    // Registrar Service Worker
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/sw.js').catch(err => {
-                console.log('SW error:', err);
-            });
+            navigator.serviceWorker.register('/sw.js').catch(() => {});
         });
     }
     </script>

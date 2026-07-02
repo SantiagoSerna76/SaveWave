@@ -1,4 +1,4 @@
-const CACHE_NAME = 'savewave-v2';
+const CACHE_NAME = 'savewave-v3';
 const ASSETS_TO_CACHE = [
     '/',
     '/static/style.css',

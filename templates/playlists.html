@@ -1429,7 +1429,31 @@
         document.getElementById('timeCurrent').textContent = '0:00';
         document.getElementById('timeTotal').textContent = '0:00';
 
-        // --- LOCAL FILES & CACHED URLS: play directly ---
+        // --- OFFLINE BROWSER CACHE: play directly without hitting server ---
+        try {
+            if ('caches' in window) {
+                const offlineCache = await caches.open(OFFLINE_CACHE_NAME);
+                const cachedRes = await offlineCache.match('savewave-offline-' + track.url);
+                if (cachedRes) {
+                    const blob = await cachedRes.blob();
+                    const localUrl = URL.createObjectURL(blob);
+                    statusEl.textContent = '⏳ Cargando offline...';
+                    audioPlayer.src = localUrl;
+                    audioPlayer.load();
+                    try {
+                        await audioPlayer.play();
+                        isPlaying = true;
+                        statusEl.textContent = track.title;
+                    } catch(err) {
+                        statusEl.textContent = '❌ Error offline: ' + err.message;
+                    }
+                    updatePlayPauseUI();
+                    return;
+                }
+            }
+        } catch(e) { /* ignore cache errors */ }
+
+        // --- LOCAL FILES & IN-MEMORY CACHE: play directly ---
         if (track.platform === 'audio_local' || track.platform === 'video_local' || track.cached_url) {
             const localSrc = track.cached_url || track.url;
             statusEl.textContent = '⏳ Cargando archivo local...';

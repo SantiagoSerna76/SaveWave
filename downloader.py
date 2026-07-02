@@ -104,6 +104,7 @@ def detect_platform(url: str) -> str:
 def _get_ydl_opts(extra_opts: dict = None) -> dict:
     """
     Construye las opciones base para yt-dlp.
+    Usa android como player client principal (evita el bloqueo "Sign in to confirm you're not a bot").
     """
     opts = {
         "quiet": True,
@@ -111,14 +112,12 @@ def _get_ydl_opts(extra_opts: dict = None) -> dict:
         "nocheckcertificate": True,
         "restrictfilenames": True,
         "noplaylist": True,
-        # Fake user agent para evitar bloqueos
+        # android no requiere cookies ni firma, evita el bloqueo en VPS
+        "extractor_args": {"youtube": {"player_client": ["android"]}},
+        # User agent de Android para que sea consistente con el player client
         "http_headers": {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            "User-Agent": "com.google.android.youtube/19.09.37 (Linux; U; Android 11) gzip"
         },
-        # web client soporta cookies; Deno en el servidor resuelve los challenges de firma de YouTube
-        "extractor_args": {"youtube": {"player_client": ["web"]}},
-        # Descarga automáticamente el script solver de firmas (usa Deno, instalado en el VPS)
-        "remote_components": {"ejs:github"},
     }
 
     # Usar cookies de YouTube si existe el archivo (necesario en VPS)

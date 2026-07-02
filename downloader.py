@@ -263,7 +263,7 @@ def download_audio(url: str, quality: str = "128", output_path: str = None) -> d
     url_hash = hashlib.md5(url.encode()).hexdigest()
 
     # Fast path: check if we already downloaded this exact audio
-    existing_files = glob.glob(os.path.join(output_path, f"audio_{url_hash}_*.mp3"))
+    existing_files = glob.glob(os.path.join(output_path, f"audio_{url_hash}.mp3"))
     if existing_files:
         downloaded_file = existing_files[0]
         file_size = os.path.getsize(downloaded_file)
@@ -274,15 +274,15 @@ def download_audio(url: str, quality: str = "128", output_path: str = None) -> d
             return {
                 "success": True,
                 "file_path": downloaded_file,
-            "file_size": file_size,
-            "file_size_formatted": _format_file_size(file_size),
-            "title": os.path.basename(downloaded_file).replace(f"audio_{url_hash}_", "").replace(".mp3", ""),
-            "platform": detect_platform(url),
-            "duration": 0,
-            "filename": os.path.basename(downloaded_file),
-        }
+                "file_size": file_size,
+                "file_size_formatted": _format_file_size(file_size),
+                "title": "Audio", # No longer used by frontend
+                "platform": detect_platform(url),
+                "duration": 0,
+                "filename": os.path.basename(downloaded_file),
+            }
 
-    output_template = os.path.join(output_path, f"audio_{url_hash}_%(title)s.%(ext)s")
+    output_template = os.path.join(output_path, f"audio_{url_hash}.%(ext)s")
 
     # Formato: extraer mejor audio y convertirlo a mp3 (con fallbacks si bestaudio no esta disponible)
     format_spec = "bestaudio[abr<=128]/bestaudio/best/bv+ba" if quality == "128" else "bestaudio/best/bv+ba"

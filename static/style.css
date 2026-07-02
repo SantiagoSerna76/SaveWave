@@ -10,8 +10,14 @@
   --spotify-card: #181818;
   --spotify-hover: #282828;
   --light-bg: #f8f9fa;
-  --text-color: #fff;
-  --card-bg: #181818;
+  --text-color: #ffffff;
+  --text-muted: #a0a0a0;
+  --card-bg: #1e1e2e;
+  --card-border: rgba(255, 255, 255, 0.1);
+  --primary-color: #0d6efd;
+  --shadow-sm: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 10px 15px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 20px 25px rgba(0, 0, 0, 0.3);
 }
 
 /* --- Tema oscuro base --- */
@@ -44,6 +50,20 @@ body {
   animation: pulse 2s infinite;
   background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%) !important;
   border-radius: 12px !important;
+  color: white !important;
+}
+
+.btn-premium {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  color: white !important;
+  border: none;
+  border-radius: 20px;
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+  transition: all 0.3s ease;
+}
+.btn-premium:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
 }
 
 .nav-pill-btn {

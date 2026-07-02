@@ -1,6 +1,7 @@
-const CACHE_NAME = 'savewave-v4';
+const CACHE_NAME = 'savewave-v5';
 const ASSETS_TO_CACHE = [
     '/',
+    '/playlists',
     '/static/style.css',
     '/static/script.js',
     '/static/Savewave.png',
@@ -38,14 +39,31 @@ self.addEventListener('activate', (event) => {
 
 // Intercept requests
 self.addEventListener('fetch', (event) => {
-    // If the request is for the API, always go to network
+    // API Requests
     if (event.request.url.includes('/api/')) {
-        event.respondWith(fetch(event.request));
+        // Cache GET requests (like playlist data) using Network-First
+        if (event.request.method === 'GET') {
+            event.respondWith(
+                fetch(event.request).then(response => {
+                    if (response && response.status === 200) {
+                        const responseClone = response.clone();
+                        caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseClone));
+                    }
+                    return response;
+                }).catch(() => {
+                    // Offline fallback
+                    return caches.match(event.request);
+                })
+            );
+        } else {
+            // POST/PUT/DELETE (like creating playlists, downloading) go to network only
+            event.respondWith(fetch(event.request));
+        }
         return;
     }
 
     // For downloaded audio files, try cache first (offline playback), then network
-    if (event.request.url.includes('/downloads/')) {
+    if (event.request.url.includes('/downloads/') || event.request.url.includes('/stream/')) {
         event.respondWith(
             caches.match(event.request).then(cached => {
                 return cached || fetch(event.request);
@@ -57,7 +75,6 @@ self.addEventListener('fetch', (event) => {
     // For the rest (static files, html pages), try network first, then fallback to cache
     event.respondWith(
         fetch(event.request).then(response => {
-            // Update the cache with the new version if it's a valid response
             if (response && response.status === 200 && event.request.method === 'GET') {
                 const responseClone = response.clone();
                 caches.open(CACHE_NAME).then(cache => {
@@ -66,7 +83,6 @@ self.addEventListener('fetch', (event) => {
             }
             return response;
         }).catch(() => {
-            // Fallback to cache if network fails (offline)
             return caches.match(event.request);
         })
     );

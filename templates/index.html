@@ -335,6 +335,20 @@
         </div>
 
 
+        {% if ads_enabled %}
+        <!-- AD: Aparece despues de ver la info del video - momento de alta atencion -->
+        <div id="adAfterVideoInfo" class="mt-4 text-center" style="display:none;">
+            <span class="badge bg-secondary mb-2" style="font-size: 0.6rem; opacity: 0.5;">Patrocinado</span>
+            <ins class="adsbygoogle"
+                 style="display:inline-block;width:320px;height:100px"
+                 data-ad-client="{{ adsense_client }}"
+                 data-ad-slot="{{ adsense_slot_index_top }}"
+                 data-ad-format="auto"
+                 data-full-width-responsive="true"></ins>
+            <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+        </div>
+        {% endif %}
+
         <!-- ==================== BARRA DE PROGRESO ==================== -->
         <div id="progressContainer" class="mt-4" style="display: none;">
             <div class="card shadow-sm border-0">
@@ -364,6 +378,20 @@
                 </div>
             </div>
         </div>
+
+        {% if ads_enabled %}
+        <!-- AD: Aparece despues de descargar - momento de maxima satisfaccion -->
+        <div class="mt-4 text-center">
+            <span class="badge bg-secondary mb-2" style="font-size: 0.6rem; opacity: 0.5;">Patrocinado</span>
+            <ins class="adsbygoogle"
+                 style="display:block"
+                 data-ad-client="{{ adsense_client }}"
+                 data-ad-slot="{{ adsense_slot_index_bottom }}"
+                 data-ad-format="auto"
+                 data-full-width-responsive="true"></ins>
+            <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+        </div>
+        {% endif %}
 
         <!-- ==================== PLAYLIST PROMO BANNER (PROFESSIONAL UI) ==================== -->
         <div class="mt-5 mb-4 position-relative promo-banner-wrapper">
@@ -697,6 +725,9 @@ $(document).ready(function() {
                         lastVideoInfo = response;
                         $videoInfo.show();
                         $('#saveToPlaylistBtn').show();
+                        // Mostrar anuncio contextual solo para usuarios gratuitos
+                        const adBlock = document.getElementById('adAfterVideoInfo');
+                        if (adBlock) adBlock.style.display = 'block';
                     }
                 } else if (response.upgrade_required) {
                     $('#upgradeMessage').text(response.error);

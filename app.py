@@ -1101,6 +1101,11 @@ def api_playlist_upload():
         }
     })
 
+@app.route("/ads.txt")
+def ads_txt():
+    """Sirve el archivo ads.txt para la verificacion de Google AdSense"""
+    return send_from_directory(app.root_path, "ads.txt")
+
 # ============================================================
 # BACKGROUND CLEANUP TASK
 # ============================================================

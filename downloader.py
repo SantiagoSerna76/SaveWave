@@ -101,11 +101,15 @@ def detect_platform(url: str) -> str:
     raise ValueError(f"URL no soportada o plataforma no reconocida: {url}")
 
 
-def _get_ydl_opts(extra_opts: dict = None) -> dict:
+def _get_ydl_opts(extra_opts: dict = None, url: str = None) -> dict:
     """
     Construye las opciones base para yt-dlp.
     Usa web como player client principal (requiere cookies, pero da formatos completos).
     Si hay cookies, usa web. Si no hay cookies, usa android (sin formatos de altura).
+    
+    Args:
+        extra_opts: Opciones adicionales para yt-dlp.
+        url: URL opcional para aplicar configuraciones específicas por plataforma.
     """
     base_dir = os.path.dirname(os.path.abspath(__file__))
     has_cookies = False
@@ -116,6 +120,11 @@ def _get_ydl_opts(extra_opts: dict = None) -> dict:
         "nocheckcertificate": True,
         "restrictfilenames": True,
         "noplaylist": True,
+        # Speed optimizations
+        "concurrent_fragment_downloads": 4,
+        "buffersize": 1024 * 16,  # 16KB buffer
+        "retries": 3,
+        "http_chunk_size": 1048576,  # 1MB chunks
     }
 
     # Buscar archivo de cookies
@@ -133,16 +142,30 @@ def _get_ydl_opts(extra_opts: dict = None) -> dict:
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         }
     else:
-        # Sin cookies: usar android (no requiere auth, pero formatos limitados)
-        opts["extractor_args"] = {"youtube": {"player_client": ["android"]}}
+        # Sin cookies: usar mweb (más rápido para audio, sin auth)
+        opts["extractor_args"] = {"youtube": {"player_client": ["mweb", "android"]}}
         opts["http_headers"] = {
-            "User-Agent": "com.google.android.youtube/19.09.37 (Linux; U; Android 11) gzip"
+            "User-Agent": "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36"
         }
 
     # Usar ffmpeg local si existe en la carpeta bin
     bin_dir = os.path.join(base_dir, 'bin')
     if os.path.exists(os.path.join(bin_dir, 'ffmpeg.exe')):
         opts['ffmpeg_location'] = bin_dir
+
+    # Configuraciones específicas por plataforma
+    if url:
+        try:
+            platform = detect_platform(url)
+        except ValueError:
+            platform = None
+
+        if platform == "instagram":
+            # Instagram requiere autenticación. Intentar con login primero.
+            from config import Config
+            if Config.INSTAGRAM_USERNAME and Config.INSTAGRAM_PASSWORD:
+                opts["username"] = Config.INSTAGRAM_USERNAME
+                opts["password"] = Config.INSTAGRAM_PASSWORD
 
     if extra_opts:
         opts.update(extra_opts)
@@ -169,7 +192,7 @@ def get_video_info(url: str) -> dict:
 
     ydl_opts = _get_ydl_opts({
         "noplaylist": False,
-    })
+    }, url)
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -284,8 +307,12 @@ def download_audio(url: str, quality: str = "128", output_path: str = None) -> d
 
     output_template = os.path.join(output_path, f"audio_{url_hash}.%(ext)s")
 
-    # Formato: extraer mejor audio y convertirlo a mp3 (con fallbacks si bestaudio no esta disponible)
-    format_spec = "bestaudio[abr<=128]/bestaudio/best" if quality == "128" else "bestaudio/best"
+    # Formato: priorizar opus/m4a nativos para evitar re-encoding lento.
+    # Solo convertir a mp3 al final con FFmpeg (más rápido que re-codificar desde cero).
+    if quality == "128":
+        format_spec = "bestaudio[abr<=128][ext=m4a]/bestaudio[abr<=128][ext=webm]/bestaudio[abr<=128]/bestaudio/best"
+    else:
+        format_spec = "bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio/best"
 
     ydl_opts = _get_ydl_opts({
         "format": format_spec,
@@ -296,7 +323,7 @@ def download_audio(url: str, quality: str = "128", output_path: str = None) -> d
             "preferredquality": quality,
         }],
         "progress_hooks": [_progress_hook],
-    })
+    }, url)
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -373,7 +400,7 @@ def download_video(url: str, quality: str = "720p", output_path: str = None) -> 
         "format": format_spec,
         "outtmpl": output_template,
         "progress_hooks": [_progress_hook],  # Para seguimiento de progreso
-    })
+    }, url)
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:

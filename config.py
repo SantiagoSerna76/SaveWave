@@ -104,6 +104,11 @@ class Config:
     # Tamaño máximo de upload de archivos (200 MB)
     MAX_CONTENT_LENGTH = 200 * 1024 * 1024  # 200 MB
 
+    # -------------------- INSTAGRAM LOGIN --------------------
+    # Credenciales para descargar videos de Instagram
+    INSTAGRAM_USERNAME = os.getenv("INSTAGRAM_USERNAME", "")
+    INSTAGRAM_PASSWORD = os.getenv("INSTAGRAM_PASSWORD", "")
+
     # -------------------- ANUNCIOS --------------------
     ADS_ENABLED = True  # Activar/desactivar anuncios globalmente
     # Código de AdSense (se inyecta en las plantillas)

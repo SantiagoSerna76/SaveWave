@@ -514,7 +514,15 @@ def stream_file(filename):
 
     if not os.path.exists(file_path):
         abort(404)
-    return send_file(file_path, as_attachment=False, mimetype="audio/mpeg")
+    # Enable conditional=True to support HTTP 206 Partial Content (Range requests)
+    # This prevents audio stuttering on mobile browsers and Safari
+    return send_file(
+        file_path, 
+        as_attachment=False, 
+        mimetype="audio/mpeg", 
+        conditional=True,
+        max_age=86400  # Cache for 24 hours to reduce server load
+    )
 
 
 # ============================================================

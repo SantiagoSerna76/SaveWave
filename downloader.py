@@ -127,10 +127,23 @@ def _get_ydl_opts(extra_opts: dict = None, url: str = None) -> dict:
         "http_chunk_size": 1048576,  # 1MB chunks
     }
 
-    # Buscar archivo de cookies
-    # YouTube: youtube_cookies.txt o www.youtube.com_cookies.txt
-    # Instagram: instagram_cookies.txt o www.instagram.com_cookies.txt
-    for cookie_name in ['youtube_cookies.txt', 'www.youtube.com_cookies.txt', 'instagram_cookies.txt', 'www.instagram.com_cookies.txt']:
+    # Determinar la plataforma para cargar cookies específicas
+    platform = None
+    if url:
+        try:
+            platform = detect_platform(url)
+        except ValueError:
+            platform = None
+
+    # Buscar archivo de cookies específico según la plataforma
+    if platform == "youtube":
+        cookie_candidates = ['youtube_cookies.txt', 'www.youtube.com_cookies.txt']
+    elif platform == "instagram":
+        cookie_candidates = ['instagram_cookies.txt', 'www.instagram.com_cookies.txt']
+    else:
+        cookie_candidates = []
+
+    for cookie_name in cookie_candidates:
         cookies_path = os.path.join(base_dir, cookie_name)
         if os.path.exists(cookies_path):
             opts['cookiefile'] = cookies_path

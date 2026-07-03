@@ -5,8 +5,12 @@
 # Variables de entorno (contienen passwords, claves API)
 .env
 
-# Cookies de YouTube (contienen sesion de Google - NUNCA subir a Git)
+# Cookies de plataformas (contienen sesion - NUNCA subir a Git)
 youtube_cookies.txt
+www.youtube.com_cookies.txt
+instagram_cookies.txt
+www.instagram.com_cookies.txt
+*_cookies.txt
 
 # Base de datos SQLite local
 *.db
@@ -35,3 +39,9 @@ build/
 .DS_Store
 Thumbs.db
 bin/
+
+# Test/temp files
+test_audio.*
+*.mp4
+*.webm
+.cache_savewave.json

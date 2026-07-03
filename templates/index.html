@@ -241,16 +241,60 @@
                             </div>
 
                             <!-- Format Toggle -->
+                            <style>
+                                .format-btn {
+                                    border-radius: 50px;
+                                    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                                    border: 2px solid transparent;
+                                    opacity: 0.6;
+                                }
+                                .format-btn-video {
+                                    color: #4facfe;
+                                    background: rgba(79,172,254,0.1);
+                                    border-color: rgba(79,172,254,0.2);
+                                }
+                                .format-btn-mp3 {
+                                    color: #a78bfa;
+                                    background: rgba(167,139,250,0.1);
+                                    border-color: rgba(167,139,250,0.2);
+                                }
+                                
+                                /* Active states via the hidden radio checked pseudo-class */
+                                .btn-check:checked + .format-btn-video {
+                                    opacity: 1;
+                                    background: rgba(79,172,254,0.15);
+                                    border-color: #4facfe;
+                                    box-shadow: 0 0 15px rgba(79,172,254,0.4);
+                                    transform: translateY(-2px);
+                                }
+                                .btn-check:checked + .format-btn-mp3 {
+                                    opacity: 1;
+                                    background: rgba(167,139,250,0.15);
+                                    border-color: #a78bfa;
+                                    box-shadow: 0 0 15px rgba(167,139,250,0.4);
+                                    transform: translateY(-2px);
+                                }
+                                
+                                /* Light mode overrides */
+                                body.light-mode .btn-check:checked + .format-btn-video {
+                                    background: rgba(79,172,254,0.1);
+                                    box-shadow: 0 4px 12px rgba(79,172,254,0.2);
+                                }
+                                body.light-mode .btn-check:checked + .format-btn-mp3 {
+                                    background: rgba(167,139,250,0.1);
+                                    box-shadow: 0 4px 12px rgba(167,139,250,0.2);
+                                }
+                            </style>
                             <div class="mb-3">
                                 <p class="small mb-2" style="color:rgba(255,255,255,0.4); font-weight:600; letter-spacing:0.05em; text-transform:uppercase; font-size:0.7rem;">Formato</p>
                                 <div class="d-flex gap-2">
                                     <input type="radio" class="btn-check" name="formatType" id="formatVideo" value="video" checked>
-                                    <label class="btn fw-semibold px-4" for="formatVideo" style="border-radius:50px; border:1px solid rgba(79,172,254,0.4); color:#4facfe; background:rgba(79,172,254,0.08); transition:all 0.2s;">
-                                        <i class="fas fa-video me-2"></i>Video
+                                    <label class="btn fw-bold px-4 format-btn format-btn-video" for="formatVideo">
+                                        <i class="fas fa-video me-2"></i>Video MP4
                                     </label>
                                     <input type="radio" class="btn-check" name="formatType" id="formatMP3" value="mp3">
-                                    <label class="btn fw-semibold px-4" for="formatMP3" style="border-radius:50px; border:1px solid rgba(167,139,250,0.4); color:#a78bfa; background:rgba(167,139,250,0.08); transition:all 0.2s;">
-                                        <i class="fas fa-music me-2"></i>MP3
+                                    <label class="btn fw-bold px-4 format-btn format-btn-mp3" for="formatMP3">
+                                        <i class="fas fa-headphones me-2"></i>Audio MP3
                                     </label>
                                 </div>
                             </div>

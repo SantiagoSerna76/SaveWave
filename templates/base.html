@@ -102,6 +102,17 @@
         
         background-color: var(--spotify-dark) !important; 
         color: var(--text-color) !important; 
+        
+        /* Native App Feel for Mobile (PWA) */
+        overscroll-behavior-y: none; /* Disables pull-to-refresh */
+        -webkit-tap-highlight-color: transparent; /* Removes blue tap highlight */
+    }
+    
+    /* Prevent text selection to feel like a real app */
+    img, a, .btn-action, .nav-link-main, .sidebar-item {
+        user-select: none;
+        -webkit-user-select: none;
+        -webkit-touch-callout: none;
     }
     body.light-mode .navbar { background: linear-gradient(135deg, #e8eaf6 0%, #c5cae9 100%) !important; border-bottom-color: var(--card-border) !important; }
     body.light-mode .navbar-brand { color: var(--text-color) !important; }

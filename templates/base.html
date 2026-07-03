@@ -90,6 +90,22 @@
         justify-content: center; border-radius: 50%;
     }
     .btn-nav-theme:hover { background: rgba(255,255,255,0.14); color: #fff; }
+    /* Prevent pull-to-refresh */
+    html, body {
+        overscroll-behavior-y: none;
+        overscroll-behavior: none;
+    }
+    body {
+        --spotify-dark: #11111b;
+        --card-bg: #181825;
+        --card-border: #313244;
+        --text-color: #cdd6f4;
+        --text-muted: #a6adc8;
+        
+        background-color: var(--spotify-dark) !important; 
+        color: var(--text-color) !important; 
+        -webkit-tap-highlight-color: transparent;
+    }
     /* Light mode */
     body.light-mode { 
         --spotify-dark: #f0f2f8;
@@ -102,10 +118,6 @@
         
         background-color: var(--spotify-dark) !important; 
         color: var(--text-color) !important; 
-        
-        /* Native App Feel for Mobile (PWA) */
-        overscroll-behavior-y: none; /* Disables pull-to-refresh */
-        -webkit-tap-highlight-color: transparent; /* Removes blue tap highlight */
     }
     
     /* Prevent text selection to feel like a real app */

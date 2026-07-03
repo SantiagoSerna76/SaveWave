@@ -191,6 +191,8 @@ def inject_ads_enabled():
 @app.route("/")
 def index():
     """Pagina principal con formulario de descarga."""
+    if request.args.get("bg_ad"):
+        return render_template("bg_ad.html")
     return render_template(
         "index.html"
     )
@@ -913,11 +915,6 @@ def api_generate_token():
 @login_required
 def playlists_view():
     """Vista principal de Playlists (estilo Spotify)."""
-    plan_info = get_user_plan(current_user)
-    if plan_info["plan"] not in ("pro", "premium"):
-        flash("Las Playlists son exclusivas de planes Pro y Premium.", "warning")
-        return redirect(url_for("pricing"))
-        
     user_playlists = Playlist.query.filter_by(user_id=current_user.id).order_by(Playlist.created_at.desc()).all()
     return render_template("playlists.html", playlists=user_playlists)
 
@@ -925,9 +922,6 @@ def playlists_view():
 @login_required
 def api_playlist_create():
     """Crea una nueva playlist."""
-    plan_info = get_user_plan(current_user)
-    if plan_info["plan"] not in ("pro", "premium"):
-        return jsonify({"success": False, "error": "Exclusivo de planes Pro/Premium."}), 403
 
     data = request.get_json() or {}
     name = data.get("name", "").strip()

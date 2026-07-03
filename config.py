@@ -110,6 +110,13 @@ class Config:
     INSTAGRAM_PASSWORD = os.getenv("INSTAGRAM_PASSWORD", "")
 
     # -------------------- ANUNCIOS --------------------
-    ADS_ENABLED = True  # Activar/desactivar anuncios globalmente
+    ADS_ENABLED = os.getenv("ADS_ENABLED", "True") == "True"
     # Código de AdSense (se inyecta en las plantillas)
     ADSENSE_CLIENT_ID = os.getenv("ADSENSE_CLIENT_ID", "")
+    ADSENSE_SLOT_INDEX_TOP = os.getenv("ADSENSE_SLOT_INDEX_TOP", "1111111111")
+    ADSENSE_SLOT_INDEX_BOTTOM = os.getenv("ADSENSE_SLOT_INDEX_BOTTOM", "0987654321")
+    ADSENSE_SLOT_LOGIN = os.getenv("ADSENSE_SLOT_LOGIN", "3333333333")
+    ADSENSE_SLOT_REGISTER = os.getenv("ADSENSE_SLOT_REGISTER", "4444444444")
+    ADSENSE_SLOT_DASHBOARD = os.getenv("ADSENSE_SLOT_DASHBOARD", "5555555555")
+    ADSENSE_SLOT_TERMS = os.getenv("ADSENSE_SLOT_TERMS", "6666666666")
+    ADSENSE_SLOT_BG = os.getenv("ADSENSE_SLOT_BG", "1111111111")

@@ -1018,6 +1018,12 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
+        /* Fix horizontal scroll so three dots stay on screen */
+        .track-row td:last-child {
+            padding-right: 12px !important;
+            width: 1%;
+            white-space: nowrap;
+        }
 
         /* Mini player bar (default mobile state) */
         .sticky-player {
@@ -1437,7 +1443,11 @@
             <i class="fas fa-trash"></i> Eliminar de playlist
         </button>
     </div>
+    </div>
 </div>
+
+<!-- Toast Notification Container -->
+<div id="toastContainer" style="position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); z-index: 10000; display: flex; flex-direction: column; gap: 8px; pointer-events: none;"></div>
 
 <!-- Re-open main and container to match base.html closing tags -->
 <main class="d-none"><div class="container d-none">
@@ -1445,6 +1455,39 @@
 
 {% block extra_scripts %}
 <script>
+    function showToast(message) {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.style.cssText = `
+            background: rgba(20, 20, 35, 0.95);
+            backdrop-filter: blur(10px);
+            color: #fff;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: auto;
+        `;
+        toast.textContent = message;
+        container.appendChild(toast);
+        
+        // Trigger reflow for animation
+        toast.offsetHeight;
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateY(0)';
+        
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(-20px)';
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+
     // ========== STATE ==========
     let currentPlaylistId = null;
     let currentPlaylistItems = [];
@@ -1652,18 +1695,17 @@
             if (data.success) {
                 location.reload();
             } else {
-                alert(data.error || 'Error al crear la playlist.');
+                showToast(data.error || 'Error al crear la playlist.');
                 btn.disabled = false;
                 btn.textContent = 'Crear Playlist';
             }
         } catch(e) {
-            alert('Error de conexión. Inténtalo de nuevo.');
+            showToast('Error de conexión. Inténtalo de nuevo.');
             btn.disabled = false;
             btn.textContent = 'Crear Playlist';
         }
     }
 
-    // Enter key to create playlist
     document.getElementById('newPlaylistName').addEventListener('keydown', function(e) {
         if (e.key === 'Enter') createPlaylist();
         this.style.borderColor = '';
@@ -1716,7 +1758,6 @@
             return;
         }
 
-        // If same track already playing, just toggle pause/play
         if (currentTrackIndex === index && audioPlayer.src && !audioPlayer.paused) {
             audioPlayer.pause();
             isPlaying = false;
@@ -1724,7 +1765,6 @@
             return;
         }
 
-        // Abort previous fetch if any
         if (currentFetchController) {
             currentFetchController.abort();
             currentFetchController = null;
@@ -1733,7 +1773,6 @@
         currentTrackIndex = index;
         const track = currentPlaylistItems[index];
 
-        // Update player UI immediately
         const platformLabel = track.platform === 'audio_local' ? 'Archivo local' : track.platform === 'video_local' ? 'Video local' : track.platform;
         document.getElementById('playerArtist').textContent = platformLabel;
         const coverEl = document.getElementById('playerCover');
@@ -1746,17 +1785,14 @@
         highlightCurrentTrack();
         setupMediaSession(track);
 
-        // Show loading state
         isPlaying = false;
         updatePlayPauseUI();
         statusEl.innerHTML = '⏳ Paso 1: Preparando...';
 
-        // Reset progress
         document.getElementById('progressBar').style.width = '0%';
         document.getElementById('timeCurrent').textContent = '0:00';
         document.getElementById('timeTotal').textContent = '0:00';
 
-        // --- OFFLINE BROWSER CACHE: play directly without hitting server ---
         try {
             if ('caches' in window) {
                 const offlineCache = await caches.open(OFFLINE_CACHE_NAME);
@@ -1772,17 +1808,15 @@
                         isPlaying = true;
                         statusEl.textContent = track.title;
                         updatePlayPauseUI();
-                        return; // Success, exit function
+                        return;
                     } catch(err) {
                         console.warn('Caché offline corrupto detectado, eliminando y usando red...', err);
                         await offlineCache.delete('/offline-cache/?url=' + encodeURIComponent(track.url));
-                        // Don't return, let the code continue to the network block below
                     }
                 }
             }
-        } catch(e) { /* ignore cache errors */ }
+        } catch(e) { }
 
-        // --- LOCAL FILES & IN-MEMORY CACHE: play directly ---
         if (track.platform === 'audio_local' || track.platform === 'video_local' || track.cached_url) {
             const localSrc = track.cached_url || track.url;
             statusEl.textContent = '⏳ Cargando archivo local...';
@@ -1799,7 +1833,6 @@
             return;
         }
 
-        // --- REMOTE URLS: download audio via API then play ---
         statusEl.innerHTML = '⏳ Paso 2: Descargando audio del servidor...';
         currentFetchController = new AbortController();
         
@@ -1821,7 +1854,6 @@
 
             const data = await res.json();
             
-            // Prevent race condition
             if (currentTrackIndex !== index) return;
 
             if (!data.success || !data.download_url) {
@@ -1830,8 +1862,7 @@
                 return;
             }
 
-            // Step 3: Set audio source and play
-            statusEl.innerHTML = '⏳ Paso 3: Cargando audio... (' + data.download_url + ')';
+            statusEl.innerHTML = '⏳ Paso 3: Cargando audio...';
             track.cached_url = data.download_url;
             
             audioPlayer.src = data.download_url;
@@ -1860,16 +1891,13 @@
 
     // ========== PLAY / PAUSE ==========
     function togglePlay() {
-        // If nothing is loaded yet, start from track 0
         if (currentTrackIndex === -1 && currentPlaylistItems.length > 0) {
             playTrack(0);
             return;
         }
 
-        // If currently fetching, do nothing
         if (currentFetchController !== null) return;
 
-        // If no src, has error, or is not loaded, retry loading
         if (!audioPlayer.src || audioPlayer.error || audioPlayer.readyState < 1) {
             playTrack(currentTrackIndex);
             return;
@@ -1894,7 +1922,6 @@
         playPauseBtn.innerHTML = isPlaying
             ? '<i class="fas fa-pause"></i>'
             : '<i class="fas fa-play" style="margin-left:2px;"></i>';
-        // Sync mobile mini play button
         const mobileBtn = document.getElementById('mobilePlayBtn');
         if (mobileBtn) {
             mobileBtn.innerHTML = isPlaying
@@ -1920,11 +1947,9 @@
         }
     }
 
-    // Tap on mini player bar to expand (mobile only)
     document.getElementById('stickyPlayer').addEventListener('click', function(e) {
         if (window.innerWidth > 768) return;
         if (this.classList.contains('expanded')) return;
-        // Don't expand if clicking a button
         if (e.target.closest('button') || e.target.closest('input')) return;
         expandPlayer();
     });
@@ -1934,14 +1959,13 @@
         if (currentPlaylistItems.length === 0) return -1;
 
         if (isShuffled) {
-            // Advance in shuffle order
             shuffleIndex++;
             if (shuffleIndex >= shuffleOrder.length) {
                 if (repeatMode >= 1) {
                     generateShuffleOrder();
                     shuffleIndex = 0;
                 } else {
-                    return -1; // End of playlist
+                    return -1;
                 }
             }
             return shuffleOrder[shuffleIndex];
@@ -1950,9 +1974,9 @@
             if (next < currentPlaylistItems.length) {
                 return next;
             } else if (repeatMode >= 1) {
-                return 0; // Loop back to start
+                return 0;
             }
-            return -1; // End of playlist
+            return -1;
         }
     }
 
@@ -1975,7 +1999,7 @@
             if (prev >= 0) {
                 return prev;
             } else if (repeatMode >= 1) {
-                return currentPlaylistItems.length - 1; // Go to last song
+                return currentPlaylistItems.length - 1;
             }
             return 0;
         }
@@ -1986,7 +2010,6 @@
         if (next !== -1) {
             playTrack(next);
         } else {
-            // End of playlist, stop
             isPlaying = false;
             updatePlayPauseUI();
             document.getElementById('playerTitle').textContent = 'Fin de la playlist';
@@ -1994,7 +2017,6 @@
     }
 
     function playPrev() {
-        // If more than 3 seconds in, restart current track
         if (audioPlayer.currentTime > 3) {
             audioPlayer.currentTime = 0;
             if (audioPlayer.paused) {
@@ -2014,7 +2036,6 @@
     // ========== SHUFFLE ==========
     function generateShuffleOrder() {
         shuffleOrder = Array.from({length: currentPlaylistItems.length}, (_, i) => i);
-        // Fisher-Yates shuffle
         for (let i = shuffleOrder.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [shuffleOrder[i], shuffleOrder[j]] = [shuffleOrder[j], shuffleOrder[i]];
@@ -2027,7 +2048,6 @@
         const btn = document.getElementById('shuffleBtn');
         btn.style.color = isShuffled ? 'var(--primary-color)' : '';
         btn.style.opacity = isShuffled ? '1' : '';
-        // Toggle active dot
         const existingDot = btn.querySelector('.active-dot');
         if (isShuffled && !existingDot) {
             const dot = document.createElement('span');
@@ -2038,7 +2058,6 @@
         }
         if (isShuffled) {
             generateShuffleOrder();
-            // Put current track at the beginning of shuffle so "next" goes to a new song
             if (currentTrackIndex >= 0) {
                 const idx = shuffleOrder.indexOf(currentTrackIndex);
                 if (idx > 0) {
@@ -2049,25 +2068,21 @@
         }
     }
 
-    // ========== REPEAT (3 modes: off → all → one → off) ==========
+    // ========== REPEAT ==========
     function updateRepeatUI() {
         const btn = document.getElementById('repeatBtn');
-        // Clear previous state
         btn.style.color = '';
         btn.style.opacity = '';
         btn.innerHTML = '<i class="fas fa-redo"></i>';
 
         if (repeatMode === 0) {
-            // Off - no dot
             btn.title = 'Repetir: Desactivado';
         } else if (repeatMode === 1) {
-            // Repeat all - colored + dot
             btn.style.color = 'var(--primary-color)';
             btn.style.opacity = '1';
             btn.innerHTML = '<i class="fas fa-redo"></i><span class="active-dot"></span>';
             btn.title = 'Repetir: Toda la playlist';
         } else {
-            // Repeat one - colored + dot + small '1' badge inside icon
             btn.style.color = 'var(--primary-color)';
             btn.style.opacity = '1';
             btn.innerHTML = '<i class="fas fa-redo"></i><span style="font-size:0.55em;font-weight:900;line-height:1;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;">1</span><span class="active-dot"></span>';
@@ -2098,9 +2113,7 @@
         document.getElementById('timeTotal').textContent = formatTime(audioPlayer.duration);
     });
 
-    // Handle audio loading errors
     audioPlayer.addEventListener('error', function(e) {
-        // Ignore errors when clearing src or actively fetching
         if (!audioPlayer.src || audioPlayer.src === window.location.href) return;
         if (currentFetchController !== null) return;
 
@@ -2112,7 +2125,6 @@
         updatePlayPauseUI();
     });
 
-    // Handle when audio is ready to play (canplay)
     audioPlayer.addEventListener('canplay', function() {
         if (currentTrackIndex >= 0 && currentPlaylistItems[currentTrackIndex]) {
             const track = currentPlaylistItems[currentTrackIndex];
@@ -2123,29 +2135,24 @@
         }
     });
 
-    // ========== AUTO-PLAY NEXT ON TRACK END ==========
     audioPlayer.addEventListener('ended', function() {
         if (repeatMode === 2) {
-            // Repeat ONE: replay the same track
             audioPlayer.currentTime = 0;
             audioPlayer.play().then(() => {
                 isPlaying = true;
                 updatePlayPauseUI();
             });
         } else {
-            // Repeat ALL or OFF: go to next track
             playNext();
         }
     });
 
-    // Sync play state when audio actually starts/pauses (covers browser autoplay blocks)
     audioPlayer.addEventListener('play', function() {
         isPlaying = true;
         updatePlayPauseUI();
         startBgAdImpressions();
     });
     audioPlayer.addEventListener('pause', function() {
-        // Only update if we're not currently fetching a track
         if (!currentFetchController) {
             isPlaying = false;
             updatePlayPauseUI();
@@ -2153,10 +2160,9 @@
         stopBgAdImpressions();
     });
 
-    // Background ad impression generator for free tier users
     let bgAdInterval = null;
     function startBgAdImpressions() {
-        if (!{{ ads_enabled|tojson }}) return; // Only for ad-enabled users
+        if (!{{ ads_enabled|tojson }}) return;
         if (bgAdInterval) return;
 
         let iframe = document.getElementById('bgAdIframe');
@@ -2171,10 +2177,8 @@
             document.body.appendChild(iframe);
         }
 
-        // Trigger immediate load of lightweight ad template
         iframe.src = '/?bg_ad=true';
 
-        // Refresh every 45 seconds to generate continuous impressions while music plays
         bgAdInterval = setInterval(() => {
             if (audioPlayer && !audioPlayer.paused) {
                 iframe.src = '/?bg_ad=true&t=' + Date.now();
@@ -2211,7 +2215,6 @@
         }
     }
 
-    // Set initial volume
     audioPlayer.volume = 0.8;
 
     function formatTime(seconds) {
@@ -2223,7 +2226,6 @@
 
     // ========== KEYBOARD SHORTCUTS ==========
     document.addEventListener('keydown', function(e) {
-        // Don't trigger if user is typing in an input
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
         switch(e.code) {
@@ -2252,7 +2254,6 @@
         formData.append('playlist_id', playlistId);
         formData.append('file', file);
 
-        // Change button to indicate uploading
         const btns = document.querySelectorAll('.btn-action');
         let uploadBtn = null;
         btns.forEach(b => { if(b.innerHTML.includes('fa-upload')) uploadBtn = b; });
@@ -2270,25 +2271,21 @@
             const data = await res.json();
             
             if (data.success) {
-                // Reload the playlist to show the new file
                 loadPlaylist(playlistId);
             } else {
-                alert(data.error || 'Error al subir el archivo.');
+                showToast(data.error || 'Error al subir el archivo.');
             }
         } catch (e) {
-            alert('Error de conexión al subir el archivo.');
+            showToast('Error de conexión al subir el archivo.');
         } finally {
             if(uploadBtn) {
                 uploadBtn.innerHTML = originalHTML;
                 uploadBtn.disabled = false;
             }
-            // Clear input so same file can be uploaded again if needed
             fileInput.value = '';
         }
     }
 
-    // ---- Custom Confirm Modal ----
-    // ---- Bottom Sheet (Mobile Three-Dots Menu) ----
     function openTrackSheet(index, playlistId, itemId, safeUrl, safeThumb, title) {
         const url = decodeURIComponent(safeUrl);
         const thumb = decodeURIComponent(safeThumb);
@@ -2301,7 +2298,6 @@
         overlay.classList.add('open');
         document.body.style.overflow = 'hidden';
 
-        // Wire up buttons (replace old listeners each time)
         const btnPlay = document.getElementById('bsBtnPlay');
         const btnDl = document.getElementById('bsBtnDownload');
         const btnDel = document.getElementById('bsBtnDelete');
@@ -2312,7 +2308,6 @@
     }
 
     function closeTrackSheet(e) {
-        // Close only if clicking the overlay, or called directly
         if (e && e.target !== document.getElementById('trackBottomSheet')) return;
         const overlay = document.getElementById('trackBottomSheet');
         overlay.classList.remove('open');
@@ -2357,20 +2352,18 @@
                 
                 loadPlaylist(playlistId);
             } else {
-                alert('Error al eliminar: ' + data.error);
+                showToast('Error al eliminar: ' + data.error);
             }
         } catch(e) {
-            alert('Error de conexión');
+            showToast('Error de conexión');
         }
     }
 
     function showDownloadOptions(playlistId) {
-        // Wire up ZIP button with the playlist ID
         document.getElementById('downloadZipBtn').onclick = function() {
             bootstrap.Modal.getInstance(document.getElementById('downloadOptionsModal')).hide();
             downloadPlaylistAll(playlistId);
         };
-        // Reset progress UI
         document.getElementById('offlineProgressContainer').classList.add('d-none');
         new bootstrap.Modal(document.getElementById('downloadOptionsModal')).show();
     }
@@ -2392,7 +2385,6 @@
                 }
             }
         } catch(e) {
-            // Cache API not available
         }
     }
 
@@ -2404,7 +2396,6 @@
         const progressText = document.getElementById('offlineProgressText');
         const progressCount = document.getElementById('offlineProgressCount');
 
-        // Hide option buttons and show progress
         document.querySelectorAll('#downloadOptionsBody .dl-option').forEach(b => b.classList.add('d-none'));
         progressContainer.classList.remove('d-none');
 
@@ -2417,9 +2408,8 @@
             
             const limit = 3;
             const items = [...currentPlaylistItems];
-            let activeDownloads = 0;
 
-            const downloadTrackOffline = async (track, index) => {
+            const downloadTrackOffline = async (track) => {
                 const cacheKey = '/offline-cache/?url=' + encodeURIComponent(track.url);
                 const existing = await offlineCache.match(cacheKey);
                 
@@ -2428,9 +2418,6 @@
                     updateUI(track.title);
                     return;
                 }
-
-                activeDownloads++;
-                updateUI(track.title);
 
                 try {
                     const res = await fetch('/api/download-audio', {
@@ -2455,7 +2442,6 @@
                 }
 
                 completed++;
-                activeDownloads--;
                 updateUI(track.title);
             };
 
@@ -2471,11 +2457,9 @@
                     progressBar.style.width = '100%';
                     checkOfflineStatus();
 
-                    // Auto-close modal after 2.5 seconds
                     setTimeout(() => {
                         const modal = bootstrap.Modal.getInstance(document.getElementById('downloadOptionsModal'));
                         if (modal) modal.hide();
-                        // Restore buttons
                         document.querySelectorAll('#downloadOptionsBody .dl-option').forEach(b => b.classList.remove('d-none'));
                         progressContainer.classList.add('d-none');
                         progressBar.style.width = '0%';
@@ -2485,13 +2469,12 @@
                 }
             }
 
-            // Run in parallel with concurrency limit
             let poolIndex = 0;
             const workers = [];
             const worker = async () => {
                 while (poolIndex < items.length) {
                     const idx = poolIndex++;
-                    await downloadTrackOffline(items[idx], idx);
+                    await downloadTrackOffline(items[idx]);
                 }
             };
 
@@ -2521,12 +2504,18 @@
             });
             const data = await res.json();
             if (data.success) {
-                window.location.href = data.download_url;
+                showToast('Descarga iniciada');
+                const a = document.createElement('a');
+                a.href = data.download_url;
+                a.download = '';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
             } else {
-                alert(data.error);
+                showToast(data.error);
             }
         } catch(e) {
-            alert('Error al descargar la canción.');
+            showToast('Error al descargar la canción.');
         }
     }
 
@@ -2546,12 +2535,13 @@
             });
             const data = await res.json();
             if (data.success) {
+                showToast('Descarga iniciada');
                 window.location.href = data.download_url;
             } else {
-                alert(data.error);
+                showToast(data.error);
             }
         } catch(e) {
-            alert('Error al descargar la playlist.');
+            showToast('Error al descargar la playlist.');
         } finally {
             btn.innerHTML = originalHTML;
             btn.disabled = false;

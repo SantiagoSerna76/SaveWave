@@ -34,6 +34,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <!-- Estilos personalizados -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=5">
+    {% if ads_enabled %}
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ adsense_client }}" crossorigin="anonymous"></script>
+    {% endif %}
     <style>
     /* =============================================
        NAVBAR PREMIUM — visible pill buttons
@@ -197,19 +200,33 @@
             background: rgba(0,0,0,0.02);
             border: 1px solid rgba(0,0,0,0.05);
         }
+        /* Mobile navbar: pill buttons in a flex-wrap grid, not full-width */
         .navbar-nav.align-items-center {
             align-items: flex-start !important;
             margin-top: 10px;
             padding-top: 10px;
             border-top: 1px solid rgba(255,255,255,0.1);
+            flex-direction: row !important;
+            flex-wrap: wrap;
+            gap: 8px;
         }
         body.light-mode .navbar-nav.align-items-center {
             border-top: 1px solid rgba(0,0,0,0.1);
         }
-        .btn-nav-pill, .btn-nav-theme {
-            width: 100%;
+        .navbar-nav.align-items-center .nav-item {
+            flex: 0 0 auto;
+        }
+        /* Theme toggle stays round, not stretched */
+        .btn-nav-theme {
+            width: 36px !important;
+            height: 36px !important;
             justify-content: center;
-            margin-bottom: 8px;
+        }
+        /* Pill buttons: auto width on mobile, not 100% */
+        .btn-nav-pill {
+            width: auto !important;
+            justify-content: center;
+            margin-bottom: 0;
         }
     }
     </style>

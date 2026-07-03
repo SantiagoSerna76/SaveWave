@@ -181,7 +181,14 @@ def inject_ads_enabled():
     
     return dict(
         ads_enabled=ads_enabled,
-        adsense_client=Config.ADSENSE_CLIENT_ID
+        adsense_client=Config.ADSENSE_CLIENT_ID,
+        adsense_slot_index_top=Config.ADSENSE_SLOT_INDEX_TOP,
+        adsense_slot_index_bottom=Config.ADSENSE_SLOT_INDEX_BOTTOM,
+        adsense_slot_login=Config.ADSENSE_SLOT_LOGIN,
+        adsense_slot_register=Config.ADSENSE_SLOT_REGISTER,
+        adsense_slot_dashboard=Config.ADSENSE_SLOT_DASHBOARD,
+        adsense_slot_terms=Config.ADSENSE_SLOT_TERMS,
+        adsense_slot_bg=Config.ADSENSE_SLOT_BG,
     )
 
 # ============================================================
@@ -712,15 +719,12 @@ def inspect_file():
 @limiter.limit("3 per minute")
 def api_download_multiple():
     """
-    API: Descarga multiples videos y devuelve un ZIP.
-    Solo para plan Premium.
+    API: Descarga el audio de multiples tracks y devuelve un ZIP de MP3.
+    Disponible para todos los usuarios registrados.
     """
     import zipfile
     from io import BytesIO
 
-    plan_info = get_user_plan(current_user)
-    if plan_info["plan"] not in ["pro", "premium"]:
-        return jsonify({"success": False, "error": "Funcion disponible para planes Pro y Premium."}), 403
 
     data = request.get_json()
     if not data or "urls" not in data:
@@ -730,11 +734,12 @@ def api_download_multiple():
     if not urls or len(urls) > 10:
         return jsonify({"success": False, "error": "Maximo 10 URLs por descarga masiva."}), 400
 
-    quality = data.get("quality", "720p")
+    quality = data.get("quality", "128")
     downloaded_files = []
 
     for url in urls:
-        result = download_video(url.strip(), quality)
+        # Download as audio for playlist zip downloads
+        result = download_audio(url.strip(), quality)
         if result["success"]:
             downloaded_files.append(result["file_path"])
         else:

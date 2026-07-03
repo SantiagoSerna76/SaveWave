@@ -898,6 +898,10 @@
         .pl-meta h1 { font-size: 1.6rem; }
         .pl-controls { flex-wrap: wrap; justify-content: center; gap: 10px; }
         .track-actions { opacity: 1; }
+        /* In mobile, only show the trash button to avoid horizontal scroll */
+        .track-actions .btn-play-track,
+        .track-actions .btn-download-track { display: none; }
+        .track-actions .btn-delete-track { display: inline-flex !important; }
 
         /* Mini player bar (default mobile state) */
         .sticky-player {
@@ -1258,6 +1262,44 @@
     </div>
 </div>
 
+<!-- Custom Confirm Modal - Full screen overlay -->
+<div id="customConfirmModal" style="
+    display:none; position:fixed; inset:0; z-index:99999;
+    background:rgba(0,0,0,0.7); backdrop-filter:blur(6px);
+    align-items:center; justify-content:center;
+">
+    <div style="
+        background: linear-gradient(135deg, #1e1e30, #16213e);
+        border: 1px solid rgba(239,68,68,0.25);
+        border-radius: 20px; padding: 28px 28px 22px;
+        max-width: 320px; width: calc(100% - 40px);
+        box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 30px rgba(239,68,68,0.1);
+        text-align: center;
+    ">
+        <div style="
+            width:52px; height:52px; border-radius:50%;
+            background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3);
+            display:flex; align-items:center; justify-content:center;
+            margin: 0 auto 16px; font-size:1.3rem; color:#f87171;
+        "><i class="fas fa-trash"></i></div>
+        <div style="color:#fff; font-weight:700; font-size:1.05rem; margin-bottom:8px;">Eliminar canción</div>
+        <div style="color:rgba(255,255,255,0.5); font-size:0.85rem; margin-bottom:22px; line-height:1.5;" id="confirmModalMsg"></div>
+        <div style="display:flex; gap:10px;">
+            <button id="confirmModalCancel" style="
+                flex:1; padding:11px; border:1px solid rgba(255,255,255,0.12);
+                border-radius:12px; background:rgba(255,255,255,0.05);
+                color:rgba(255,255,255,0.6); font-weight:600; font-size:0.9rem; cursor:pointer;
+            ">Cancelar</button>
+            <button id="confirmModalOk" style="
+                flex:1; padding:11px; border:none;
+                border-radius:12px; background:linear-gradient(135deg,#ef4444,#dc2626);
+                color:#fff; font-weight:700; font-size:0.9rem; cursor:pointer;
+                box-shadow: 0 4px 15px rgba(239,68,68,0.35);
+            "><i class="fas fa-trash me-1"></i>Eliminar</button>
+        </div>
+    </div>
+</div>
+
 <!-- Re-open main and container to match base.html closing tags -->
 <main class="d-none"><div class="container d-none">
 {% endblock %}
@@ -1368,9 +1410,9 @@
                         <td class="text-end text-muted" style="font-size: 0.85rem;">${item.duration_formatted || '—'}</td>
                         <td class="text-end">
                             <div class="track-actions">
-                                <button class="track-action-btn" title="Reproducir" onclick="playTrack(${index})"><i class="fas fa-play"></i></button>
-                                <button class="track-action-btn" title="Descargar MP3" onclick="downloadTrack(decodeURIComponent('${safeUrl}'))"><i class="fas fa-download"></i></button>
-                                <button class="track-action-btn" style="color:rgba(239,68,68,0.7);" title="Eliminar de playlist" onclick="removeTrack(${playlist.id}, ${item.id}, '${safeUrl}')"><i class="fas fa-trash"></i></button>
+                                <button class="track-action-btn btn-play-track" title="Reproducir" onclick="playTrack(${index})"><i class="fas fa-play"></i></button>
+                                <button class="track-action-btn btn-download-track" title="Descargar MP3" onclick="downloadTrack(decodeURIComponent('${safeUrl}'))"><i class="fas fa-download"></i></button>
+                                <button class="track-action-btn btn-delete-track" style="color:rgba(239,68,68,0.7);" title="Eliminar de playlist" onclick="removeTrack(${playlist.id}, ${item.id}, '${safeUrl}')"><i class="fas fa-trash"></i></button>
                             </div>
                         </td>
                     </tr>
@@ -2060,11 +2102,33 @@
         }
     }
 
+    // ---- Custom Confirm Modal ----
+    function showConfirm(message) {
+        return new Promise((resolve) => {
+            const modal = document.getElementById('customConfirmModal');
+            document.getElementById('confirmModalMsg').textContent = message;
+            modal.style.display = 'flex';
+            const ok = document.getElementById('confirmModalOk');
+            const cancel = document.getElementById('confirmModalCancel');
+            function cleanup(result) {
+                modal.style.display = 'none';
+                ok.removeEventListener('click', onOk);
+                cancel.removeEventListener('click', onCancel);
+                resolve(result);
+            }
+            function onOk() { cleanup(true); }
+            function onCancel() { cleanup(false); }
+            ok.addEventListener('click', onOk);
+            cancel.addEventListener('click', onCancel);
+        });
+    }
+
     // ========== DOWNLOAD ==========
     const OFFLINE_CACHE_NAME = 'savewave-offline';
 
     async function removeTrack(playlistId, itemId, url) {
-        if (!confirm('¿Seguro que deseas eliminar esta canción de la playlist?')) return;
+        const confirmed = await showConfirm('¿Eliminar esta canción de tu playlist?');
+        if (!confirmed) return;
         
         try {
             const res = await fetch(`/api/playlists/${playlistId}/remove/${itemId}`, { method: 'DELETE' });

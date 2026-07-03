@@ -1,4 +1,5 @@
-const CACHE_NAME = 'savewave-v6';
+const CACHE_NAME = 'savewave-v7';
+const OFFLINE_AUDIO_CACHE = 'savewave-offline';
 const ASSETS_TO_CACHE = [
     '/',
     '/playlists',
@@ -15,25 +16,23 @@ const ASSETS_TO_CACHE = [
     'https://code.jquery.com/jquery-3.7.1.min.js'
 ];
 
-// Install Service Worker and cache static assets
+// ==================== INSTALL ====================
 self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_NAME)
-            .then((cache) => {
-                return cache.addAll(ASSETS_TO_CACHE);
-            })
+            .then((cache) => cache.addAll(ASSETS_TO_CACHE))
     );
     self.skipWaiting();
 });
 
-// Activate the SW and clean old caches (but preserve offline audio cache)
+// ==================== ACTIVATE ====================
 self.addEventListener('activate', (event) => {
     event.waitUntil(
         caches.keys().then((cacheNames) => {
             return Promise.all(
                 cacheNames.map((cacheName) => {
                     // Keep the offline audio cache and the current static cache
-                    if (cacheName !== CACHE_NAME && cacheName !== 'savewave-offline') {
+                    if (cacheName !== CACHE_NAME && cacheName !== OFFLINE_AUDIO_CACHE) {
                         return caches.delete(cacheName);
                     }
                 })
@@ -43,12 +42,30 @@ self.addEventListener('activate', (event) => {
     self.clients.claim();
 });
 
-// Intercept requests
+// ==================== FETCH ====================
 self.addEventListener('fetch', (event) => {
-    // API Requests
-    if (event.request.url.includes('/api/')) {
-        // Cache GET requests (like playlist data) using Network-First
+    const url = new URL(event.request.url);
+
+    // ---------- OFFLINE AUDIO CACHE (with Range Request support) ----------
+    // This handles audio files that were downloaded via "Descargar Todo"
+    if (url.pathname.startsWith('/offline-cache/')) {
+        event.respondWith(handleOfflineAudio(event.request));
+        return;
+    }
+
+    // ---------- STREAM / DOWNLOAD audio files ----------
+    // For /stream/ and /downloads/ paths, check offline cache first, then network
+    if (url.pathname.startsWith('/stream/') || url.pathname.startsWith('/downloads/')) {
+        event.respondWith(
+            handleStreamRequest(event.request)
+        );
+        return;
+    }
+
+    // ---------- API Requests ----------
+    if (url.pathname.startsWith('/api/')) {
         if (event.request.method === 'GET') {
+            // Network-first for GET API calls
             event.respondWith(
                 fetch(event.request).then(response => {
                     if (response && response.status === 200) {
@@ -56,29 +73,16 @@ self.addEventListener('fetch', (event) => {
                         caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseClone));
                     }
                     return response;
-                }).catch(() => {
-                    // Offline fallback
-                    return caches.match(event.request);
-                })
+                }).catch(() => caches.match(event.request))
             );
         } else {
-            // POST/PUT/DELETE (like creating playlists, downloading) go to network only
+            // POST/PUT/DELETE go to network only
             event.respondWith(fetch(event.request));
         }
         return;
     }
 
-    // For downloaded audio files, try cache first (offline playback), then network
-    if (event.request.url.includes('/downloads/') || event.request.url.includes('/stream/')) {
-        event.respondWith(
-            caches.match(event.request).then(cached => {
-                return cached || fetch(event.request);
-            })
-        );
-        return;
-    }
-
-    // For the rest (static files, html pages), try network first, then fallback to cache
+    // ---------- Static files & HTML pages (Network-first) ----------
     event.respondWith(
         fetch(event.request).then(response => {
             if (response && response.status === 200 && event.request.method === 'GET') {
@@ -88,8 +92,90 @@ self.addEventListener('fetch', (event) => {
                 });
             }
             return response;
-        }).catch(() => {
-            return caches.match(event.request);
-        })
+        }).catch(() => caches.match(event.request))
     );
 });
+
+
+// ==================== HELPER: Handle offline audio with Range Requests ====================
+// This is THE KEY fix for stuttering in the PWA.
+// HTML5 <audio> elements send Range requests (e.g., "Range: bytes=0-65535")
+// to seek and stream. If we just return the full cached blob, the browser
+// can't seek properly, causing stuttering and failed playback on iOS/Safari.
+async function handleOfflineAudio(request) {
+    try {
+        const cache = await caches.open(OFFLINE_AUDIO_CACHE);
+        const cachedResponse = await cache.match(request);
+
+        if (!cachedResponse) {
+            // Not in cache — try network
+            return fetch(request);
+        }
+
+        // Check if this is a Range request
+        const rangeHeader = request.headers.get('Range');
+        if (!rangeHeader) {
+            // No Range header — return the full cached response
+            return cachedResponse;
+        }
+
+        // Parse Range header (e.g., "bytes=12345-" or "bytes=0-65535")
+        const blob = await cachedResponse.blob();
+        const totalSize = blob.size;
+        const rangeMatch = rangeHeader.match(/bytes=(\d+)-(\d*)/);
+
+        if (!rangeMatch) {
+            return cachedResponse;
+        }
+
+        const start = parseInt(rangeMatch[1], 10);
+        const end = rangeMatch[2] ? parseInt(rangeMatch[2], 10) : totalSize - 1;
+        const chunkSize = end - start + 1;
+
+        // Slice the blob to return only the requested range
+        const slicedBlob = blob.slice(start, end + 1);
+
+        return new Response(slicedBlob, {
+            status: 206,
+            statusText: 'Partial Content',
+            headers: {
+                'Content-Type': cachedResponse.headers.get('Content-Type') || 'audio/mpeg',
+                'Content-Length': chunkSize,
+                'Content-Range': `bytes ${start}-${end}/${totalSize}`,
+                'Accept-Ranges': 'bytes',
+            }
+        });
+
+    } catch (err) {
+        // If anything fails, try network
+        return fetch(request).catch(() => {
+            return new Response('Audio not available offline', { status: 404 });
+        });
+    }
+}
+
+
+// ==================== HELPER: Handle /stream/ and /downloads/ requests ====================
+async function handleStreamRequest(request) {
+    // First check the offline audio cache
+    try {
+        const cache = await caches.open(OFFLINE_AUDIO_CACHE);
+        const keys = await cache.keys();
+        
+        // Try to find a matching cached audio by filename
+        for (const key of keys) {
+            const keyUrl = new URL(key.url);
+            if (request.url.includes(keyUrl.searchParams.get('url'))) {
+                const cached = await cache.match(key);
+                if (cached) return cached;
+            }
+        }
+    } catch(e) { /* ignore */ }
+
+    // Check static cache
+    const staticCached = await caches.match(request);
+    if (staticCached) return staticCached;
+
+    // Fallback to network
+    return fetch(request);
+}

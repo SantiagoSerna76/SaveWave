@@ -22,7 +22,7 @@ pymysql.install_as_MySQLdb()
 
 from flask import (
     Flask, render_template, request, redirect, url_for,
-    flash, jsonify, send_file, session, abort, current_app
+    flash, jsonify, send_file, send_from_directory, session, abort, current_app
 )
 from flask_cors import CORS
 from flask_login import (
@@ -479,6 +479,18 @@ def api_download():
 
     except Exception as e:
         return jsonify({"success": False, "error": f"Error al descargar: {str(e)}"})
+
+
+@app.route("/manifest.json")
+def serve_manifest():
+    """Sirve el manifest de la PWA desde la carpeta static."""
+    return send_from_directory(app.static_folder, "manifest.json")
+
+
+@app.route("/sw.js")
+def serve_sw():
+    """Sirve el service worker de la PWA desde la carpeta static."""
+    return send_from_directory(app.static_folder, "sw.js")
 
 
 @app.route("/downloads/<filename>")

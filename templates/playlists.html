@@ -1370,6 +1370,7 @@
                             <div class="track-actions">
                                 <button class="track-action-btn" title="Reproducir" onclick="playTrack(${index})"><i class="fas fa-play"></i></button>
                                 <button class="track-action-btn" title="Descargar MP3" onclick="downloadTrack(decodeURIComponent('${safeUrl}'))"><i class="fas fa-download"></i></button>
+                                <button class="track-action-btn" style="color:rgba(239,68,68,0.7);" title="Eliminar de playlist" onclick="removeTrack(${playlist.id}, ${item.id}, '${safeUrl}')"><i class="fas fa-trash"></i></button>
                             </div>
                         </td>
                     </tr>
@@ -2061,6 +2062,27 @@
 
     // ========== DOWNLOAD ==========
     const OFFLINE_CACHE_NAME = 'savewave-offline';
+
+    async function removeTrack(playlistId, itemId, url) {
+        if (!confirm('¿Seguro que deseas eliminar esta canción de la playlist?')) return;
+        
+        try {
+            const res = await fetch(`/api/playlists/${playlistId}/remove/${itemId}`, { method: 'DELETE' });
+            const data = await res.json();
+            if (data.success) {
+                try {
+                    const offlineCache = await caches.open(OFFLINE_CACHE_NAME);
+                    await offlineCache.delete(decodeURIComponent(url));
+                } catch(e) {}
+                
+                loadPlaylist(playlistId);
+            } else {
+                alert('Error al eliminar: ' + data.error);
+            }
+        } catch(e) {
+            alert('Error de conexión');
+        }
+    }
 
     function showDownloadOptions(playlistId) {
         // Wire up ZIP button with the playlist ID

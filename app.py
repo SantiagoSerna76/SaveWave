@@ -1001,6 +1001,25 @@ def api_playlist_get(playlist_id):
         }
     })
 
+
+@app.route("/api/playlists/<int:playlist_id>/remove/<int:item_id>", methods=["DELETE"])
+@login_required
+def api_playlist_remove_item(playlist_id, item_id):
+    """Elimina una cancion de una playlist."""
+    playlist = Playlist.query.filter_by(id=playlist_id, user_id=current_user.id).first()
+    if not playlist:
+        return jsonify({"success": False, "error": "Playlist no encontrada."}), 404
+        
+    item = PlaylistItem.query.filter_by(id=item_id, playlist_id=playlist_id).first()
+    if not item:
+        return jsonify({"success": False, "error": "Canción no encontrada."}), 404
+        
+    db.session.delete(item)
+    db.session.commit()
+    
+    return jsonify({"success": True})
+
+
 @app.route("/api/playlists/list")
 @login_required
 def api_playlists_list():

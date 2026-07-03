@@ -439,10 +439,29 @@
     .track-actions {
         opacity: 0;
         transition: opacity 0.15s;
+        white-space: nowrap;
     }
 
     .track-row:hover .track-actions {
         opacity: 1;
+    }
+
+    /* Three-dots button always visible */
+    .btn-three-dots {
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        font-size: 1.1rem;
+        cursor: pointer;
+        padding: 8px 10px;
+        border-radius: 50%;
+        transition: all 0.15s;
+        line-height: 1;
+        flex-shrink: 0;
+    }
+    .btn-three-dots:hover {
+        color: #fff;
+        background: rgba(255,255,255,0.08);
     }
 
     .track-action-btn {
@@ -460,6 +479,93 @@
         color: var(--primary-color);
         background: rgba(13, 110, 253, 0.08);
     }
+
+    /* ---- BOTTOM SHEET (mobile action menu) ---- */
+    .track-bottom-sheet-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 99998;
+        background: rgba(0,0,0,0.6);
+        backdrop-filter: blur(4px);
+        align-items: flex-end;
+        justify-content: center;
+    }
+    .track-bottom-sheet-overlay.open {
+        display: flex;
+    }
+    .track-bottom-sheet {
+        width: 100%;
+        max-width: 500px;
+        background: linear-gradient(180deg, #1e1e30 0%, #16213e 100%);
+        border-radius: 20px 20px 0 0;
+        border-top: 1px solid rgba(255,255,255,0.08);
+        padding: 12px 0 32px;
+        transform: translateY(100%);
+        transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .track-bottom-sheet-overlay.open .track-bottom-sheet {
+        transform: translateY(0);
+    }
+    .track-bs-handle {
+        width: 36px; height: 4px;
+        background: rgba(255,255,255,0.2);
+        border-radius: 2px;
+        margin: 0 auto 18px;
+    }
+    .track-bs-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 0 20px 16px;
+        border-bottom: 1px solid rgba(255,255,255,0.07);
+        margin-bottom: 8px;
+    }
+    .track-bs-thumb {
+        width: 44px; height: 44px;
+        border-radius: 8px;
+        object-fit: cover;
+        flex-shrink: 0;
+        background: rgba(255,255,255,0.1);
+    }
+    .track-bs-title {
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: #fff;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .track-bs-sub {
+        font-size: 0.78rem;
+        color: rgba(255,255,255,0.45);
+        margin-top: 2px;
+    }
+    .track-bs-btn {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        width: 100%;
+        padding: 14px 24px;
+        background: none;
+        border: none;
+        color: rgba(255,255,255,0.85);
+        font-size: 0.95rem;
+        font-weight: 500;
+        cursor: pointer;
+        text-align: left;
+        transition: background 0.15s;
+    }
+    .track-bs-btn:hover, .track-bs-btn:active {
+        background: rgba(255,255,255,0.06);
+    }
+    .track-bs-btn i {
+        width: 22px;
+        text-align: center;
+        font-size: 1rem;
+        flex-shrink: 0;
+    }
+    .track-bs-btn.danger { color: #f87171; }
 
     /* ---- STICKY PLAYER (Spotify Bottom Bar) ---- */
     .sticky-player {
@@ -898,10 +1004,21 @@
         .pl-meta h1 { font-size: 1.6rem; }
         .pl-controls { flex-wrap: wrap; justify-content: center; gap: 10px; }
         .track-actions { opacity: 1; }
-        /* In mobile, only show the trash button to avoid horizontal scroll */
+        /* On mobile: hide play/download inline buttons, use three-dots bottom sheet instead */
         .track-actions .btn-play-track,
-        .track-actions .btn-download-track { display: none; }
-        .track-actions .btn-delete-track { display: inline-flex !important; }
+        .track-actions .btn-download-track,
+        .track-actions .btn-delete-track { display: none; }
+        .btn-three-dots { display: inline-flex !important; }
+        /* Hide number and duration columns on mobile to give title more space */
+        .track-number { display: none; }
+        .col-duration { display: none; }
+        /* Fix title truncation on mobile */
+        .track-title { 
+            max-width: 200px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
 
         /* Mini player bar (default mobile state) */
         .sticky-player {
@@ -1300,6 +1417,29 @@
     </div>
 </div>
 
+<!-- Track Bottom Sheet (Mobile Action Menu) -->
+<div class="track-bottom-sheet-overlay" id="trackBottomSheet" onclick="closeTrackSheet(event)">
+    <div class="track-bottom-sheet">
+        <div class="track-bs-handle"></div>
+        <div class="track-bs-header">
+            <img class="track-bs-thumb" id="bsThumb" src="" alt="">
+            <div style="min-width:0; flex:1;">
+                <div class="track-bs-title" id="bsTitle"></div>
+                <div class="track-bs-sub" id="bsSub"></div>
+            </div>
+        </div>
+        <button class="track-bs-btn" id="bsBtnPlay">
+            <i class="fas fa-play" style="color:#6366f1;"></i> Reproducir
+        </button>
+        <button class="track-bs-btn" id="bsBtnDownload">
+            <i class="fas fa-download" style="color:#10b981;"></i> Descargar MP3
+        </button>
+        <button class="track-bs-btn danger" id="bsBtnDelete">
+            <i class="fas fa-trash"></i> Eliminar de playlist
+        </button>
+    </div>
+</div>
+
 <!-- Re-open main and container to match base.html closing tags -->
 <main class="d-none"><div class="container d-none">
 {% endblock %}
@@ -1394,26 +1534,31 @@
         } else {
             playlist.items.forEach((item, index) => {
                 const safeUrl = encodeURIComponent(item.url);
+                const safeThumb = encodeURIComponent(item.thumbnail || '');
+                const safeTitle = item.title.replace(/'/g, "\\'").replace(/"/g, '&quot;');
                 const platformLabel = item.platform === 'audio_local' ? 'Archivo local' : item.platform === 'video_local' ? 'Video local' : item.platform;
                 rows += `
                     <tr class="track-row" ondblclick="playTrack(${index})" id="trackRow${index}">
                         <td class="track-number">${index + 1}</td>
-                        <td>
-                            <div class="d-flex align-items-center gap-3">
+                        <td style="width:100%;">
+                            <div style="display:flex; align-items:center; gap:12px; min-width:0;">
                                 <img src="${item.thumbnail || ''}" class="track-thumb" alt="">
-                                <div>
-                                    <div class="track-title">${item.title} <span class="offline-badge d-none" id="offlineBadge${index}"><i class="fas fa-check-circle"></i> Offline</span></div>
+                                <div style="min-width:0; flex:1;">
+                                    <div class="track-title" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;">${item.title} <span class="offline-badge d-none" id="offlineBadge${index}"><i class="fas fa-check-circle"></i> Offline</span></div>
                                     <div class="text-muted" style="font-size: 0.8rem;">${platformLabel}</div>
                                 </div>
                             </div>
                         </td>
-                        <td class="text-end text-muted" style="font-size: 0.85rem;">${item.duration_formatted || '—'}</td>
-                        <td class="text-end">
-                            <div class="track-actions">
+                        <td class="text-end text-muted col-duration" style="font-size: 0.85rem; white-space:nowrap;">${item.duration_formatted || '—'}</td>
+                        <td class="text-end" style="white-space:nowrap; padding-right:8px;">
+                            <div class="track-actions" style="display:flex; align-items:center; justify-content:flex-end;">
                                 <button class="track-action-btn btn-play-track" title="Reproducir" onclick="playTrack(${index})"><i class="fas fa-play"></i></button>
                                 <button class="track-action-btn btn-download-track" title="Descargar MP3" onclick="downloadTrack(decodeURIComponent('${safeUrl}'))"><i class="fas fa-download"></i></button>
-                                <button class="track-action-btn btn-delete-track" style="color:rgba(239,68,68,0.7);" title="Eliminar de playlist" onclick="removeTrack(${playlist.id}, ${item.id}, '${safeUrl}')"><i class="fas fa-trash"></i></button>
+                                <button class="track-action-btn btn-delete-track" style="color:rgba(239,68,68,0.7);" title="Eliminar" onclick="removeTrack(${playlist.id}, ${item.id}, '${safeUrl}')"><i class="fas fa-trash"></i></button>
                             </div>
+                            <button class="btn-three-dots" style="display:none;" title="Opciones"
+                                onclick="openTrackSheet(${index}, ${playlist.id}, ${item.id}, '${safeUrl}', '${safeThumb}', '${safeTitle}')"
+                            ><i class="fas fa-ellipsis-v"></i></button>
                         </td>
                     </tr>
                 `;
@@ -2103,6 +2248,37 @@
     }
 
     // ---- Custom Confirm Modal ----
+    // ---- Bottom Sheet (Mobile Three-Dots Menu) ----
+    function openTrackSheet(index, playlistId, itemId, safeUrl, safeThumb, title) {
+        const url = decodeURIComponent(safeUrl);
+        const thumb = decodeURIComponent(safeThumb);
+        
+        document.getElementById('bsTitle').textContent = title;
+        document.getElementById('bsSub').textContent = currentPlaylistItems[index]?.platform || '';
+        document.getElementById('bsThumb').src = thumb;
+
+        const overlay = document.getElementById('trackBottomSheet');
+        overlay.classList.add('open');
+        document.body.style.overflow = 'hidden';
+
+        // Wire up buttons (replace old listeners each time)
+        const btnPlay = document.getElementById('bsBtnPlay');
+        const btnDl = document.getElementById('bsBtnDownload');
+        const btnDel = document.getElementById('bsBtnDelete');
+        
+        btnPlay.onclick = () => { closeTrackSheet(); playTrack(index); };
+        btnDl.onclick = () => { closeTrackSheet(); downloadTrack(url); };
+        btnDel.onclick = () => { closeTrackSheet(); removeTrack(playlistId, itemId, safeUrl); };
+    }
+
+    function closeTrackSheet(e) {
+        // Close only if clicking the overlay, or called directly
+        if (e && e.target !== document.getElementById('trackBottomSheet')) return;
+        const overlay = document.getElementById('trackBottomSheet');
+        overlay.classList.remove('open');
+        document.body.style.overflow = '';
+    }
+
     function showConfirm(message) {
         return new Promise((resolve) => {
             const modal = document.getElementById('customConfirmModal');

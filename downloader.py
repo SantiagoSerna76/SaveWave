@@ -128,7 +128,9 @@ def _get_ydl_opts(extra_opts: dict = None, url: str = None) -> dict:
     }
 
     # Buscar archivo de cookies
-    for cookie_name in ['youtube_cookies.txt', 'www.youtube.com_cookies.txt']:
+    # YouTube: youtube_cookies.txt o www.youtube.com_cookies.txt
+    # Instagram: instagram_cookies.txt o www.instagram.com_cookies.txt
+    for cookie_name in ['youtube_cookies.txt', 'www.youtube.com_cookies.txt', 'instagram_cookies.txt', 'www.instagram.com_cookies.txt']:
         cookies_path = os.path.join(base_dir, cookie_name)
         if os.path.exists(cookies_path):
             opts['cookiefile'] = cookies_path

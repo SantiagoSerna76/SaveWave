@@ -293,23 +293,27 @@
     }
 
     .btn-action {
-        padding: 8px 20px;
-        border-radius: 8px;
-        border: 1px solid var(--card-border);
-        background: var(--card-bg);
+        padding: 10px 24px;
+        border-radius: 50px;
+        border: 1px solid rgba(255,255,255,0.15);
+        background: rgba(255,255,255,0.05);
         color: var(--text-color);
-        font-size: 0.85rem;
+        font-size: 0.9rem;
         font-weight: 600;
         cursor: pointer;
-        transition: all 0.2s;
-        display: flex;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        display: inline-flex;
         align-items: center;
         gap: 8px;
+        backdrop-filter: blur(10px);
     }
 
     .btn-action:hover {
-        border-color: var(--text-muted);
-        background: var(--light-bg);
+        border-color: rgba(99,102,241,0.5);
+        background: rgba(99,102,241,0.15);
+        color: #fff;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.2);
     }
 
     /* Tracklist */
@@ -749,8 +753,8 @@
     body.light-mode .pl-header { border-bottom-color: rgba(0,0,0,0.08); }
     body.light-mode .pl-meta h1 { color: #1e1e2e; }
     body.light-mode .pl-meta .pl-stats { color: #6b7280; }
-    body.light-mode .btn-action { border-color: rgba(0,0,0,0.1); background: #fff; color: #1e1e2e; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-    body.light-mode .btn-action:hover { border-color: rgba(0,0,0,0.2); background: #f9fafb; }
+    body.light-mode .btn-action { border-color: rgba(0,0,0,0.15); background: rgba(0,0,0,0.03); color: #1e1e2e; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+    body.light-mode .btn-action:hover { border-color: rgba(99,102,241,0.4); background: rgba(99,102,241,0.08); color: #4f46e5; box-shadow: 0 8px 20px rgba(99,102,241,0.15); }
     body.light-mode .tracklist thead th { border-bottom-color: rgba(0,0,0,0.08); color: #6b7280; }
     body.light-mode .track-title { color: #1e1e2e; }
     body.light-mode .track-row:hover { background-color: rgba(0,0,0,0.03); }

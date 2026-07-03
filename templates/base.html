@@ -215,7 +215,11 @@
                 </ul>
                 <!-- Right action buttons -->
                 <ul class="navbar-nav align-items-center gap-2">
-
+                    <li class="nav-item" id="navInstallBtnContainer" style="display:none;">
+                        <button class="btn-nav-pill" onclick="window.triggerInstall()" style="background: rgba(99,102,241,0.1); color: #8b5cf6; border: 1px solid rgba(99,102,241,0.2);">
+                            <i class="fas fa-download"></i>App
+                        </button>
+                    </li>
                     <li class="nav-item">
                         <button id="darkModeToggle" class="btn-nav-pill btn-nav-theme" title="Cambiar tema">
                             <i class="fas fa-sun"></i>
@@ -331,6 +335,10 @@
             e.preventDefault();
             deferredPrompt = e;
             
+            // Show the navbar fallback button so they can install later if they dismiss the banner
+            const navBtn = document.getElementById('navInstallBtnContainer');
+            if (navBtn) navBtn.style.display = 'block';
+            
             // Show floating install banner (only if user hasn't dismissed it before)
             if (!localStorage.getItem('installBannerDismissed')) {
                 showInstallBanner();
@@ -342,9 +350,11 @@
                 deferredPrompt.prompt();
                 const result = await deferredPrompt.userChoice;
                 deferredPrompt = null;
-                // Hide the banner after install
+                // Hide the banner and navbar button after install
                 const banner = document.getElementById('pwaInstallBanner');
                 if (banner) banner.remove();
+                const navBtn = document.getElementById('navInstallBtnContainer');
+                if (navBtn) navBtn.style.display = 'none';
             }
         };
         

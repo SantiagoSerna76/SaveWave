@@ -651,39 +651,55 @@
         display: flex;
         align-items: center;
         gap: 16px;
-        padding: 16px 20px;
-        border-radius: 12px;
-        border: 1px solid var(--card-border);
-        background: var(--card-bg);
+        padding: 18px 20px;
+        border-radius: 16px;
+        border: 1px solid rgba(255,255,255,0.08);
+        background: rgba(255,255,255,0.02);
         cursor: pointer;
-        transition: all 0.2s ease;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         text-align: left;
         width: 100%;
+        position: relative;
+        overflow: hidden;
+    }
+    .dl-option::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: linear-gradient(135deg, rgba(255,255,255,0.05), transparent);
+        opacity: 0;
+        transition: opacity 0.3s;
+        pointer-events: none;
     }
     .dl-option:hover {
-        border-color: var(--primary-color);
+        border-color: rgba(99,102,241,0.4);
         transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        background: rgba(255,255,255,0.04);
     }
+    .dl-option:hover::before { opacity: 1; }
+    
     .dl-option-icon {
-        width: 48px;
-        height: 48px;
-        border-radius: 12px;
+        width: 52px;
+        height: 52px;
+        border-radius: 14px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.2rem;
+        font-size: 1.3rem;
         flex-shrink: 0;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.15);
     }
     .dl-option-text h6 {
-        margin: 0 0 2px;
+        margin: 0 0 4px;
         font-weight: 700;
-        font-size: 0.95rem;
+        font-size: 1.05rem;
+        color: #fff;
     }
     .dl-option-text p {
         margin: 0;
-        font-size: 0.8rem;
-        color: var(--text-muted);
+        font-size: 0.85rem;
+        color: rgba(255,255,255,0.5);
     }
 
     /* ---- PROGRESS BAR FOR OFFLINE DOWNLOAD ---- */

@@ -118,6 +118,7 @@ def format_duration(seconds):
     """Convierte segundos a formato mm:ss o hh:mm:ss para las plantillas."""
     if not seconds:
         return "0:00"
+    seconds = int(seconds)
     hours = seconds // 3600
     minutes = (seconds % 3600) // 60
     secs = seconds % 60

@@ -1857,13 +1857,12 @@
             return;
         }
 
-        statusEl.innerHTML = '⏳ Paso 2: Obteniendo enlace directo...';
+        statusEl.innerHTML = '⏳ Paso 2: Conectando con el servidor...';
         currentFetchController = new AbortController();
         
         try {
-            // Usar endpoint de URL directa: el servidor solo negocia (<1s)
-            // y el móvil descarga DIRECTAMENTE desde YouTube usando su propia CPU
-            const res = await fetch('/api/audio-direct-url', {
+            // Obtener la URL del stream desde el proxy
+            const res = await fetch('/api/stream-proxy', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/x-www-form-urlencoded'},
                 body: 'url=' + encodeURIComponent(track.url),
@@ -1882,18 +1881,19 @@
             
             if (currentTrackIndex !== index) return;
 
-            if (!data.success || !data.direct_url) {
-                statusEl.textContent = '❌ ' + (data.error || 'Sin enlace disponible');
+            if (!data.success || !data.stream_url) {
+                statusEl.textContent = '❌ ' + (data.error || 'Sin stream disponible');
                 updatePlayPauseUI();
                 return;
             }
 
-            statusEl.innerHTML = '⏳ Paso 3: Cargando audio (descarga directa)...';
-            track.cached_url = data.direct_url;
+            statusEl.innerHTML = '⏳ Paso 3: Cargando audio (streaming directo)...';
+            track.cached_url = data.stream_url;
             
-            // Poner la URL directa de YouTube como fuente del audio
-            // El navegador/móvil descargará directamente desde los servidores de YouTube
-            audioPlayer.src = data.direct_url;
+            // Usar la URL del stream como source del <audio>.
+            // El navegador reproduce MIENTRAS descarga (streaming real).
+            // No usamos blob() porque esperaría la descarga completa.
+            audioPlayer.src = data.stream_url;
             audioPlayer.load();
             
             statusEl.innerHTML = '⏳ Paso 4: Reproduciendo...';

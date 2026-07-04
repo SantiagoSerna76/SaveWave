@@ -786,19 +786,51 @@ def api_audio_direct_url():
 @limiter.limit("30 per minute")
 def api_stream_proxy():
     """
-    API: Proxy de streaming. El servidor obtiene la URL directa del audio
-    y la canaliza (pipe) al cliente SIN descargar completa en el servidor.
-    Esto evita problemas de CORS y el móvil recibe el audio en tiempo real
-    mientras se descarga. El servidor nunca almacena el archivo completo.
+    API: Proxy de streaming (POST). Devuelve la URL del stream GET
+    para que el <audio> del navegador pueda reproducir en tiempo real.
     """
-    import requests as http_requests
-
     if request.is_json:
         data = request.get_json()
         url = data.get("url", "").strip() if data else ""
     else:
         url = request.form.get("url", "").strip()
 
+    if not url:
+        return jsonify({"success": False, "error": "Debes proporcionar una URL."}), 400
+
+    try:
+        # Verificar que la URL sea válida obteniendo info rápida
+        result = get_audio_direct_url(url)
+        if not result["success"]:
+            return jsonify({"success": False, "error": result["error"]}), 400
+
+        # Devolver la URL del stream GET con la URL original codificada
+        import urllib.parse
+        stream_url = url_for("api_stream_proxy_get", _external=True) + "?url=" + urllib.parse.quote(url)
+
+        return jsonify({
+            "success": True,
+            "stream_url": stream_url,
+            "title": result.get("title", ""),
+            "format": result.get("format", "m4a"),
+        })
+
+    except Exception as e:
+        return jsonify({"success": False, "error": f"Error: {str(e)}"}), 500
+
+
+@app.route("/api/stream-proxy-get")
+@limiter.limit("60 per minute")
+def api_stream_proxy_get():
+    """
+    API: Proxy de streaming (GET). El servidor obtiene la URL directa del audio
+    y la canaliza (pipe) al cliente SIN descargar completa en el servidor.
+    El <audio> del navegador usa esta URL como source y reproduce en tiempo real.
+    """
+    import requests as http_requests
+    import urllib.parse
+
+    url = request.args.get("url", "").strip()
     if not url:
         return jsonify({"success": False, "error": "Debes proporcionar una URL."}), 400
 
@@ -823,7 +855,6 @@ def api_stream_proxy():
         mime = mimetype_map.get(audio_format, "audio/mp4")
 
         # Hacer una request streaming a la URL directa de YouTube
-        # y canalizar la respuesta al cliente
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
         }
@@ -846,6 +877,7 @@ def api_stream_proxy():
 
         # Cache por 1 hora
         response_headers["Cache-Control"] = "public, max-age=3600"
+        response_headers["Access-Control-Allow-Origin"] = "*"
 
         def generate():
             for chunk in resp.iter_content(chunk_size=65536):

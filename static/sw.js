@@ -82,7 +82,15 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // ---------- Static files & HTML pages (Network-first) ----------
+    // ---------- Static files only (Network-first, but DON'T cache HTML pages) ----------
+    // HTML pages always go to network to ensure latest version
+    const isHTML = event.request.headers.get('Accept')?.includes('text/html');
+    if (isHTML) {
+        event.respondWith(fetch(event.request).catch(() => caches.match(event.request)));
+        return;
+    }
+
+    // Static files (CSS, JS, images, etc.) - network first with cache fallback
     event.respondWith(
         fetch(event.request).then(response => {
             if (response && response.status === 200 && event.request.method === 'GET') {

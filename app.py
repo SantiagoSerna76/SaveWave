@@ -23,7 +23,7 @@ pymysql.install_as_MySQLdb()
 from flask import (
     Flask, render_template, request, redirect, url_for,
     flash, jsonify, send_file, send_from_directory, session, abort, current_app,
-    Response
+    Response, make_response
 )
 from flask_cors import CORS
 from flask_login import (
@@ -1132,7 +1132,12 @@ def api_generate_token():
 def playlists_view():
     """Vista principal de Playlists (estilo Spotify)."""
     user_playlists = Playlist.query.filter_by(user_id=current_user.id).order_by(Playlist.created_at.desc()).all()
-    return render_template("playlists.html", playlists=user_playlists)
+    response = make_response(render_template("playlists.html", playlists=user_playlists))
+    # No cache HTML pages to ensure SW always gets latest version
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
 
 @app.route("/api/playlists/create", methods=["POST"])
 @login_required

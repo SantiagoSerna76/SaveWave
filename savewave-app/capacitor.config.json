@@ -2,10 +2,11 @@
   "appId": "com.savewave.app",
   "appName": "SaveWave",
   "webDir": "www",
-  "server": {},
+  "server": {
+    "androidScheme": "https"
+  },
   "android": {
-    "allowMixedContent": true,
-    "webContentsDebuggingEnabled": false
+    "allowMixedContent": true
   },
   "plugins": {
     "CapacitorHttp": {

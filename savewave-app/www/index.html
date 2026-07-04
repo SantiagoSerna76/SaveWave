@@ -6,20 +6,38 @@
     <title>SaveWave</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #11111b;
+        }
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        .splash {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
             background: #11111b;
             display: flex;
             align-items: center;
             justify-content: center;
-            height: 100vh;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            color: #fff;
+            z-index: 9999;
+            transition: opacity 0.5s ease;
         }
-        .loader {
+        .splash.hide {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .splash-inner {
             text-align: center;
-            max-width: 280px;
         }
-        .logo {
+        .splash-logo {
             width: 80px;
             height: 80px;
             border-radius: 20px;
@@ -33,12 +51,15 @@
             color: #fff;
             box-shadow: 0 10px 30px rgba(99,102,241,0.3);
         }
-        .loader h1 {
+        .splash-title {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             font-size: 1.5rem;
             font-weight: 700;
+            color: #fff;
             margin-bottom: 8px;
         }
-        .loader p {
+        .splash-sub {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             color: rgba(255,255,255,0.5);
             font-size: 0.9rem;
         }
@@ -52,103 +73,33 @@
             margin: 20px auto;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .retry-btn {
-            display: none;
-            margin-top: 16px;
-            padding: 10px 24px;
-            border-radius: 50px;
-            border: 1px solid rgba(99,102,241,0.4);
-            background: rgba(99,102,241,0.15);
-            color: #a5b4fc;
-            font-size: 0.9rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .retry-btn:hover {
-            background: rgba(99,102,241,0.25);
-        }
-        .error-text {
-            color: #f87171;
-            font-size: 0.8rem;
-            margin-top: 12px;
-            display: none;
-        }
     </style>
 </head>
 <body>
-    <div class="loader" id="loader">
-        <div class="logo">S</div>
-        <h1>SaveWave</h1>
-        <p id="statusText">Conectando con el servidor...</p>
-        <div class="spinner" id="spinner"></div>
-        <p class="error-text" id="errorText"></p>
-        <button class="retry-btn" id="retryBtn" onclick="connect()">
-            <i class="fas fa-redo"></i> Reintentar
-        </button>
+    <div class="splash" id="splash">
+        <div class="splash-inner">
+            <div class="splash-logo">S</div>
+            <div class="splash-title">SaveWave</div>
+            <div class="splash-sub">Cargando...</div>
+            <div class="spinner"></div>
+        </div>
     </div>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/js/all.min.js"></script>
+    <iframe src="https://savewave.com/?native=1" id="webview"></iframe>
     <script>
-        const targetUrl = 'https://savewave.com/?native=1';
-        let retryCount = 0;
-        const MAX_RETRIES = 3;
-
-        function connect() {
-            const spinner = document.getElementById('spinner');
-            const status = document.getElementById('statusText');
-            const error = document.getElementById('errorText');
-            const retry = document.getElementById('retryBtn');
-            
-            spinner.style.display = 'block';
-            status.textContent = 'Conectando con el servidor...';
-            error.style.display = 'none';
-            retry.style.display = 'none';
-            
-            // Intentar cargar la web con timeout
-            const timeout = setTimeout(() => {
-                retryCount++;
-                spinner.style.display = 'none';
-                error.style.display = 'block';
-                
-                if (retryCount >= MAX_RETRIES) {
-                    error.textContent = 'No se pudo conectar con savewave.com. Verifica tu conexión a internet.';
-                    status.textContent = 'Error de conexión';
-                } else {
-                    error.textContent = 'Tiempo de espera agotado. Reintentando...';
-                    connect();
-                }
-            }, 15000);
-
-            // Intentar cargar la página
-            try {
-                window.location.href = targetUrl;
-            } catch(e) {
-                clearTimeout(timeout);
-                spinner.style.display = 'none';
-                status.textContent = 'Error al cargar';
-                error.style.display = 'block';
-                error.textContent = 'Error: ' + e.message;
-                retry.style.display = 'block';
-            }
-        }
-
-        // Si después de 5 segundos seguimos aquí, mostrar reintento
+        const splash = document.getElementById('splash');
+        const iframe = document.getElementById('webview');
+        
+        // Ocultar splash cuando el iframe cargue
+        iframe.onload = function() {
+            splash.classList.add('hide');
+            setTimeout(() => splash.style.display = 'none', 500);
+        };
+        
+        // Timeout: si después de 10 segundos no cargó, ocultar splash igual
         setTimeout(() => {
-            const spinner = document.getElementById('spinner');
-            if (spinner.style.display !== 'none') {
-                // Todavía cargando - possible redirect blocked
-                retryCount++;
-                spinner.style.display = 'none';
-                document.getElementById('statusText').textContent = '¿Conexión lenta?';
-                document.getElementById('errorText').style.display = 'block';
-                document.getElementById('errorText').textContent = 'La redirección está tomando más de lo esperado.';
-                document.getElementById('retryBtn').style.display = 'block';
-            }
-        }, 5000);
-
-        // Iniciar conexión
-        connect();
+            splash.classList.add('hide');
+            setTimeout(() => splash.style.display = 'none', 500);
+        }, 10000);
     </script>
 </body>
 </html>

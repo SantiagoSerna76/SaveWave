@@ -1,20 +1,9 @@
 {
   "appId": "com.savewave.app",
   "appName": "SaveWave",
-  "server": {
-    "url": "https://savewave.com/?native=1",
-    "androidScheme": "https",
-    "allowNavigation": [
-      "*"
-    ]
-  },
+  "webDir": "www",
+  "server": {},
   "android": {
-    "buildOptions": {
-      "keystorePath": "savewave.keystore",
-      "keystorePassword": "savewave123",
-      "keystoreAlias": "savewave",
-      "keystoreAliasPassword": "savewave123"
-    },
     "allowMixedContent": true,
     "webContentsDebuggingEnabled": false
   },

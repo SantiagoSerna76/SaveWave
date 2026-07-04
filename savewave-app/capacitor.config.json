@@ -3,6 +3,7 @@
   "appName": "SaveWave",
   "webDir": "www",
   "server": {
+    "url": "https://savewave.com/?native=1",
     "androidScheme": "https",
     "hostname": "savewave.com",
     "allowNavigation": [
@@ -11,8 +12,12 @@
       "159.223.178.155",
       "*.youtube.com",
       "*.googlevideo.com",
-      "*.ytimg.com"
-    ]
+      "*.ytimg.com",
+      "*.googlevideo.com",
+      "*.ytimg.com",
+      "*.ggpht.com"
+    ],
+    "cleartext": true
   },
   "android": {
     "buildOptions": {

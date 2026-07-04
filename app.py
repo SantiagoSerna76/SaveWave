@@ -22,7 +22,8 @@ pymysql.install_as_MySQLdb()
 
 from flask import (
     Flask, render_template, request, redirect, url_for,
-    flash, jsonify, send_file, send_from_directory, session, abort, current_app
+    flash, jsonify, send_file, send_from_directory, session, abort, current_app,
+    Response
 )
 from flask_cors import CORS
 from flask_login import (
@@ -779,6 +780,87 @@ def api_audio_direct_url():
             return jsonify({"success": False, "error": result["error"]})
     except Exception as e:
         return jsonify({"success": False, "error": f"Error: {str(e)}"})
+
+
+@app.route("/api/stream-proxy", methods=["POST"])
+@limiter.limit("30 per minute")
+def api_stream_proxy():
+    """
+    API: Proxy de streaming. El servidor obtiene la URL directa del audio
+    y la canaliza (pipe) al cliente SIN descargar completa en el servidor.
+    Esto evita problemas de CORS y el móvil recibe el audio en tiempo real
+    mientras se descarga. El servidor nunca almacena el archivo completo.
+    """
+    import requests as http_requests
+
+    if request.is_json:
+        data = request.get_json()
+        url = data.get("url", "").strip() if data else ""
+    else:
+        url = request.form.get("url", "").strip()
+
+    if not url:
+        return jsonify({"success": False, "error": "Debes proporcionar una URL."}), 400
+
+    try:
+        # Obtener la URL directa del audio (rápido, <1s)
+        result = get_audio_direct_url(url)
+        if not result["success"]:
+            return jsonify({"success": False, "error": result["error"]}), 400
+
+        direct_url = result["direct_url"]
+        audio_format = result.get("format", "m4a")
+
+        # Determinar mimetype
+        mimetype_map = {
+            "m4a": "audio/mp4",
+            "webm": "audio/webm",
+            "opus": "audio/opus",
+            "mp3": "audio/mpeg",
+            "aac": "audio/aac",
+            "ogg": "audio/ogg",
+        }
+        mime = mimetype_map.get(audio_format, "audio/mp4")
+
+        # Hacer una request streaming a la URL directa de YouTube
+        # y canalizar la respuesta al cliente
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        }
+
+        # Soporte para Range requests (para seek en el reproductor)
+        range_header = request.headers.get("Range")
+        if range_header:
+            headers["Range"] = range_header
+
+        resp = http_requests.get(direct_url, headers=headers, stream=True, timeout=30)
+
+        # Construir respuesta con los mismos headers que YouTube devuelve
+        response_headers = {}
+        for key in ["Content-Type", "Content-Length", "Content-Range", "Accept-Ranges"]:
+            if key in resp.headers:
+                response_headers[key] = resp.headers[key]
+
+        if "Content-Type" not in response_headers:
+            response_headers["Content-Type"] = mime
+
+        # Cache por 1 hora
+        response_headers["Cache-Control"] = "public, max-age=3600"
+
+        def generate():
+            for chunk in resp.iter_content(chunk_size=65536):
+                if chunk:
+                    yield chunk
+
+        return Response(
+            generate(),
+            status=resp.status_code,
+            headers=response_headers,
+            direct_passthrough=True,
+        )
+
+    except Exception as e:
+        return jsonify({"success": False, "error": f"Error en streaming: {str(e)}"}), 500
 
 
 @app.route("/api/debug-download", methods=["GET"])

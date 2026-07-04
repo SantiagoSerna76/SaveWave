@@ -1,14 +1,12 @@
 {
   "appId": "com.savewave.app",
   "appName": "SaveWave",
-  "webDir": "www",
   "server": {
+    "url": "https://savewave.com/?native=1",
     "androidScheme": "https",
-    "hostname": "savewave.com",
     "allowNavigation": [
       "*"
-    ],
-    "errorPath": ""
+    ]
   },
   "android": {
     "buildOptions": {
@@ -18,17 +16,11 @@
       "keystoreAliasPassword": "savewave123"
     },
     "allowMixedContent": true,
-    "captureInput": true,
     "webContentsDebuggingEnabled": false
   },
   "plugins": {
     "CapacitorHttp": {
       "enabled": true
-    },
-    "SplashScreen": {
-      "launchShowDuration": 1000,
-      "backgroundColor": "#11111b",
-      "androidSplashResourceName": "splash"
     }
   }
 }

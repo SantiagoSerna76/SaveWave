@@ -17,12 +17,20 @@
         }
         .loader {
             text-align: center;
+            max-width: 280px;
         }
-        .loader img {
+        .logo {
             width: 80px;
             height: 80px;
             border-radius: 20px;
-            margin-bottom: 20px;
+            margin: 0 auto 20px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: 900;
+            color: #fff;
             box-shadow: 0 10px 30px rgba(99,102,241,0.3);
         }
         .loader h1 {
@@ -44,35 +52,103 @@
             margin: 20px auto;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
+        .retry-btn {
+            display: none;
+            margin-top: 16px;
+            padding: 10px 24px;
+            border-radius: 50px;
+            border: 1px solid rgba(99,102,241,0.4);
+            background: rgba(99,102,241,0.15);
+            color: #a5b4fc;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .retry-btn:hover {
+            background: rgba(99,102,241,0.25);
+        }
+        .error-text {
+            color: #f87171;
+            font-size: 0.8rem;
+            margin-top: 12px;
+            display: none;
+        }
     </style>
-    <script>
-        // Detectar si estamos en la app nativa Capacitor
-        const isNative = () => {
-            return typeof Capacitor !== 'undefined' && Capacitor.isNativePlatform();
-        };
-
-        // Cargar la app principal
-        window.onload = function() {
-            // Redirigir a la web principal con un parámetro que indica que es app nativa
-            // La app nativa cargará la web pero con el flag ?native=1
-            const baseUrl = 'https://savewave.com';
-            const targetUrl = baseUrl + '?native=1';
-            
-            // Si estamos en Capacitor, usar el Browser o cargar en WebView
-            if (isNative()) {
-                window.location.href = targetUrl;
-            } else {
-                window.location.href = targetUrl;
-            }
-        };
-    </script>
 </head>
 <body>
-    <div class="loader">
-        <img src="https://savewave.com/static/Savewave.png" alt="SaveWave">
+    <div class="loader" id="loader">
+        <div class="logo">S</div>
         <h1>SaveWave</h1>
-        <p>Cargando...</p>
-        <div class="spinner"></div>
+        <p id="statusText">Conectando con el servidor...</p>
+        <div class="spinner" id="spinner"></div>
+        <p class="error-text" id="errorText"></p>
+        <button class="retry-btn" id="retryBtn" onclick="connect()">
+            <i class="fas fa-redo"></i> Reintentar
+        </button>
     </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/js/all.min.js"></script>
+    <script>
+        const targetUrl = 'https://savewave.com/?native=1';
+        let retryCount = 0;
+        const MAX_RETRIES = 3;
+
+        function connect() {
+            const spinner = document.getElementById('spinner');
+            const status = document.getElementById('statusText');
+            const error = document.getElementById('errorText');
+            const retry = document.getElementById('retryBtn');
+            
+            spinner.style.display = 'block';
+            status.textContent = 'Conectando con el servidor...';
+            error.style.display = 'none';
+            retry.style.display = 'none';
+            
+            // Intentar cargar la web con timeout
+            const timeout = setTimeout(() => {
+                retryCount++;
+                spinner.style.display = 'none';
+                error.style.display = 'block';
+                
+                if (retryCount >= MAX_RETRIES) {
+                    error.textContent = 'No se pudo conectar con savewave.com. Verifica tu conexión a internet.';
+                    status.textContent = 'Error de conexión';
+                } else {
+                    error.textContent = 'Tiempo de espera agotado. Reintentando...';
+                    connect();
+                }
+            }, 15000);
+
+            // Intentar cargar la página
+            try {
+                window.location.href = targetUrl;
+            } catch(e) {
+                clearTimeout(timeout);
+                spinner.style.display = 'none';
+                status.textContent = 'Error al cargar';
+                error.style.display = 'block';
+                error.textContent = 'Error: ' + e.message;
+                retry.style.display = 'block';
+            }
+        }
+
+        // Si después de 5 segundos seguimos aquí, mostrar reintento
+        setTimeout(() => {
+            const spinner = document.getElementById('spinner');
+            if (spinner.style.display !== 'none') {
+                // Todavía cargando - possible redirect blocked
+                retryCount++;
+                spinner.style.display = 'none';
+                document.getElementById('statusText').textContent = '¿Conexión lenta?';
+                document.getElementById('errorText').style.display = 'block';
+                document.getElementById('errorText').textContent = 'La redirección está tomando más de lo esperado.';
+                document.getElementById('retryBtn').style.display = 'block';
+            }
+        }, 5000);
+
+        // Iniciar conexión
+        connect();
+    </script>
 </body>
 </html>

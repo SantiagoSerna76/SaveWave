@@ -1,5 +1,5 @@
 """
-Genera todos los iconos de Android desde SaveWave.png
+Genera iconos Android desde SaveWave.png preservando transparencia
 """
 import os
 from PIL import Image
@@ -8,7 +8,6 @@ BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(BASE, "static", "Savewave.png")
 OUT = os.path.join(BASE, "savewave-app", "android", "app", "src", "main", "res")
 
-# Tamaños de iconos Android
 ICONS = {
     "mipmap-mdpi": 48,
     "mipmap-hdpi": 72,
@@ -17,51 +16,53 @@ ICONS = {
     "mipmap-xxxhdpi": 192,
 }
 
-# Tamaños del icono de launcher adaptativo
-FOREGROUND_SIZE = 108  # tamaño del foreground en dp (72% del adaptive icon)
-
-img = Image.open(SRC)
-
-# Convertir a RGBA
-if img.mode != 'RGBA':
-    img = img.convert('RGBA')
-
-# Crear icono redondeado cuadrado (como Android requiere)
-def make_square_rounded(img, size):
-    # Crear lienzo cuadrado
-    canvas = Image.new('RGBA', (size, size), (0, 0, 0, 0))
+def prepare_image(img, target_size):
+    """Convierte a RGBA, escala manteniendo aspecto, centra en canvas cuadrado"""
+    # Convertir a RGBA preservando transparencia
+    if img.mode == 'P':
+        img = img.convert('RGBA' if 'transparency' in img.info else 'RGB')
+    elif img.mode != 'RGBA':
+        img = img.convert('RGBA')
     
-    # Escalar imagen a ocupar ~70% del canvas con padding
-    pad = int(size * 0.15)
-    inner_size = size - 2 * pad
-    resized = img.resize((inner_size, inner_size), Image.LANCZOS)
+    # Calcular escalado manteniendo aspecto
+    w, h = img.size
+    # Usar el lado más corto como referencia para que quepa completo
+    scale = (target_size * 0.75) / max(w, h)
+    new_w = int(w * scale)
+    new_h = int(h * scale)
     
-    # Pegar en el centro
-    x = (size - inner_size) // 2
-    y = (size - inner_size) // 2
-    canvas.paste(resized, (x, y), resized if resized.mode == 'RGBA' else None)
+    resized = img.resize((new_w, new_h), Image.LANCZOS)
+    
+    # Crear canvas cuadrado transparente
+    canvas = Image.new('RGBA', (target_size, target_size), (0, 0, 0, 0))
+    
+    # Centrar
+    x = (target_size - new_w) // 2
+    y = (target_size - new_h) // 2
+    canvas.paste(resized, (x, y), resized)
     
     return canvas
 
-# Generar iconos para cada densidad
+img = Image.open(SRC)
+print(f"Imagen original: {img.size}, mode: {img.mode}")
+
 for folder, size in ICONS.items():
     out_dir = os.path.join(OUT, folder)
     os.makedirs(out_dir, exist_ok=True)
     
-    icon = make_square_rounded(img, size)
-    icon.save(os.path.join(out_dir, "ic_launcher.png"))
-    icon.save(os.path.join(out_dir, "ic_launcher_round.png"))
+    icon = prepare_image(img, size)
     
-    # También generar el foreground para adaptive icon
-    foreground = make_square_rounded(img, size)
-    foreground.save(os.path.join(out_dir, "ic_launcher_foreground.png"))
+    # Guardar como PNG (preserva transparencia)
+    icon.save(os.path.join(out_dir, "ic_launcher.png"), "PNG")
+    icon.save(os.path.join(out_dir, "ic_launcher_round.png"), "PNG")
     
-    # Background: color sólido
-    bg = Image.new('RGBA', (size, size), (17, 17, 27, 255))  # #11111b
-    bg.save(os.path.join(out_dir, "ic_launcher_background.png"))
+    # Foreground (mismo icono con fondo transparente)
+    icon.save(os.path.join(out_dir, "ic_launcher_foreground.png"), "PNG")
+    
+    # Background sólido oscuro
+    bg = Image.new('RGBA', (size, size), (17, 17, 27, 255))
+    bg.save(os.path.join(out_dir, "ic_launcher_background.png"), "PNG")
     
     print(f"  ✓ {folder}: {size}x{size}")
 
-print("\n✅ Iconos generados correctamente")
-print(f"   Origen: {SRC}")
-print(f"   Destino: {OUT}")
+print("\n✅ Iconos generados correctamente (transparencia preservada)")

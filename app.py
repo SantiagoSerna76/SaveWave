@@ -786,8 +786,9 @@ def api_audio_direct_url():
 @limiter.limit("30 per minute")
 def api_stream_proxy():
     """
-    API: Proxy de streaming (POST). Devuelve la URL del stream GET
-    para que el <audio> del navegador pueda reproducir en tiempo real.
+    API: Proxy de streaming (POST). Extrae la URL directa del audio de YouTube
+    y la devuelve. El frontend primero intenta reproducirla directamente.
+    Si falla por CORS, usa el proxy GET como fallback.
     """
     if request.is_json:
         data = request.get_json()
@@ -799,20 +800,24 @@ def api_stream_proxy():
         return jsonify({"success": False, "error": "Debes proporcionar una URL."}), 400
 
     try:
-        # Verificar que la URL sea válida obteniendo info rápida
+        # Extraer la URL directa del audio (esto es lo que toma tiempo, solo una vez)
         result = get_audio_direct_url(url)
         if not result["success"]:
             return jsonify({"success": False, "error": result["error"]}), 400
 
-        # Devolver la URL del stream GET con la URL original codificada
+        direct_url = result["direct_url"]
+        audio_format = result.get("format", "m4a")
+
+        # Construir URL del proxy GET por si CORS falla
         import urllib.parse
-        stream_url = url_for("api_stream_proxy_get", _external=True) + "?url=" + urllib.parse.quote(url)
+        proxy_url = url_for("api_stream_proxy_get", _external=True) + "?direct_url=" + urllib.parse.quote(direct_url) + "&fmt=" + audio_format
 
         return jsonify({
             "success": True,
-            "stream_url": stream_url,
+            "direct_url": direct_url,       # Intentar directo primero
+            "proxy_url": proxy_url,          # Fallback si CORS bloquea
             "title": result.get("title", ""),
-            "format": result.get("format", "m4a"),
+            "format": audio_format,
         })
 
     except Exception as e:
@@ -823,26 +828,19 @@ def api_stream_proxy():
 @limiter.limit("60 per minute")
 def api_stream_proxy_get():
     """
-    API: Proxy de streaming (GET). El servidor obtiene la URL directa del audio
-    y la canaliza (pipe) al cliente SIN descargar completa en el servidor.
-    El <audio> del navegador usa esta URL como source y reproduce en tiempo real.
+    API: Proxy de streaming (GET). Recibe una direct_url de YouTube
+    y la canaliza (pipe) al cliente. Usado como fallback cuando CORS bloquea.
     """
     import requests as http_requests
     import urllib.parse
 
-    url = request.args.get("url", "").strip()
-    if not url:
-        return jsonify({"success": False, "error": "Debes proporcionar una URL."}), 400
+    direct_url = request.args.get("direct_url", "").strip()
+    audio_format = request.args.get("fmt", "m4a").strip()
+
+    if not direct_url:
+        return jsonify({"success": False, "error": "Falta direct_url."}), 400
 
     try:
-        # Obtener la URL directa del audio (rápido, <1s)
-        result = get_audio_direct_url(url)
-        if not result["success"]:
-            return jsonify({"success": False, "error": result["error"]}), 400
-
-        direct_url = result["direct_url"]
-        audio_format = result.get("format", "m4a")
-
         # Determinar mimetype
         mimetype_map = {
             "m4a": "audio/mp4",
@@ -875,7 +873,6 @@ def api_stream_proxy_get():
         if "Content-Type" not in response_headers:
             response_headers["Content-Type"] = mime
 
-        # Cache por 1 hora
         response_headers["Cache-Control"] = "public, max-age=3600"
         response_headers["Access-Control-Allow-Origin"] = "*"
 

@@ -1861,7 +1861,7 @@
         currentFetchController = new AbortController();
         
         try {
-            // Obtener la URL del stream desde el proxy
+            // Obtener la URL directa de YouTube + proxy de respaldo
             const res = await fetch('/api/stream-proxy', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/x-www-form-urlencoded'},
@@ -1881,20 +1881,54 @@
             
             if (currentTrackIndex !== index) return;
 
-            if (!data.success || !data.stream_url) {
-                statusEl.textContent = '❌ ' + (data.error || 'Sin stream disponible');
+            if (!data.success) {
+                statusEl.textContent = '❌ ' + (data.error || 'Sin respuesta del servidor');
                 updatePlayPauseUI();
                 return;
             }
 
-            statusEl.innerHTML = '⏳ Paso 3: Cargando audio (streaming directo)...';
-            track.cached_url = data.stream_url;
+            statusEl.innerHTML = '⏳ Paso 3: Cargando audio...';
             
-            // Usar la URL del stream como source del <audio>.
-            // El navegador reproduce MIENTRAS descarga (streaming real).
-            // No usamos blob() porque esperaría la descarga completa.
-            audioPlayer.src = data.stream_url;
-            audioPlayer.load();
+            // Intentar con la URL directa de YouTube primero (más rápido, el móvil descarga directo)
+            // Si falla por CORS, usar el proxy como respaldo
+            const tryPlay = async (url) => {
+                return new Promise((resolve, reject) => {
+                    const audio = new Audio();
+                    audio.preload = 'auto';
+                    
+                    audio.oncanplay = () => {
+                        audioPlayer.src = url;
+                        audioPlayer.load();
+                        resolve();
+                    };
+                    audio.onerror = () => {
+                        reject(new Error('CORS or load error'));
+                    };
+                    audio.src = url;
+                    audio.load();
+                    
+                    // Timeout de 3 segundos para la carga directa
+                    setTimeout(() => {
+                        if (!audio.readyState || audio.readyState < 2) {
+                            audio.src = '';
+                            reject(new Error('Timeout'));
+                        }
+                    }, 3000);
+                });
+            };
+
+            try {
+                // Primero intentar con la URL directa de YouTube
+                await tryPlay(data.direct_url);
+                track.cached_url = data.direct_url;
+                statusEl.innerHTML = '⏳ Reproduciendo (directo desde YouTube)...';
+            } catch (directErr) {
+                // Fallback al proxy si CORS bloquea
+                statusEl.innerHTML = '⏳ Usando proxy de streaming...';
+                track.cached_url = data.proxy_url;
+                audioPlayer.src = data.proxy_url;
+                audioPlayer.load();
+            }
             
             statusEl.innerHTML = '⏳ Paso 4: Reproduciendo...';
             

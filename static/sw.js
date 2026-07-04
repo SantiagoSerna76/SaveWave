@@ -1,4 +1,4 @@
-const CACHE_NAME = 'savewave-v8';
+const CACHE_NAME = 'savewave-v9';
 const OFFLINE_AUDIO_CACHE = 'savewave-offline';
 const ASSETS_TO_CACHE = [
     '/',
@@ -53,9 +53,9 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // ---------- STREAM / DOWNLOAD audio files ----------
-    // For /stream/ and /downloads/ paths, check offline cache first, then network
-    if (url.pathname.startsWith('/stream/') || url.pathname.startsWith('/downloads/')) {
+    // ---------- STREAM / DOWNLOAD / STREAM-NATIVE audio files ----------
+    // For /stream/, /stream-native/ and /downloads/ paths, check offline cache first, then network
+    if (url.pathname.startsWith('/stream/') || url.pathname.startsWith('/stream-native/') || url.pathname.startsWith('/downloads/')) {
         event.respondWith(
             handleStreamRequest(event.request)
         );

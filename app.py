@@ -1119,6 +1119,12 @@ def google_verification():
 # RUTAS - API DOCS Y TOKEN
 # ============================================================
 
+@app.route("/app")
+def app_download():
+    """Pagina de descarga de la app nativa Android."""
+    return render_template("app_download.html")
+
+
 @app.route("/api-docs")
 def api_docs():
     """Pagina de documentacion de la API para usuarios Premium."""

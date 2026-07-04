@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block title %}SaveWave - App Android Nativa{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="text-center py-5 mt-4">
+            <div class="mb-4 mx-auto d-inline-flex align-items-center justify-content-center" style="width:100px;height:100px;border-radius:24px;background:linear-gradient(135deg,#6366f1,#8b5cf6);box-shadow:0 10px 30px rgba(99,102,241,0.4);">
+                <i class="fab fa-android fa-3x text-white"></i>
+            </div>
+            <h1 class="display-4 fw-bold mb-3" style="letter-spacing:-1px;">
+                App Nativa <span style="background:linear-gradient(135deg,#6366f1,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">SaveWave</span>
+            </h1>
+            <p class="lead mb-4 mx-auto" style="max-width:600px;color:var(--text-muted);">
+                Descarga directa desde YouTube, Instagram, TikTok y +1000 plataformas.<br>
+                <strong>Rápido como la extensión de Chrome.</strong> Sin límites, sin CORS.
+            </p>
+        </div>
+
+        <div class="row g-4 mb-5">
+            <div class="col-md-4">
+                <div class="card border-0 h-100" style="background:var(--card-bg);border-radius:16px;">
+                    <div class="card-body text-center p-4">
+                        <div class="mb-3" style="font-size:2rem;color:#6366f1;"><i class="fas fa-bolt"></i></div>
+                        <h5 class="fw-bold">Descarga Directa</h5>
+                        <p class="small text-muted mb-0">El móvil descarga directo desde YouTube usando su propia CPU. Sin esperar al servidor.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 h-100" style="background:var(--card-bg);border-radius:16px;">
+                    <div class="card-body text-center p-4">
+                        <div class="mb-3" style="font-size:2rem;color:#10b981;"><i class="fas fa-wifi-slash"></i></div>
+                        <h5 class="fw-bold">Offline Real</h5>
+                        <p class="small text-muted mb-0">Los archivos se guardan en el almacenamiento interno. Escucha sin internet.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 h-100" style="background:var(--card-bg);border-radius:16px;">
+                    <div class="card-body text-center p-4">
+                        <div class="mb-3" style="font-size:2rem;color:#f59e0b;"><i class="fas fa-headphones"></i></div>
+                        <h5 class="fw-bold">Segundo Plano</h5>
+                        <p class="small text-muted mb-0">Sigue reproduciendo aunque minimices la app o bloquees la pantalla.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-lg mb-5" style="background:linear-gradient(135deg,#1a1a2e,#16213e);border-radius:24px;overflow:hidden;">
+            <div class="card-body p-5 text-center">
+                <div class="mb-4">
+                    <span class="badge rounded-pill px-3 py-2 mb-3" style="background:rgba(16,185,129,0.15);color:#10b981;border:1px solid rgba(16,185,129,0.3);">
+                        <i class="fas fa-check-circle me-1"></i> APK firmado · 100% seguro
+                    </span>
+                </div>
+                <h3 class="fw-bold mb-2">SaveWave para Android</h3>
+                <p class="text-muted mb-4">Versión 1.0.0 · Tamaño: ~8 MB · Android 8+</p>
+                
+                <a href="/downloads/savewave.apk" class="btn btn-lg px-5 fw-bold" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:50px;box-shadow:0 8px 25px rgba(99,102,241,0.4);">
+                    <i class="fas fa-download me-2"></i>Descargar APK
+                </a>
+                
+                <div class="mt-4 p-3 rounded-3" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);">
+                    <p class="small mb-2" style="color:rgba(255,255,255,0.6);">
+                        <i class="fas fa-shield-alt me-1" style="color:#10b981;"></i>
+                        Después de descargar, ve a Ajustes → Seguridad → <strong>"Instalar apps desconocidas"</strong> y permite la instalación.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="alert alert-info border-0" style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);border-radius:16px;">
+            <div class="d-flex align-items-start gap-3">
+                <i class="fas fa-info-circle mt-1" style="color:#6366f1;font-size:1.2rem;"></i>
+                <div>
+                    <h6 class="fw-bold mb-1" style="color:#a5b4fc;">¿Usas iPhone?</h6>
+                    <p class="small mb-0" style="color:rgba(255,255,255,0.6);">
+                        Apple no permite instalar apps fuera de la App Store. 
+                        Para iPhone, usa nuestra <a href="/" class="text-decoration-none" style="color:#6366f1;">versión web</a> 
+                        o agrega SaveWave a tu pantalla de inicio como PWA.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center mt-5 pt-4 border-top" style="border-color:var(--card-border)!important;">
+            <h5 class="fw-bold mb-3">¿Cómo funciona la app nativa?</h5>
+            <div class="row g-3 text-start">
+                <div class="col-md-6">
+                    <div class="p-3 rounded-3" style="background:var(--card-bg);">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="fw-bold fs-4" style="color:#6366f1;">1</div>
+                            <div>
+                                <div class="fw-semibold small">Obtén la URL directa</div>
+                                <div class="text-muted" style="font-size:0.8rem;">El VPS negocia con YouTube en <1s</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="p-3 rounded-3" style="background:var(--card-bg);">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="fw-bold fs-4" style="color:#6366f1;">2</div>
+                            <div>
+                                <div class="fw-semibold small">Descarga directa</div>
+                                <div class="text-muted" style="font-size:0.8rem;">El móvil descarga directo de YouTube</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="p-3 rounded-3" style="background:var(--card-bg);">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="fw-bold fs-4" style="color:#6366f1;">3</div>
+                            <div>
+                                <div class="fw-semibold small">Guarda en el teléfono</div>
+                                <div class="text-muted" style="font-size:0.8rem;">Archivo MP3/M4A en almacenamiento interno</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="p-3 rounded-3" style="background:var(--card-bg);">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="fw-bold fs-4" style="color:#6366f1;">4</div>
+                            <div>
+                                <div class="fw-semibold small">Reproducción instantánea</div>
+                                <div class="text-muted" style="font-size:0.8rem;">Sin esperar, sin CORS, sin límites</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

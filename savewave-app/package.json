@@ -1,0 +1,22 @@
+{
+  "name": "savewave-app",
+  "version": "1.0.0",
+  "description": "SaveWave - Descarga videos de cualquier plataforma",
+  "main": "index.js",
+  "scripts": {
+    "build": "node build.js",
+    "cap:init": "npx cap init SaveWave com.savewave.app --webDir=www",
+    "cap:sync": "npx cap sync",
+    "cap:open": "npx cap open android",
+    "cap:build": "npx cap build android",
+    "apk:build": "cd android && ./gradlew assembleRelease"
+  },
+  "keywords": ["savewave", "downloader", "capacitor"],
+  "author": "SaveWave",
+  "license": "ISC",
+  "dependencies": {
+    "@capacitor/android": "^7.0.0",
+    "@capacitor/core": "^7.0.0",
+    "@capacitor/cli": "^7.0.0"
+  }
+}

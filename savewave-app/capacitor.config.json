@@ -1,0 +1,33 @@
+{
+  "appId": "com.savewave.app",
+  "appName": "SaveWave",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https",
+    "hostname": "savewave.com",
+    "allowNavigation": [
+      "savewave.com",
+      "*.savewave.com",
+      "159.223.178.155",
+      "*.youtube.com",
+      "*.googlevideo.com",
+      "*.ytimg.com"
+    ]
+  },
+  "android": {
+    "buildOptions": {
+      "keystorePath": "",
+      "keystorePassword": "",
+      "keystoreAlias": "",
+      "keystoreAliasPassword": ""
+    },
+    "allowMixedContent": true,
+    "captureInput": true,
+    "webContentsDebuggingEnabled": true
+  },
+  "plugins": {
+    "CapacitorHttp": {
+      "enabled": true
+    }
+  }
+}

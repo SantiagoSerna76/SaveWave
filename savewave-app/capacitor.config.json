@@ -16,18 +16,23 @@
   },
   "android": {
     "buildOptions": {
-      "keystorePath": "",
-      "keystorePassword": "",
-      "keystoreAlias": "",
-      "keystoreAliasPassword": ""
+      "keystorePath": "savewave.keystore",
+      "keystorePassword": "savewave123",
+      "keystoreAlias": "savewave",
+      "keystoreAliasPassword": "savewave123"
     },
     "allowMixedContent": true,
     "captureInput": true,
-    "webContentsDebuggingEnabled": true
+    "webContentsDebuggingEnabled": false
   },
   "plugins": {
     "CapacitorHttp": {
       "enabled": true
+    },
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "backgroundColor": "#11111b",
+      "androidSplashResourceName": "splash"
     }
   }
 }

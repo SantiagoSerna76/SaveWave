@@ -367,6 +367,95 @@ def download_audio(url: str, quality: str = "128", output_path: str = None) -> d
         }
 
 
+def download_audio_native(url: str, output_path: str = None) -> dict:
+    """
+    Descarga audio en formato nativo (M4A/Opus) SIN reconversión a MP3.
+    Esto es MUCHO más rápido porque evita FFmpeg por completo.
+    El navegador/móvil reproduce M4A nativamente.
+
+    Args:
+        url: URL del video.
+        output_path: Ruta donde guardar el archivo.
+
+    Returns:
+        Diccionario con resultado de la descarga.
+    """
+    if output_path is None:
+        output_path = Config.DOWNLOAD_FOLDER
+
+    os.makedirs(output_path, exist_ok=True)
+
+    url_hash = hashlib.md5(url.encode()).hexdigest()
+
+    # Fast path: check if we already downloaded this exact audio natively
+    existing_files = glob.glob(os.path.join(output_path, f"native_{url_hash}.*"))
+    if existing_files:
+        downloaded_file = existing_files[0]
+        file_size = os.path.getsize(downloaded_file)
+        if file_size < 50 * 1024:
+            os.remove(downloaded_file)
+        else:
+            ext = os.path.splitext(downloaded_file)[1].lstrip('.')
+            return {
+                "success": True,
+                "file_path": downloaded_file,
+                "file_size": file_size,
+                "file_size_formatted": _format_file_size(file_size),
+                "title": "Audio",
+                "platform": detect_platform(url),
+                "duration": 0,
+                "filename": os.path.basename(downloaded_file),
+                "format": ext,
+            }
+
+    output_template = os.path.join(output_path, f"native_{url_hash}.%(ext)s")
+
+    # Descargar el mejor audio disponible SIN post-procesamiento (sin FFmpeg)
+    # Priorizar m4a (AAC) que es el más compatible con navegadores y móviles
+    format_spec = "bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio/best"
+
+    ydl_opts = _get_ydl_opts({
+        "format": format_spec,
+        "outtmpl": output_template,
+        # NO postprocessors = sin reconversión FFmpeg
+        "progress_hooks": [_progress_hook],
+    }, url)
+
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=True)
+
+            # Buscar el archivo descargado (puede ser .m4a, .webm, etc.)
+            downloaded_file = _find_native_file(output_path, url_hash)
+
+            if not downloaded_file:
+                return {
+                    "success": False,
+                    "error": "No se pudo encontrar el archivo de audio descargado.",
+                }
+
+            file_size = os.path.getsize(downloaded_file)
+            ext = os.path.splitext(downloaded_file)[1].lstrip('.')
+
+            return {
+                "success": True,
+                "file_path": downloaded_file,
+                "file_size": file_size,
+                "file_size_formatted": _format_file_size(file_size),
+                "title": info.get("title", "Sin titulo"),
+                "platform": detect_platform(url),
+                "duration": info.get("duration", 0),
+                "filename": os.path.basename(downloaded_file),
+                "format": ext,
+            }
+
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Error al descargar audio nativo: {str(e)}",
+        }
+
+
 def download_video(url: str, quality: str = "720p", output_path: str = None) -> dict:
     """
     Descarga un video desde la URL especificada.
@@ -528,6 +617,19 @@ def _find_downloaded_file(download_folder: str, url_hash: str) -> str:
     prefix = f"video_{url_hash}_"
     for filename in os.listdir(download_folder):
         if filename.startswith(prefix):
+            return os.path.join(download_folder, filename)
+    return None
+
+
+def _find_native_file(download_folder: str, url_hash: str) -> str:
+    """Busca el archivo de audio nativo descargado (m4a, webm, etc.) que coincida con el hash."""
+    prefix = f"native_{url_hash}."
+    for filename in os.listdir(download_folder):
+        if filename.startswith(prefix):
+            return os.path.join(download_folder, filename)
+    # Fallback: buscar cualquier archivo recién creado con el hash
+    for filename in os.listdir(download_folder):
+        if url_hash in filename and not filename.endswith('.part'):
             return os.path.join(download_folder, filename)
     return None
 

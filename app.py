@@ -45,7 +45,7 @@ from models import db, init_db, User, Download, PlanType, Playlist, PlaylistItem
 # Importar servicios
 from downloader import (
     detect_platform, get_video_info, download_video, download_audio,
-    get_available_qualities, cleanup_old_files
+    download_audio_native, get_available_qualities, cleanup_old_files
 )
 from auth import (
     register_user, authenticate_user, get_user_by_id,
@@ -651,6 +651,99 @@ def api_download_audio():
             return jsonify({"success": False, "error": result["error"]})
     except Exception as e:
         return jsonify({"success": False, "error": f"Error al convertir a MP3: {str(e)}"})
+
+@app.route("/api/download-audio-native", methods=["POST"])
+@limiter.limit("20 per minute")
+def api_download_audio_native():
+    """
+    API: Descarga audio en formato nativo (M4A) SIN reconversión a MP3.
+    Esto es ~10x más rápido que download-audio porque evita FFmpeg.
+    El navegador y móvil reproducen M4A nativamente.
+    Acepta autenticacion via sesion web O via JWT.
+    """
+    if request.is_json:
+        data = request.get_json()
+        url = data.get("url", "").strip() if data else ""
+    else:
+        url = request.form.get("url", "").strip()
+
+    if not url:
+        return jsonify({"success": False, "error": "Debes proporcionar una URL."})
+
+    # Verificar limite (sesion web o JWT)
+    user, is_jwt = _get_api_user()
+    if user:
+        limit_check = check_daily_limit(user)
+        if not limit_check["allowed"]:
+            return jsonify({"success": False, "error": limit_check["error"],
+                          "upgrade_required": True})
+
+    try:
+        result = download_audio_native(url)
+        if result["success"]:
+            # Determinar mimetype según el formato
+            fmt = result.get("format", "m4a")
+            mimetype_map = {
+                "m4a": "audio/mp4",
+                "webm": "audio/webm",
+                "opus": "audio/opus",
+                "mp3": "audio/mpeg",
+                "aac": "audio/aac",
+                "ogg": "audio/ogg",
+            }
+            mime = mimetype_map.get(fmt, "audio/mp4")
+
+            return jsonify({
+                "success": True,
+                "filename": result["filename"],
+                "file_size": result["file_size_formatted"],
+                "title": result["title"],
+                "platform": result["platform"],
+                "format": fmt,
+                "download_url": url_for("stream_file_native", filename=result["filename"]),
+            })
+        else:
+            return jsonify({"success": False, "error": result["error"]})
+    except Exception as e:
+        return jsonify({"success": False, "error": f"Error al descargar audio: {str(e)}"})
+
+
+@app.route("/stream-native/<filename>")
+def stream_file_native(filename):
+    """Sirve el archivo de audio nativo para reproducción (sin reconversión)."""
+    if ".." in filename or "/" in filename or "\\" in filename:
+        abort(400)
+
+    file_path = os.path.join(Config.DOWNLOAD_FOLDER, filename)
+    real_path = os.path.realpath(file_path)
+    download_folder = os.path.realpath(Config.DOWNLOAD_FOLDER)
+    if not real_path.startswith(download_folder):
+        abort(403)
+
+    if not os.path.exists(file_path):
+        abort(404)
+
+    # Detectar mimetype por extensión
+    ext = os.path.splitext(filename)[1].lstrip('.').lower()
+    mimetype_map = {
+        "m4a": "audio/mp4",
+        "webm": "audio/webm",
+        "opus": "audio/opus",
+        "mp3": "audio/mpeg",
+        "aac": "audio/aac",
+        "ogg": "audio/ogg",
+        "mp4": "video/mp4",
+    }
+    mime = mimetype_map.get(ext, "audio/mp4")
+
+    return send_file(
+        file_path,
+        as_attachment=False,
+        mimetype=mime,
+        conditional=True,
+        max_age=86400
+    )
+
 
 @app.route("/api/debug-download", methods=["GET"])
 def debug_download():

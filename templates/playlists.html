@@ -953,16 +953,26 @@
     .mobile-menu-toggle {
         display: none;
         position: absolute;
-        top: 15px;
-        left: 15px;
-        background: rgba(255,255,255,0.08);
-        border: 1px solid rgba(255,255,255,0.12);
-        border-radius: 8px;
-        padding: 8px 16px;
+        top: 12px;
+        left: 12px;
+        background: rgba(255,255,255,0.1);
+        border: 1px solid rgba(255,255,255,0.15);
+        border-radius: 10px;
+        padding: 8px 14px;
         font-weight: 600;
-        font-size: 0.9rem;
+        font-size: 0.85rem;
         color: var(--text-color);
         z-index: 1030;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        transition: all 0.2s ease;
+        cursor: pointer;
+        align-items: center;
+        gap: 6px;
+    }
+    .mobile-menu-toggle:hover {
+        background: rgba(255,255,255,0.18);
+        color: #fff;
     }
     .sidebar-overlay {
         display: none;
@@ -1851,10 +1861,11 @@
         currentFetchController = new AbortController();
         
         try {
-            const res = await fetch('/api/download-audio', {
+            // Usar endpoint nativo (M4A) que es ~10x más rápido que MP3
+            const res = await fetch('/api/download-audio-native', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                body: 'url=' + encodeURIComponent(track.url) + '&quality=128',
+                body: 'url=' + encodeURIComponent(track.url),
                 signal: currentFetchController.signal
             });
             
@@ -2434,10 +2445,11 @@
                 }
 
                 try {
-                    const res = await fetch('/api/download-audio', {
+                    // Usar endpoint nativo (M4A) que es ~10x más rápido
+                    const res = await fetch('/api/download-audio-native', {
                         method: 'POST',
                         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                        body: 'url=' + encodeURIComponent(track.url) + '&quality=128'
+                        body: 'url=' + encodeURIComponent(track.url)
                     });
                     const data = await res.json();
 

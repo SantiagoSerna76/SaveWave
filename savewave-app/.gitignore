@@ -1,0 +1,8 @@
+node_modules/
+android/
+.capacitor/
+dist/
+*.apk
+*.aab
+*.keystore
+local.properties

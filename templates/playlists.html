@@ -1512,6 +1512,12 @@
         }, 3000);
     }
 
+    // ========== DETECTAR APP NATIVA ==========
+    const isNativeApp = () => {
+        return window.location.search.includes('native=1') || 
+               (typeof Capacitor !== 'undefined' && Capacitor.isNativePlatform());
+    };
+
     // ========== STATE ==========
     let currentPlaylistId = null;
     let currentPlaylistItems = [];

@@ -367,6 +367,88 @@ def download_audio(url: str, quality: str = "128", output_path: str = None) -> d
         }
 
 
+def get_audio_direct_url(url: str) -> dict:
+    """
+    Extrae la URL directa del mejor audio disponible SIN descargar nada.
+    El servidor solo hace la negociación (<1 segundo) y devuelve la URL.
+    Luego el móvil/PC descarga DIRECTAMENTE desde los servidores de YouTube
+    usando su propia CPU y ancho de banda. ¡Esto es lo que hace rápida la extensión de Chrome!
+
+    Args:
+        url: URL del video.
+
+    Returns:
+        Diccionario con: success, direct_url, title, platform, format, thumbnail, duration.
+    """
+    ydl_opts = _get_ydl_opts({
+        "noplaylist": True,
+        # Solo extraer info, no descargar nada
+    }, url)
+
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=False)
+
+            # Buscar el mejor formato de audio (priorizar m4a)
+            best_audio_url = None
+            best_format = "m4a"
+            best_bitrate = 0
+
+            if "formats" in info:
+                for fmt in info["formats"]:
+                    # Solo formatos que tengan audio y URL directa
+                    if fmt.get("url") and fmt.get("acodec") and fmt.get("acodec") != "none":
+                        # Priorizar m4a (AAC) que es el más compatible
+                        ext = fmt.get("ext", "")
+                        abr = fmt.get("abr", 0) or 0
+                        if ext == "m4a" and abr > best_bitrate:
+                            best_audio_url = fmt["url"]
+                            best_format = "m4a"
+                            best_bitrate = abr
+                        elif ext == "webm" and abr > best_bitrate and not best_audio_url:
+                            best_audio_url = fmt["url"]
+                            best_format = "webm"
+                            best_bitrate = abr
+
+            # Si no encontró por formatos, usar bestaudio
+            if not best_audio_url:
+                # Intentar con el formato bestaudio
+                ydl_opts2 = _get_ydl_opts({
+                    "noplaylist": True,
+                    "format": "bestaudio[ext=m4a]/bestaudio/best",
+                }, url)
+                with yt_dlp.YoutubeDL(ydl_opts2) as ydl2:
+                    info2 = ydl2.extract_info(url, download=False)
+                    if "formats" in info2:
+                        for fmt in info2["formats"]:
+                            if fmt.get("url") and fmt.get("acodec") and fmt.get("acodec") != "none":
+                                best_audio_url = fmt["url"]
+                                best_format = fmt.get("ext", "m4a")
+                                break
+
+            if not best_audio_url:
+                return {
+                    "success": False,
+                    "error": "No se pudo extraer la URL directa del audio.",
+                }
+
+            return {
+                "success": True,
+                "direct_url": best_audio_url,
+                "title": info.get("title", "Sin titulo"),
+                "platform": detect_platform(url),
+                "format": best_format,
+                "thumbnail": info.get("thumbnail", ""),
+                "duration": info.get("duration", 0),
+            }
+
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Error al extraer URL directa: {str(e)}",
+        }
+
+
 def download_audio_native(url: str, output_path: str = None) -> dict:
     """
     Descarga audio en formato nativo (M4A/Opus) SIN reconversión a MP3.

@@ -45,7 +45,7 @@ from models import db, init_db, User, Download, PlanType, Playlist, PlaylistItem
 # Importar servicios
 from downloader import (
     detect_platform, get_video_info, download_video, download_audio,
-    download_audio_native, get_available_qualities, cleanup_old_files
+    download_audio_native, get_audio_direct_url, get_available_qualities, cleanup_old_files
 )
 from auth import (
     register_user, authenticate_user, get_user_by_id,
@@ -743,6 +743,42 @@ def stream_file_native(filename):
         conditional=True,
         max_age=86400
     )
+
+
+@app.route("/api/audio-direct-url", methods=["POST"])
+@limiter.limit("30 per minute")
+def api_audio_direct_url():
+    """
+    API: Extrae la URL directa del audio SIN descargar nada en el servidor.
+    El servidor solo negocia con YouTube (<1 segundo) y devuelve la URL.
+    Luego el móvil descarga DIRECTAMENTE desde los servidores de YouTube
+    usando su propia CPU y ancho de banda.
+    """
+    if request.is_json:
+        data = request.get_json()
+        url = data.get("url", "").strip() if data else ""
+    else:
+        url = request.form.get("url", "").strip()
+
+    if not url:
+        return jsonify({"success": False, "error": "Debes proporcionar una URL."})
+
+    try:
+        result = get_audio_direct_url(url)
+        if result["success"]:
+            return jsonify({
+                "success": True,
+                "direct_url": result["direct_url"],
+                "title": result["title"],
+                "platform": result["platform"],
+                "format": result["format"],
+                "thumbnail": result.get("thumbnail", ""),
+                "duration": result.get("duration", 0),
+            })
+        else:
+            return jsonify({"success": False, "error": result["error"]})
+    except Exception as e:
+        return jsonify({"success": False, "error": f"Error: {str(e)}"})
 
 
 @app.route("/api/debug-download", methods=["GET"])

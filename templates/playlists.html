@@ -1826,12 +1826,14 @@
         try {
             if ('caches' in window) {
                 const offlineCache = await caches.open(OFFLINE_CACHE_NAME);
-                const cachedRes = await offlineCache.match('/offline-cache/?url=' + encodeURIComponent(track.url));
+                const cacheKey = '/offline-cache/?url=' + encodeURIComponent(track.url);
+                const cachedRes = await offlineCache.match(cacheKey);
                 if (cachedRes) {
-                    const blob = await cachedRes.blob();
-                    const localUrl = URL.createObjectURL(blob);
+                    // Usar la URL del Service Worker en vez de blob URL.
+                    // Los blob URLs se destruyen cuando el móvil manda la app al fondo,
+                    // causando que la música se detenga. El SW proxy mantiene el audio vivo.
                     statusEl.textContent = '⏳ Cargando offline...';
-                    audioPlayer.src = localUrl;
+                    audioPlayer.src = cacheKey;
                     audioPlayer.load();
                     try {
                         await audioPlayer.play();
@@ -1841,7 +1843,7 @@
                         return;
                     } catch(err) {
                         console.warn('Caché offline corrupto detectado, eliminando y usando red...', err);
-                        await offlineCache.delete('/offline-cache/?url=' + encodeURIComponent(track.url));
+                        await offlineCache.delete(cacheKey);
                     }
                 }
             }
@@ -2228,6 +2230,19 @@
             updatePlayPauseUI();
         }
         stopBgAdImpressions();
+    });
+
+    // Manejar cuando el usuario sale y vuelve a la app (visibilitychange)
+    // En móvil, algunos navegadores pausan el audio al ir al fondo.
+    // Al volver, verificamos si debería seguir sonando y lo reanudamos.
+    document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'visible' && isPlaying && audioPlayer.paused) {
+            // El usuario volvió a la app y la música debería estar sonando pero se pausó
+            audioPlayer.play().then(() => {
+                if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
+                updatePlayPauseUI();
+            }).catch(() => {});
+        }
     });
 
     let bgAdInterval = null;

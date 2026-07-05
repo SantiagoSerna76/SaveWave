@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}SaveWave - App Android Nativa{% endblock %}
+{% block title %}SaveWave - Instalar App{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
@@ -12,75 +12,49 @@
                 Elige tu plataforma y disfruta de descargas rápidas desde YouTube, Instagram, TikTok y +1000 más.
             </p>
         </div>
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card border-0" style="background:linear-gradient(135deg,#1a1a2e,#16213e);border-radius:24px;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,0.3);">
+                    <div class="card-body p-5 text-center">
+                        <div class="mb-4 mx-auto d-flex align-items-center justify-content-center" style="width:100px;height:100px;border-radius:24px;background:linear-gradient(135deg,#6366f1,#8b5cf6);box-shadow:0 8px 25px rgba(99,102,241,0.4);">
+                            <i class="fas fa-layer-group fa-3x text-white"></i>
+                        </div>
+                        <h2 class="fw-bold mb-2">Instala SaveWave</h2>
+                        <p class="text-muted mb-4 fs-5">Lleva tu música a todas partes, incluso sin internet.</p>
+                        
+                        <div class="row g-4 text-start mb-5 justify-content-center">
+                            <div class="col-md-5">
+                                <div class="d-flex align-items-start gap-3">
+                                    <div style="color:#10b981; margin-top:3px;"><i class="fas fa-wifi fa-lg"></i></div>
+                                    <div>
+                                        <h5 class="fw-bold mb-1">Modo Offline Real</h5>
+                                        <p class="small text-muted mb-0">Tus playlists guardadas se reproducen sin consumir datos, guardadas directamente en el caché de tu dispositivo.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-5">
+                                <div class="d-flex align-items-start gap-3">
+                                    <div style="color:#6366f1; margin-top:3px;"><i class="fas fa-bolt fa-lg"></i></div>
+                                    <div>
+                                        <h5 class="fw-bold mb-1">Cero Espacio Basura</h5>
+                                        <p class="small text-muted mb-0">Nuestra tecnología PWA pesa menos de 1 MB. Sin instalaciones pesadas, actualizaciones molestas ni bloqueos de Play Protect.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
-        <div class="row g-4 justify-content-center">
-            <!-- ANDROID -->
-            <div class="col-md-4">
-                <div class="card border-0 h-100" style="background:linear-gradient(135deg,#1a1a2e,#16213e);border-radius:24px;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,0.3);">
-                    <div class="card-body p-4 text-center d-flex flex-column">
-                        <div class="mb-3 mx-auto d-flex align-items-center justify-content-center" style="width:80px;height:80px;border-radius:20px;background:linear-gradient(135deg,#6366f1,#8b5cf6);box-shadow:0 8px 20px rgba(99,102,241,0.3);">
-                            <i class="fab fa-android fa-2x text-white"></i>
-                        </div>
-                        <h3 class="fw-bold mb-1">Android</h3>
-                        <p class="small text-muted mb-3">App nativa · Descarga directa · Offline real</p>
-                        <div class="text-start small mb-3" style="color:rgba(255,255,255,0.7);">
-                            <div class="d-flex align-items-center gap-2 mb-1"><i class="fas fa-check-circle" style="color:#10b981;font-size:0.7rem;"></i> Sin CORS, sin límites</div>
-                            <div class="d-flex align-items-center gap-2 mb-1"><i class="fas fa-check-circle" style="color:#10b981;font-size:0.7rem;"></i> Reproducción en segundo plano</div>
-                            <div class="d-flex align-items-center gap-2"><i class="fas fa-check-circle" style="color:#10b981;font-size:0.7rem;"></i> Archivos guardados en el teléfono</div>
-                        </div>
-                        <div class="mt-auto">
-                            <a href="/" class="btn w-100 fw-bold" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:50px;padding:12px;box-shadow:0 4px 15px rgba(99,102,241,0.3);">
-                                <i class="fas fa-plus-square me-2"></i>Instalar PWA
-                            </a>
-                            <p class="small text-muted mt-2 mb-0">Chrome → Menú (⋮) → Instalar Aplicación</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- iOS (iPhone) -->
-            <div class="col-md-4">
-                <div class="card border-0 h-100" style="background:linear-gradient(135deg,#1a1a2e,#1c1c2e);border-radius:24px;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,0.3);">
-                    <div class="card-body p-4 text-center d-flex flex-column">
-                        <div class="mb-3 mx-auto d-flex align-items-center justify-content-center" style="width:80px;height:80px;border-radius:20px;background:linear-gradient(135deg,#1e1e2e,#2a2a3e);box-shadow:0 8px 20px rgba(0,0,0,0.3);">
-                            <i class="fab fa-apple fa-2x text-white"></i>
-                        </div>
-                        <h3 class="fw-bold mb-1">iPhone</h3>
-                        <p class="small text-muted mb-3">PWA · Sin instalación · Streaming rápido</p>
-                        <div class="text-start small mb-3" style="color:rgba(255,255,255,0.7);">
-                            <div class="d-flex align-items-center gap-2 mb-1"><i class="fas fa-check-circle" style="color:#6366f1;font-size:0.7rem;"></i> Agrega a pantalla de inicio</div>
-                            <div class="d-flex align-items-center gap-2 mb-1"><i class="fas fa-check-circle" style="color:#6366f1;font-size:0.7rem;"></i> Funciona como app nativa</div>
-                            <div class="d-flex align-items-center gap-2"><i class="fas fa-check-circle" style="color:#6366f1;font-size:0.7rem;"></i> Reproducción en tiempo real</div>
-                        </div>
-                        <div class="mt-auto">
-                            <a href="/" class="btn w-100 fw-bold" style="background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.2);border-radius:50px;padding:12px;">
-                                <i class="fas fa-plus-square me-2"></i>Instalar PWA
-                            </a>
-                            <p class="small text-muted mt-2 mb-0">Safari → Compartir → Pantalla de inicio</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- PC / Web -->
-            <div class="col-md-4">
-                <div class="card border-0 h-100" style="background:linear-gradient(135deg,#1a1a2e,#1c1c2e);border-radius:24px;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,0.3);">
-                    <div class="card-body p-4 text-center d-flex flex-column">
-                        <div class="mb-3 mx-auto d-flex align-items-center justify-content-center" style="width:80px;height:80px;border-radius:20px;background:linear-gradient(135deg,#0f0f1a,#1a1a2e);box-shadow:0 8px 20px rgba(0,0,0,0.3);">
-                            <i class="fas fa-laptop fa-2x text-white"></i>
-                        </div>
-                        <h3 class="fw-bold mb-1">PC / Web</h3>
-                        <p class="small text-muted mb-3">Navegador · Extensión Chrome · Streaming</p>
-                        <div class="text-start small mb-3" style="color:rgba(255,255,255,0.7);">
-                            <div class="d-flex align-items-center gap-2 mb-1"><i class="fas fa-check-circle" style="color:#f59e0b;font-size:0.7rem;"></i> Descarga desde el navegador</div>
-                            <div class="d-flex align-items-center gap-2 mb-1"><i class="fas fa-check-circle" style="color:#f59e0b;font-size:0.7rem;"></i> Extensión Chrome rápida</div>
-                            <div class="d-flex align-items-center gap-2"><i class="fas fa-check-circle" style="color:#f59e0b;font-size:0.7rem;"></i> Sin límites de plataforma</div>
-                        </div>
-                        <div class="mt-auto">
-                            <a href="/" class="btn w-100 fw-bold" style="background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.2);border-radius:50px;padding:12px;">
-                                <i class="fas fa-globe me-2"></i>Abrir Web
-                            </a>
-                            <p class="small text-muted mt-2 mb-0">savewave.com · Todos los navegadores</p>
+                        <div class="d-flex flex-column align-items-center">
+                            <!-- Botón universal que dispara el prompt nativo PWA, o explica cómo si no se puede -->
+                            <button id="installAppBtn" class="btn btn-lg px-5 py-3 fw-bold mb-3" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:50px;box-shadow:0 8px 25px rgba(99,102,241,0.4); display: none;">
+                                <i class="fas fa-download me-2"></i>Instalar App Oficial
+                            </button>
+                            
+                            <div id="installInstructions" class="text-start p-4 rounded-3 w-100" style="background:rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); max-width: 500px;">
+                                <h6 class="fw-bold mb-3 text-center"><i class="fas fa-info-circle me-2" style="color:#8b5cf6;"></i>¿Cómo instalar?</h6>
+                                <p class="small mb-2"><i class="fab fa-android text-success me-2"></i><strong>Android (Chrome):</strong> Toca los 3 puntos (⋮) arriba a la derecha y selecciona <em>"Instalar Aplicación"</em> o <em>"Agregar a la pantalla principal"</em>.</p>
+                                <p class="small mb-2"><i class="fab fa-apple text-secondary me-2"></i><strong>iPhone (Safari):</strong> Toca el botón compartir <i class="fas fa-share-square mx-1"></i> abajo y selecciona <em>"Agregar a inicio"</em>.</p>
+                                <p class="small mb-0"><i class="fas fa-desktop text-info me-2"></i><strong>PC (Chrome/Edge):</strong> Haz clic en el ícono de descarga <i class="fas fa-download mx-1"></i> en la barra de direcciones superior.</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -127,4 +101,44 @@
         </div>
     </div>
 </div>
+
+<script>
+    let deferredPrompt;
+    const installBtn = document.getElementById('installAppBtn');
+    const installInstructions = document.getElementById('installInstructions');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+        // Prevent the mini-infobar from appearing on mobile
+        e.preventDefault();
+        // Stash the event so it can be triggered later.
+        deferredPrompt = e;
+        // Update UI notify the user they can install the PWA
+        installBtn.style.display = 'block';
+        installInstructions.style.display = 'none'; // Hide manual instructions if button works
+    });
+
+    installBtn.addEventListener('click', async () => {
+        if (deferredPrompt) {
+            // Show the install prompt
+            deferredPrompt.prompt();
+            // Wait for the user to respond to the prompt
+            const { outcome } = await deferredPrompt.userChoice;
+            console.log(`User response to the install prompt: ${outcome}`);
+            // We've used the prompt, and can't use it again, throw it away
+            deferredPrompt = null;
+            // Hide the button again
+            installBtn.style.display = 'none';
+            installInstructions.style.display = 'block';
+        }
+    });
+
+    window.addEventListener('appinstalled', () => {
+        // Clear the deferredPrompt so it can be garbage collected
+        deferredPrompt = null;
+        console.log('PWA was installed');
+        installBtn.style.display = 'none';
+        installInstructions.innerHTML = '<h5 class="text-success fw-bold text-center mb-0"><i class="fas fa-check-circle me-2"></i>¡Aplicación Instalada con éxito!</h5>';
+        installInstructions.style.display = 'block';
+    });
+</script>
 {% endblock %}

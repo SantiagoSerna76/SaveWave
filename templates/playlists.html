@@ -1339,7 +1339,7 @@
 </div>
 
 <!-- HTML Audio Element (Hidden) -->
-<audio id="audioPlayer" preload="auto"></audio>
+<audio id="audioPlayer" preload="auto" playsinline controlsList="nodownload"></audio>
 
 <!-- MODAL NEW PLAYLIST -->
 <div class="modal fade" id="newPlaylistModal" tabindex="-1">
@@ -2217,12 +2217,14 @@
 
     audioPlayer.addEventListener('play', function() {
         isPlaying = true;
+        if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
         updatePlayPauseUI();
         startBgAdImpressions();
     });
     audioPlayer.addEventListener('pause', function() {
         if (!currentFetchController) {
             isPlaying = false;
+            if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
             updatePlayPauseUI();
         }
         stopBgAdImpressions();

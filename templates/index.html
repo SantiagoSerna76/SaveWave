@@ -59,6 +59,7 @@
                                         id="urlInput"
                                         placeholder="Pega el enlace del video o audio aquí..."
                                         style="box-shadow: none; background: transparent; color: var(--text-color); font-size: 1.1rem; font-weight: 500;"
+                                        autocomplete="off"
                                         required
                                     >
                                     <button type="submit" class="btn btn-primary px-5 fw-bold fs-5 border-0 btn-pulse" id="submitBtn" style="border-radius: 0 14px 14px 0;">
@@ -646,11 +647,12 @@
         {% endif %}
     </div>
 </div>
-{% endblock %}
-
 {% block extra_scripts %}
 <script>
 $(document).ready(function() {
+    // Limpiar input al cargar para que no guarde el link anterior por caché del navegador
+    document.getElementById('urlInput').value = '';
+
     const $form = $('#downloadForm');
     const $urlInput = $('#urlInput');
     const $submitBtn = $('#submitBtn');

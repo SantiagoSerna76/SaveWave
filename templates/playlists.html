@@ -2474,8 +2474,19 @@
         try {
             const offlineCache = await caches.open(OFFLINE_CACHE_NAME);
             
-            const limit = 3;
+            // Reducir concurrencia a 1 en móviles para evitar colapso de red y throttling
+            const limit = 1;
             const items = [...currentPlaylistItems];
+            
+            // Intentar mantener la pantalla encendida (WakeLock API)
+            let wakeLock = null;
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                }
+            } catch (err) {
+                console.log('Wake Lock no soportado o denegado');
+            }
 
             const downloadTrackOffline = async (track) => {
                 const cacheKey = '/offline-cache/?url=' + encodeURIComponent(track.url);

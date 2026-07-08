@@ -190,9 +190,16 @@
     body.light-mode .nav-icon-btn:hover { color: var(--text-color) !important; background: rgba(0,0,0,0.05); }
     
     @media (max-width: 576px) {
-        .navbar-brand { margin-right: 0.5rem !important; font-size: 1rem; }
-        .nav-icon-btn { padding: 6px 8px; font-size: 1.1rem; }
-        .nav-icon-btn span { display: none; } /* Hide text on very small screens */
+        .navbar-brand { margin-right: 0.2rem !important; font-size: 0; } /* Hide text brand on very small screens, keep only logo */
+        .navbar-brand img { height: 28px !important; }
+        .nav-icon-btn { 
+            padding: 4px 8px; 
+            font-size: 0.85rem; 
+            flex-direction: column; 
+            gap: 3px; 
+        }
+        .nav-icon-btn i { font-size: 1.1rem; }
+        .nav-icon-btn span { display: block !important; font-size: 0.65rem; font-weight: 700; }
     }
 
     /* Mobile Menu Dropdown Premium Styling */
@@ -236,24 +243,24 @@
 <body>
     <!-- ==================== NAVBAR ==================== -->
     <nav class="navbar navbar-expand-lg navbar-dark position-relative">
-        <div class="container d-flex align-items-center justify-content-between">
+        <div class="container d-flex align-items-center justify-content-between px-2 px-md-3">
             
             <!-- Left Side: Brand & Main Links -->
             <div class="d-flex align-items-center">
-                <a class="navbar-brand fw-bold me-2 me-md-4" href="{{ url_for('index') }}">
+                <a class="navbar-brand fw-bold me-1 me-md-4" href="{{ url_for('index') }}">
                     <img src="{{ url_for('static', filename='Savewave.png') }}" alt="SaveWave" height="30" class="me-1 me-md-2" style="border-radius: 6px;">
                     <span class="d-none d-sm-inline">SaveWave</span>
                 </a>
                 
-                <div class="d-flex align-items-center gap-1 gap-md-2">
+                <div class="d-flex align-items-center gap-0 gap-md-2">
                     <a class="nav-icon-btn" href="{{ url_for('index') }}" title="Inicio">
-                        <i class="fas fa-home" style="color:#4facfe;"></i> <span class="d-none d-md-inline ms-1">Inicio</span>
+                        <i class="fas fa-home" style="color:#4facfe;"></i> <span>Inicio</span>
                     </a>
                     <a class="nav-icon-btn" href="{{ url_for('playlists_view') }}" title="Playlists">
-                        <i class="fas fa-headphones" style="color:#a6e3a1;"></i> <span class="d-none d-md-inline ms-1">Playlists</span>
+                        <i class="fas fa-headphones" style="color:#a6e3a1;"></i> <span>Playlists</span>
                     </a>
                     <a class="nav-icon-btn" href="{{ url_for('pricing') }}" title="Planes">
-                        <i class="fas fa-tags" style="color:#a78bfa;"></i> <span class="d-none d-md-inline ms-1">Planes</span>
+                        <i class="fas fa-tags" style="color:#a78bfa;"></i> <span>Planes</span>
                     </a>
                 </div>
             </div>

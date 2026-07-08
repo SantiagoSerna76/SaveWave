@@ -472,10 +472,10 @@
         <!-- ==================== MODAL: Seleccionar Playlist ==================== -->
         {% if current_user.is_authenticated %}
         <div class="modal fade" id="selectPlaylistModal" tabindex="-1">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content" style="background-color: #1e1e2e; color: #fff; border: 1px solid #313244;">
-                    <div class="modal-header border-0 pb-2">
-                        <h5 class="modal-title fw-bold"><i class="fas fa-headphones me-2" style="color:#a6e3a1;"></i>Guardar en Playlist</h5>
+            <div class="modal-dialog modal-dialog-centered modal-sm">
+                <div class="modal-content" style="background: rgba(30, 30, 46, 0.9); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1px solid rgba(255,255,255,0.1); border-radius: 28px; box-shadow: 0 25px 50px rgba(0,0,0,0.5);">
+                    <div class="modal-header border-0 pb-2 px-4 pt-4">
+                        <h5 class="modal-title fw-bold" style="font-size: 1.25rem;"><i class="fas fa-headphones me-2" style="color:#a6e3a1;"></i>Guardar en Playlist</h5>
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body p-0">

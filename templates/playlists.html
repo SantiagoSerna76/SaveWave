@@ -1020,34 +1020,61 @@
         .track-actions .btn-download-track,
         .track-actions .btn-delete-track { display: none; }
         .btn-three-dots { display: inline-flex !important; }
-        /* Hide number and duration columns on mobile to give title more space */
-        .track-number { display: none; }
-        .col-duration { display: none; }
-        /* Fix title truncation on mobile */
+        
+        /* Flexbox layout for track rows to absolutely prevent horizontal scroll */
         .tracklist {
-            table-layout: fixed;
+            display: block;
             width: 100%;
         }
+        .tracklist thead {
+            display: none; /* Hide headers on mobile */
+        }
+        .tracklist tbody {
+            display: block;
+            width: 100%;
+        }
+        .track-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
         .track-row td {
-            overflow: hidden;
+            display: block;
+            padding: 0 !important;
+            border: none !important;
+        }
+        .track-number { display: none !important; }
+        .col-duration { display: none !important; }
+        
+        /* Center content takes remaining space and truncates */
+        .track-row td:nth-child(2) {
+            flex: 1;
+            min-width: 0;
+            padding-right: 12px !important;
         }
         .track-thumb {
-            width: 45px;
-            height: 45px;
+            width: 48px;
+            height: 48px;
             flex-shrink: 0;
             border-radius: 8px;
+            object-fit: cover;
         }
         .track-title { 
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
             display: block;
+            font-size: 1rem !important;
         }
-        /* Fix horizontal scroll so three dots stay on screen */
+        /* Three dots container */
         .track-row td:last-child {
-            padding-right: 12px !important;
-            width: 50px;
-            white-space: nowrap;
+            flex-shrink: 0;
+            width: 40px;
+            display: flex;
+            justify-content: flex-end;
             overflow: visible;
         }
 
@@ -1386,37 +1413,38 @@
 <!-- MODAL DOWNLOAD OPTIONS -->
 <div class="modal fade" id="downloadOptionsModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered modal-sm">
-        <div class="modal-content pl-modal">
-            <div class="modal-header">
-                <h5 class="modal-title fw-bold">Descargar Playlist</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <div class="modal-content" style="background: rgba(30, 30, 46, 0.9); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1px solid rgba(255,255,255,0.1); border-radius: 28px; box-shadow: 0 25px 50px rgba(0,0,0,0.5);">
+            <div class="modal-header border-0 pb-1 px-4 pt-4">
+                <h5 class="modal-title fw-bold" style="font-size: 1.3rem;">Descargar Playlist</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body d-flex flex-column gap-3" id="downloadOptionsBody">
-                <button class="dl-option" onclick="downloadPlaylistOffline()">
-                    <div class="dl-option-icon" style="background: rgba(16,185,129,0.15); color: var(--success-color);">
+            <div class="modal-body d-flex flex-column gap-3 px-4 pb-4 pt-3" id="downloadOptionsBody">
+                <button class="dl-option" onclick="downloadPlaylistOffline()" style="background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2); border-radius: 20px; padding: 18px; text-align: left; display: flex; gap: 16px; align-items: center; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); width: 100%;">
+                    <div class="dl-option-icon" style="background: linear-gradient(135deg, #10b981, #059669); color: white; width: 50px; height: 50px; border-radius: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 8px 16px rgba(16,185,129,0.3);">
                         <i class="fas fa-wifi-slash fa-lg"></i>
                     </div>
-                    <div class="dl-option-text">
-                        <h6>Guardar en SaveWave</h6>
-                        <p>Escucha sin conexión desde la app</p>
+                    <div class="dl-option-text" style="flex: 1;">
+                        <h6 class="mb-1 fw-bold" style="color: #fff; font-size: 1.05rem;">Guardar en App</h6>
+                        <p class="mb-0" style="font-size: 0.85rem; color: rgba(255,255,255,0.6);">Escucha offline (SaveWave)</p>
                     </div>
                 </button>
-                <button class="dl-option" id="downloadZipBtn">
-                    <div class="dl-option-icon" style="background: rgba(59,130,246,0.15); color: #3b82f6;">
+                
+                <button class="dl-option" id="downloadZipBtn" style="background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.2); border-radius: 20px; padding: 18px; text-align: left; display: flex; gap: 16px; align-items: center; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); width: 100%;">
+                    <div class="dl-option-icon" style="background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; width: 50px; height: 50px; border-radius: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 8px 16px rgba(59,130,246,0.3);">
                         <i class="fas fa-file-archive fa-lg"></i>
                     </div>
-                    <div class="dl-option-text">
-                        <h6>Descargar como ZIP</h6>
-                        <p>Guardar archivos en tu dispositivo</p>
+                    <div class="dl-option-text" style="flex: 1;">
+                        <h6 class="mb-1 fw-bold" style="color: #fff; font-size: 1.05rem;">Descargar ZIP</h6>
+                        <p class="mb-0" style="font-size: 0.85rem; color: rgba(255,255,255,0.6);">Guardar en dispositivo</p>
                     </div>
                 </button>
-                <div id="offlineProgressContainer" class="d-none">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <span class="small fw-semibold" id="offlineProgressText">Preparando...</span>
-                        <span class="small text-muted" id="offlineProgressCount">0/0</span>
+                <div id="offlineProgressContainer" class="d-none mt-2">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="small fw-semibold" id="offlineProgressText" style="color: #a6e3a1;">Preparando...</span>
+                        <span class="small" id="offlineProgressCount" style="color: rgba(255,255,255,0.5);">0/0</span>
                     </div>
-                    <div class="offline-progress">
-                        <div class="offline-progress-fill" id="offlineProgressBar"></div>
+                    <div class="offline-progress" style="background: rgba(255,255,255,0.1); border-radius: 10px; height: 8px; overflow: hidden;">
+                        <div class="offline-progress-fill" id="offlineProgressBar" style="background: linear-gradient(90deg, #10b981, #34d399); height: 100%; width: 0%; transition: width 0.3s ease;"></div>
                     </div>
                 </div>
             </div>
@@ -1490,15 +1518,15 @@
 
 <!-- Modal: Agregar a Playlist -->
 <div class="modal fade" id="addToPlaylistModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content" style="background-color: #1e1e2e; color: #fff; border: 1px solid #313244; border-radius: 20px;">
-            <div class="modal-header border-0 pb-2">
-                <h5 class="modal-title fw-bold"><i class="fas fa-plus-circle me-2" style="color:#a6e3a1;"></i>Agregar a otra Playlist</h5>
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content" style="background: rgba(30, 30, 46, 0.9); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1px solid rgba(255,255,255,0.1); border-radius: 28px; box-shadow: 0 25px 50px rgba(0,0,0,0.5);">
+            <div class="modal-header border-0 pb-2 px-4 pt-4">
+                <h5 class="modal-title fw-bold" style="font-size: 1.25rem;"><i class="fas fa-plus-circle me-2" style="color:#a6e3a1;"></i>A otra Playlist</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body p-3">
-                <div id="addToPlaylistList" class="mb-2">
-                    <p class="text-secondary small"><i class="fas fa-spinner fa-spin me-1"></i> Cargando playlists...</p>
+            <div class="modal-body p-4 pt-1">
+                <div id="addToPlaylistList" class="d-flex flex-column gap-2">
+                    <p class="text-secondary small text-center my-3"><i class="fas fa-spinner fa-spin me-1"></i> Cargando playlists...</p>
                 </div>
             </div>
         </div>

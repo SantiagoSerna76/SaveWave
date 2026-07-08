@@ -60,7 +60,8 @@ def create_checkout_session(plan_type: PlanType, user: User) -> dict:
             return {"success": False, "error": "Plan no configurado en Stripe."}
 
         # Crear la sesión de checkout
-        checkout_session = stripe.checkout.Session.create(
+        from stripe.checkout import Session as StripeCheckoutSession
+        checkout_session = StripeCheckoutSession.create(
             payment_method_types=["card"],
             line_items=[
                 {

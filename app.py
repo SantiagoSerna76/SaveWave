@@ -783,7 +783,7 @@ def api_audio_direct_url():
 
 
 @app.route("/api/stream-proxy", methods=["POST"])
-@limiter.limit("30 per minute")
+@limiter.limit("300 per minute")
 def api_stream_proxy():
     """
     API: Proxy de streaming (POST). Extrae la URL directa del audio de YouTube
@@ -825,7 +825,7 @@ def api_stream_proxy():
 
 
 @app.route("/api/stream-proxy-get")
-@limiter.limit("60 per minute")
+@limiter.limit("300 per minute")
 def api_stream_proxy_get():
     """
     API: Proxy de streaming (GET). Recibe una direct_url de YouTube

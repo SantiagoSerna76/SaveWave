@@ -2640,16 +2640,16 @@
                 }
 
                 try {
-                    // Usar endpoint nativo (M4A) que es ~10x más rápido
-                    const res = await fetch('/api/download-audio-native', {
+                    // Usar proxy de streaming en tiempo real (evita guardar archivos en el VPS)
+                    const res = await fetch('/api/stream-proxy', {
                         method: 'POST',
                         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
                         body: 'url=' + encodeURIComponent(track.url)
                     });
                     const data = await res.json();
 
-                    if (data.success && data.download_url) {
-                        const audioRes = await fetch(data.download_url);
+                    if (data.success && data.proxy_url) {
+                        const audioRes = await fetch(data.proxy_url);
                         if (audioRes.ok) {
                             await offlineCache.put(cacheKey, audioRes.clone());
                         } else {

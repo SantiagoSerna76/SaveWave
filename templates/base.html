@@ -374,25 +374,39 @@
 
     // ---- Light / Dark Mode Toggle ----
     (function() {
-        const toggle = document.getElementById('darkModeToggle');
-        const icon = toggle ? toggle.querySelector('i') : null;
+        const toggles = document.querySelectorAll('#darkModeToggle, .btn-nav-theme-mobile');
+        
         // Dark mode is default. Only switch to light if user explicitly chose it.
         const isLight = localStorage.getItem('lightMode') === 'true';
+        
+        function updateIcons(isLightMode) {
+            toggles.forEach(toggle => {
+                const icon = toggle.querySelector('i');
+                if (icon) {
+                    icon.className = isLightMode ? 'fas fa-moon me-2' : 'fas fa-sun me-2';
+                    // Remove me-2 if it's the desktop button which shouldn't have margin
+                    if (toggle.id === 'darkModeToggle') {
+                        icon.classList.remove('me-2');
+                    }
+                }
+            });
+        }
+
         if (isLight) {
             document.body.classList.add('light-mode');
-            if (icon) { icon.className = 'fas fa-moon'; }
+            updateIcons(true);
         } else {
-            // Ensure dark mode icon is shown
             document.body.classList.remove('light-mode');
-            if (icon) { icon.className = 'fas fa-sun'; }
+            updateIcons(false);
         }
-        if (toggle) {
+        
+        toggles.forEach(toggle => {
             toggle.addEventListener('click', function() {
                 const nowLight = document.body.classList.toggle('light-mode');
                 localStorage.setItem('lightMode', nowLight ? 'true' : 'false');
-                if (icon) { icon.className = nowLight ? 'fas fa-moon' : 'fas fa-sun'; }
+                updateIcons(nowLight);
             });
-        }
+        });
 
         // ---- Install App (PWA) ----
         let deferredPrompt;

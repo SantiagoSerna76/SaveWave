@@ -654,7 +654,7 @@ def api_download_audio():
         return jsonify({"success": False, "error": f"Error al convertir a MP3: {str(e)}"})
 
 @app.route("/api/download-audio-native", methods=["POST"])
-@limiter.limit("20 per minute")
+@limiter.limit("200 per minute")
 def api_download_audio_native():
     """
     API: Descarga audio en formato nativo (M4A) SIN reconversión a MP3.

@@ -172,6 +172,29 @@
     body.light-mode .form-label { color: var(--text-color) !important; }
     body.light-mode .text-muted { color: var(--text-muted) !important; }
     
+    /* Main Nav Icons (Always visible) */
+    .nav-icon-btn {
+        color: rgba(255,255,255,0.7) !important;
+        font-weight: 600; font-size: 0.95rem;
+        padding: 6px 12px;
+        border-radius: 12px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        display: inline-flex; align-items: center; justify-content: center;
+        text-decoration: none;
+    }
+    .nav-icon-btn:hover { 
+        color: #fff !important; 
+        background: rgba(255,255,255,0.1); 
+    }
+    body.light-mode .nav-icon-btn { color: var(--text-muted) !important; }
+    body.light-mode .nav-icon-btn:hover { color: var(--text-color) !important; background: rgba(0,0,0,0.05); }
+    
+    @media (max-width: 576px) {
+        .navbar-brand { margin-right: 0.5rem !important; font-size: 1rem; }
+        .nav-icon-btn { padding: 6px 8px; font-size: 1.1rem; }
+        .nav-icon-btn span { display: none; } /* Hide text on very small screens */
+    }
+
     /* Mobile Menu Dropdown Premium Styling */
     @media (max-width: 991px) {
         .navbar-collapse {
@@ -182,51 +205,28 @@
             margin-top: 12px;
             border: 1px solid rgba(255,255,255,0.1);
             box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            position: absolute;
+            top: 100%;
+            left: 10px;
+            right: 10px;
+            z-index: 1050;
         }
         body.light-mode .navbar-collapse {
             background: rgba(255,255,255,0.95);
             border: 1px solid rgba(0,0,0,0.1);
             box-shadow: 0 10px 40px rgba(0,0,0,0.1);
         }
-        .nav-link-main {
-            padding: 10px 16px !important;
-            margin-bottom: 6px;
-            font-size: 0.95rem;
-            background: rgba(255,255,255,0.04);
-            border: 1px solid rgba(255,255,255,0.07);
-            justify-content: flex-start;
-        }
-        body.light-mode .nav-link-main {
-            background: rgba(0,0,0,0.02);
-            border: 1px solid rgba(0,0,0,0.05);
-        }
         /* Mobile navbar: pill buttons in a flex-wrap grid, not full-width */
-        .navbar-nav.align-items-center {
-            align-items: flex-start !important;
-            margin-top: 10px;
-            padding-top: 10px;
-            border-top: 1px solid rgba(255,255,255,0.1);
-            flex-direction: row !important;
-            flex-wrap: wrap;
-            gap: 8px;
+        .navbar-nav {
+            align-items: stretch !important;
+            flex-direction: column !important;
+            gap: 12px;
         }
-        body.light-mode .navbar-nav.align-items-center {
-            border-top: 1px solid rgba(0,0,0,0.1);
-        }
-        .navbar-nav.align-items-center .nav-item {
-            flex: 0 0 auto;
-        }
-        /* Theme toggle stays round, not stretched */
-        .btn-nav-theme {
-            width: 36px !important;
-            height: 36px !important;
-            justify-content: center;
-        }
-        /* Pill buttons: auto width on mobile, not 100% */
         .btn-nav-pill {
-            width: auto !important;
-            justify-content: center;
-            margin-bottom: 0;
+            width: 100% !important;
+            justify-content: flex-start;
+            padding: 10px 16px;
+            font-size: 0.95rem;
         }
     }
     </style>
@@ -235,62 +235,71 @@
 </head>
 <body>
     <!-- ==================== NAVBAR ==================== -->
-    <nav class="navbar navbar-expand-lg navbar-dark">
-        <div class="container">
-            <a class="navbar-brand fw-bold" href="{{ url_for('index') }}">
-                <img src="{{ url_for('static', filename='Savewave.png') }}" alt="SaveWave" height="30" class="me-2" style="border-radius: 6px;">
-                SaveWave
-            </a>
-            <button class="navbar-toggler btn-mobile-menu" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <i class="fas fa-bars fs-5"></i>
-            </button>
+    <nav class="navbar navbar-expand-lg navbar-dark position-relative">
+        <div class="container d-flex align-items-center justify-content-between">
+            
+            <!-- Left Side: Brand & Main Links -->
+            <div class="d-flex align-items-center">
+                <a class="navbar-brand fw-bold me-2 me-md-4" href="{{ url_for('index') }}">
+                    <img src="{{ url_for('static', filename='Savewave.png') }}" alt="SaveWave" height="30" class="me-1 me-md-2" style="border-radius: 6px;">
+                    <span class="d-none d-sm-inline">SaveWave</span>
+                </a>
+                
+                <div class="d-flex align-items-center gap-1 gap-md-2">
+                    <a class="nav-icon-btn" href="{{ url_for('index') }}" title="Inicio">
+                        <i class="fas fa-home" style="color:#4facfe;"></i> <span class="d-none d-md-inline ms-1">Inicio</span>
+                    </a>
+                    <a class="nav-icon-btn" href="{{ url_for('playlists_view') }}" title="Playlists">
+                        <i class="fas fa-headphones" style="color:#a6e3a1;"></i> <span class="d-none d-md-inline ms-1">Playlists</span>
+                    </a>
+                    <a class="nav-icon-btn" href="{{ url_for('pricing') }}" title="Planes">
+                        <i class="fas fa-tags" style="color:#a78bfa;"></i> <span class="d-none d-md-inline ms-1">Planes</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Right Side: Hamburger Toggle -->
+            <div class="d-flex align-items-center gap-2">
+                <button id="darkModeToggle" class="btn-nav-pill btn-nav-theme d-none d-lg-flex" title="Cambiar tema">
+                    <i class="fas fa-sun"></i>
+                </button>
+                <button class="navbar-toggler btn-mobile-menu" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <i class="fas fa-bars fs-5"></i>
+                </button>
+            </div>
+
+            <!-- Collapsed Items (Profile, Logout, App, Theme) -->
             <div class="collapse navbar-collapse" id="navbarNav">
-                <!-- Left nav links -->
-                <ul class="navbar-nav me-auto gap-1">
-                    <li class="nav-item">
-                        <a class="nav-link-main" href="{{ url_for('index') }}">
-                            <i class="fas fa-home" style="color:#4facfe;"></i>Inicio
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link-main" href="{{ url_for('pricing') }}">
-                            <i class="fas fa-tags" style="color:#a78bfa;"></i>Planes
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link-main" href="{{ url_for('app_download') }}">
-                            <i class="fas fa-mobile-alt" style="color:#10b981;"></i>App
-                        </a>
-                    </li>
-                </ul>
-                <!-- Right action buttons -->
-                <ul class="navbar-nav align-items-center gap-2">
+                <ul class="navbar-nav ms-auto align-items-lg-center gap-2 mt-2 mt-lg-0">
                     <li class="nav-item" id="navInstallBtnContainer" style="display:none;">
-                        <button class="btn-nav-pill" onclick="window.triggerInstall()" style="background: rgba(99,102,241,0.1); color: #8b5cf6; border: 1px solid rgba(99,102,241,0.2);">
-                            <i class="fas fa-download"></i><span class="ms-1">Obtener App</span>
+                        <button class="btn-nav-pill w-100 w-lg-auto" onclick="window.triggerInstall()" style="background: rgba(99,102,241,0.1); color: #8b5cf6; border: 1px solid rgba(99,102,241,0.2);">
+                            <i class="fas fa-download me-2"></i>Obtener App
+                        </button>
+                    </li>
+                    <li class="nav-item d-lg-none">
+                        <!-- Boton de tema en movil (se delega el click en JS al darkModeToggle original si es necesario, o se usa el mismo listener si seleccionamos por clase) -->
+                        <button class="btn-nav-pill btn-nav-theme-mobile w-100" style="background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.15); justify-content: flex-start;">
+                            <i class="fas fa-sun me-2"></i> Cambiar tema
                         </button>
                     </li>
                     <li class="nav-item">
-                        <button id="darkModeToggle" class="btn-nav-pill btn-nav-theme" title="Cambiar tema">
-                            <i class="fas fa-sun"></i>
-                        </button>
+                        <a class="btn-nav-pill w-100 w-lg-auto" href="{{ url_for('app_download') }}" style="background: rgba(16,185,129,0.1); color: #10b981; border: 1px solid rgba(16,185,129,0.2);">
+                            <i class="fas fa-mobile-alt me-2"></i> App
+                        </a>
                     </li>
                     {% if current_user.is_authenticated %}
                         <li class="nav-item">
-                            <a class="btn-nav-pill btn-nav-playlists" href="{{ url_for('playlists_view') }}"><i class="fas fa-headphones"></i>Playlists</a>
+                            <a class="btn-nav-pill btn-nav-dashboard" href="{{ url_for('dashboard') }}"><i class="fas fa-user me-2"></i> Perfil / Dashboard</a>
                         </li>
                         <li class="nav-item">
-                            <a class="btn-nav-pill btn-nav-dashboard" href="{{ url_for('dashboard') }}"><i class="fas fa-user"></i>{{ current_user.username }}</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="btn-nav-pill btn-nav-logout" href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i>Salir</a>
+                            <a class="btn-nav-pill btn-nav-logout" href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt me-2"></i> Salir</a>
                         </li>
                     {% else %}
                         <li class="nav-item">
-                            <a class="btn-nav-pill btn-nav-login" href="{{ url_for('login') }}"><i class="fas fa-sign-in-alt"></i>Entrar</a>
+                            <a class="btn-nav-pill btn-nav-login" href="{{ url_for('login') }}"><i class="fas fa-sign-in-alt me-2"></i> Entrar</a>
                         </li>
                         <li class="nav-item">
-                            <a class="btn-nav-pill btn-nav-register" href="{{ url_for('register') }}"><i class="fas fa-user-plus"></i>Crear cuenta</a>
+                            <a class="btn-nav-pill btn-nav-register" href="{{ url_for('register') }}"><i class="fas fa-user-plus me-2"></i> Crear cuenta</a>
                         </li>
                     {% endif %}
                 </ul>

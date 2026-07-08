@@ -474,36 +474,46 @@
         <div class="modal fade" id="selectPlaylistModal" tabindex="-1">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content" style="background-color: #1e1e2e; color: #fff; border: 1px solid #313244;">
-                    <div class="modal-header" style="border-bottom: 1px solid #313244;">
+                    <div class="modal-header border-0 pb-2">
                         <h5 class="modal-title fw-bold"><i class="fas fa-headphones me-2" style="color:#a6e3a1;"></i>Guardar en Playlist</h5>
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body p-0">
-                        <!-- TABS dentro del modal -->
-                        <ul class="nav nav-tabs nav-fill border-0" id="playlistModalTabs" style="background:#181825; border-bottom: 1px solid #313244 !important;">
-                            <li class="nav-item">
-                                <button class="nav-link active fw-semibold" id="modal-playlists-tab" data-bs-toggle="tab" data-bs-target="#modal-playlists" type="button" style="color:#cdd6f4; border-radius:0;">
-                                    <i class="fas fa-list me-1"></i> Mis Playlists
-                                </button>
-                            </li>
-                            <li class="nav-item">
-                                <button class="nav-link fw-semibold" id="modal-upload-tab" data-bs-toggle="tab" data-bs-target="#modal-upload" type="button" style="color:#cdd6f4; border-radius:0;">
-                                    <i class="fas fa-upload me-1"></i> Subir Archivo
-                                </button>
-                            </li>
-                        </ul>
+                        <!-- TABS Premium -->
+                        <div class="px-3">
+                            <ul class="nav nav-pills d-flex p-1 mb-3" style="background: rgba(255,255,255,0.05); border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);" id="playlistModalTabs" role="tablist">
+                                <li class="nav-item flex-fill text-center" role="presentation">
+                                    <button class="nav-link active w-100 fw-bold" id="modal-playlists-tab" data-bs-toggle="pill" data-bs-target="#modal-playlists" type="button" role="tab" style="border-radius: 10px; padding: 10px; transition: all 0.3s;">
+                                        <i class="fas fa-list me-1"></i> Mis Playlists
+                                    </button>
+                                </li>
+                                <li class="nav-item flex-fill text-center" role="presentation">
+                                    <button class="nav-link w-100 fw-bold" id="modal-upload-tab" data-bs-toggle="pill" data-bs-target="#modal-upload" type="button" role="tab" style="border-radius: 10px; padding: 10px; transition: all 0.3s; color: rgba(255,255,255,0.6);">
+                                        <i class="fas fa-upload me-1"></i> Subir Archivo
+                                    </button>
+                                </li>
+                            </ul>
+                            <style>
+                                #playlistModalTabs .nav-link.active {
+                                    background: #fff;
+                                    color: #1e1e2e !important;
+                                    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+                                }
+                            </style>
+                        </div>
                         <div class="tab-content">
                             <!-- TAB 1: Mis Playlists -->
                             <div class="tab-pane fade show active p-3" id="modal-playlists">
                                 <div id="userPlaylistsList" class="mb-3">
                                     <p class="text-secondary small"><i class="fas fa-spinner fa-spin me-1"></i> Cargando...</p>
                                 </div>
-                                <hr style="border-color:#313244;">
-                                <p class="text-secondary small mb-2"><i class="fas fa-plus-circle me-1" style="color:#a6e3a1;"></i>O crea una nueva playlist:</p>
-                                <div id="quickCreateError" class="alert alert-warning py-2 small d-none"></div>
-                                <div class="input-group">
-                                    <input type="text" class="form-control" id="quickNewPlaylistName" placeholder="Nombre de la nueva playlist..." style="background:#313244; border:1px solid #45475a; color:#fff;">
-                                    <button class="btn fw-bold" onclick="quickCreateAndAdd()" id="quickCreateBtn" style="background:#a6e3a1; border:none; color:#1e1e2e;"><i class="fas fa-check me-1"></i>Crear y guardar</button>
+                                <div class="mt-2">
+                                    <p class="text-secondary fw-semibold small mb-2"><i class="fas fa-plus-circle me-1" style="color:#a6e3a1;"></i>O crea una nueva playlist:</p>
+                                    <div id="quickCreateError" class="alert alert-warning py-2 small d-none"></div>
+                                    <div class="d-flex gap-2">
+                                        <input type="text" class="form-control" id="quickNewPlaylistName" placeholder="Nombre de la nueva" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius: 12px; padding: 12px 16px;">
+                                        <button class="btn fw-bold" onclick="quickCreateAndAdd()" id="quickCreateBtn" style="background:#a6e3a1; border:none; color:#1e1e2e; border-radius: 12px; padding: 0 20px; white-space: nowrap;"><i class="fas fa-check me-1"></i>Crear y guardar</button>
+                                    </div>
                                 </div>
                             </div>
                             <!-- TAB 2: Subir archivo -->
@@ -855,8 +865,8 @@ $(document).ready(function() {
                 let html = '';
                 let selectHtml = '<option value="">-- Selecciona una playlist --</option>';
                 data.playlists.forEach(function(pl) {
-                    html += `<button class="btn btn-sm w-100 mb-2 text-start fw-semibold" onclick="addToPlaylist(${pl.id})" style="background:#313244; color:#cdd6f4; border:1px solid #45475a;">`;
-                    html += `<i class="fas fa-music me-2" style="color:#a6e3a1;"></i>${pl.name}</button>`;
+                    html += `<button class="btn w-100 mb-2 text-start fw-semibold" onclick="addToPlaylist(${pl.id})" style="background: rgba(255,255,255,0.04); color: #cdd6f4; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 14px 16px; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.08)'; this.style.borderColor='rgba(255,255,255,0.2)';" onmouseout="this.style.background='rgba(255,255,255,0.04)'; this.style.borderColor='rgba(255,255,255,0.08)';">`;
+                    html += `<i class="fas fa-music me-3" style="color:#a6e3a1; font-size: 1.1rem;"></i>${pl.name}</button>`;
                     selectHtml += `<option value="${pl.id}">${pl.name}</option>`;
                 });
                 if (!html) html = '<p class="text-secondary small"><i class="fas fa-info-circle me-1"></i>No tienes playlists aún. Crea una abajo.</p>';

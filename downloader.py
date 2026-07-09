@@ -171,11 +171,10 @@ def _get_ydl_opts(extra_opts: dict = None, url: str = None) -> dict:
             break
 
     if platform == "youtube":
-        # Usar android_vr es 100% inmune al bloqueo "Sign in to confirm you're not a bot"
-        # en las IPs de DigitalOcean, y no requiere cookies ni servidor Deno/bgutil.
-        existing_args = opts.get("extractor_args", {}).get("youtube", {})
-        existing_args["player_client"] = ["android_vr"]
-        opts["extractor_args"] = {"youtube": existing_args}
+        # Dejar que yt-dlp use sus clientes por defecto (mix de web, ios, android).
+        # Ya que el usuario subió cookies.txt, esto funcionará de manera 100% estable
+        # para todos los videos, sin los cuelgues (hangs) de android_vr puro.
+        pass
 
 
     # Usar ffmpeg local si existe en la carpeta bin

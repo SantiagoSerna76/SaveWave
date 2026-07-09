@@ -859,13 +859,13 @@ def api_download_proxy():
         fd, temp_path = tempfile.mkstemp(suffix=".m4a", prefix="savewave_offline_dl_")
         os.close(fd)
 
-        # Opciones nativas usando android_vr para máxima velocidad y evasión de bots
+        # Opciones nativas para máxima velocidad y evasión de bots
         opts = {
             'format': 'worstaudio[ext=m4a]/worstaudio/best',
             'outtmpl': temp_path,
             'quiet': True,
             'no_warnings': True,
-            'extractor_args': {'youtube': {'player_client': ['android_vr']}}
+            'cookiefile': os.path.join(os.path.dirname(os.path.abspath(__file__)), 'www.youtube.com_cookies.txt') if os.path.exists(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'www.youtube.com_cookies.txt')) else None
         }
 
         with yt_dlp.YoutubeDL(opts) as ydl:

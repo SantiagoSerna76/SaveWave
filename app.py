@@ -864,7 +864,9 @@ def api_stream_proxy_get():
         if range_header:
             headers["Range"] = range_header
 
-        resp = http_requests.get(direct_url, headers=headers, stream=True, timeout=30)
+        # Descargar el archivo entero a la memoria RAM del VPS (son ~5MB, toma milisegundos en DO)
+        # Esto evita que Gunicorn y requests bloqueen el worker iterando chunks lentamente
+        resp = http_requests.get(direct_url, headers=headers, timeout=30)
 
         # Construir respuesta con los mismos headers que YouTube devuelve
         response_headers = {}
@@ -878,16 +880,10 @@ def api_stream_proxy_get():
         response_headers["Cache-Control"] = "public, max-age=3600"
         response_headers["Access-Control-Allow-Origin"] = "*"
 
-        def generate():
-            for chunk in resp.iter_content(chunk_size=65536):
-                if chunk:
-                    yield chunk
-
         return Response(
-            generate(),
+            resp.content,
             status=resp.status_code,
-            headers=response_headers,
-            direct_passthrough=True,
+            headers=response_headers
         )
 
     except Exception as e:

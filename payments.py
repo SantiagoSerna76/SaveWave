@@ -91,6 +91,10 @@ def create_checkout_session(plan_type: PlanType, user: User) -> dict:
     except stripe.error.StripeError as e:
         return {"success": False, "error": f"Error de Stripe: {str(e)}"}
     except Exception as e:
+        import traceback
+        print("====== STRIPE EXCEPTION TRACEBACK ======")
+        traceback.print_exc()
+        print("========================================")
         return {"success": False, "error": f"Error inesperado: {str(e)}"}
 
 

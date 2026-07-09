@@ -793,15 +793,17 @@ def api_stream_proxy():
     if request.is_json:
         data = request.get_json()
         url = data.get("url", "").strip() if data else ""
+        quality = data.get("quality", "best")
     else:
         url = request.form.get("url", "").strip()
+        quality = request.form.get("quality", "best")
 
     if not url:
         return jsonify({"success": False, "error": "Debes proporcionar una URL."}), 400
 
     try:
         # Extraer la URL directa del audio (esto es lo que toma tiempo, solo una vez)
-        result = get_audio_direct_url(url)
+        result = get_audio_direct_url(url, quality=quality)
         if not result["success"]:
             return jsonify({"success": False, "error": result["error"]}), 400
 

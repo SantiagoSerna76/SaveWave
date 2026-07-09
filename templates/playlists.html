@@ -2643,11 +2643,12 @@
 
                 try {
                     // Paso 1: Resolver URL directa de audio (~5-7s por canción)
+                    // quality=low pide audio <=96kbps → archivo 2-3x más pequeño → descarga más rápida
                     progressText.textContent = `🔍 Resolviendo: ${shortTitle}...`;
                     const res = await fetch('/api/stream-proxy', {
                         method: 'POST',
                         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                        body: 'url=' + encodeURIComponent(track.url)
+                        body: 'url=' + encodeURIComponent(track.url) + '&quality=low'
                     });
                     const data = await res.json();
 

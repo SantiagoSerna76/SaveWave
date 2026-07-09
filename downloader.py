@@ -160,14 +160,12 @@ def _get_ydl_opts(extra_opts: dict = None, url: str = None) -> dict:
             opts['cookiefile'] = cookies_path
             break
 
-    # ── Estrategia de PO Token ──────────────────────────────────────────────
-    # Cuando el servidor bgutil HTTP está corriendo en :4416, yt-dlp puede pedir
-    # PO Tokens en milisegundos en vez de arrancar Deno frío (~7s).
-    # NO forzamos player_client para evitar el error "SABR-only" que ocurre con
-    # el cliente web cuando YouTube activa el experimento de streaming SABR.
     if platform == "youtube" and _bgutil_server_running():
-        # Modo rápido: inyectar solo el proveedor HTTP; yt-dlp elige el mejor cliente
+        # Modo rápido: inyectar proveedor HTTP y FORZAR cliente web.
+        # Es obligatorio usar el cliente web, ya que el plugin bgutil solo genera tokens para 'web'.
+        # Si no lo forzamos, yt-dlp usa 'android' o 'android_vr' que no usan PO Token y la IP de DO es bloqueada.
         existing_args = opts.get("extractor_args", {}).get("youtube", {})
+        existing_args["player_client"] = ["web"]
         existing_args["pot_provider"] = "bgutil"
         existing_args["pot_bgutil_baseurl"] = ["http://localhost:4416/"]
         opts["extractor_args"] = {"youtube": existing_args}
@@ -441,6 +439,7 @@ def get_audio_direct_url(url: str, quality: str = 'best') -> dict:
                 "format": best_format,
                 "thumbnail": info.get("thumbnail", ""),
                 "duration": info.get("duration", 0),
+                "http_headers": info.get("http_headers", {})
             }
 
     except Exception as e:

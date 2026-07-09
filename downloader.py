@@ -12,6 +12,18 @@ Funciones:
 """
 
 import os
+import json
+import logging
+import asyncio
+import subprocess
+
+# INYECTAR DENO AL PATH:
+# Systemd no carga el PATH completo del usuario root. Si yt-dlp no encuentra un motor JS (Deno),
+# falla al resolver las firmas de YouTube (sig/n) y devuelve "Requested format is not available".
+if "/root/.deno/bin" not in os.environ.get("PATH", ""):
+    os.environ["PATH"] = os.environ.get("PATH", "") + ":/root/.deno/bin"
+
+import yt_dlp
 import re
 import time
 import shutil

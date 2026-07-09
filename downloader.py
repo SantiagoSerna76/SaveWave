@@ -373,14 +373,10 @@ def get_audio_direct_url(url: str) -> dict:
     Returns:
         Diccionario con: success, direct_url, title, platform, format, thumbnail, duration.
     """
-    # Usar opciones mínimas sin player_client específico para máxima compatibilidad
-    ydl_opts = {
-        "quiet": True,
-        "no_warnings": True,
-        "nocheckcertificate": True,
+    ydl_opts = _get_ydl_opts({
         "noplaylist": True,
         "format": "bestaudio/best",
-    }
+    }, url)
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -478,20 +474,14 @@ def download_audio_native(url: str, output_path: str = None) -> dict:
     # Descargar el mejor audio disponible SIN post-procesamiento (sin FFmpeg)
     format_spec = "bestaudio/best"
 
-    # Usar opciones mínimas sin player_client específico (máxima compatibilidad)
-    base_dir2 = os.path.dirname(os.path.abspath(__file__))
-    ydl_opts = {
-        "quiet": True,
-        "no_warnings": True,
-        "nocheckcertificate": True,
+    ydl_opts = _get_ydl_opts({
         "noplaylist": True,
         "format": format_spec,
         "outtmpl": output_template,
         "concurrent_fragment_downloads": 4,
         "retries": 3,
-        # NO postprocessors = sin reconversión FFmpeg
         "progress_hooks": [_progress_hook],
-    }
+    }, url)
     # Añadir ffmpeg local si existe
     bin_dir2 = os.path.join(base_dir2, 'bin')
     if os.path.exists(os.path.join(bin_dir2, 'ffmpeg.exe')):

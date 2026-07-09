@@ -102,25 +102,19 @@ def detect_platform(url: str) -> str:
 
 
 def _bgutil_server_running() -> bool:
-    """Comprueba si el servidor bgutil HTTP está activo en localhost:4416."""
-    try:
-        import urllib.request
-        urllib.request.urlopen('http://localhost:4416/', timeout=0.5)
-        return True
-    except Exception:
-        # 404 también significa que está corriendo (el path / no existe pero el server responde)
+    """Comprueba si el servidor bgutil HTTP está activo en puerto 4416 (IPv4 o IPv6)."""
+    import socket
+    for host in ('127.0.0.1', '::1'):
         try:
-            import urllib.error
-        except ImportError:
-            pass
-        # Revisar si la conexión fue rechazada (no corriendo) o recibida (corriendo)
-        import socket
-        try:
-            s = socket.create_connection(('127.0.0.1', 4416), timeout=0.5)
+            family = socket.AF_INET if '.' in host else socket.AF_INET6
+            s = socket.socket(family, socket.SOCK_STREAM)
+            s.settimeout(0.8)
+            s.connect((host, 4416))
             s.close()
             return True
-        except (socket.timeout, ConnectionRefusedError, OSError):
-            return False
+        except Exception:
+            pass
+    return False
 
 
 def _get_ydl_opts(extra_opts: dict = None, url: str = None) -> dict:
@@ -167,22 +161,17 @@ def _get_ydl_opts(extra_opts: dict = None, url: str = None) -> dict:
             break
 
     # ── Estrategia de PO Token ──────────────────────────────────────────────
-    # El cliente 'web' es el que más formatos da pero exige PO Token.
-    # Usamos bgutil server si está corriendo (evita arrancar Deno por cada canción).
-    if platform == "youtube":
-        if _bgutil_server_running():
-            # Modo rápido: servidor Deno persistente ya cargado en memoria → ~0.5s/token
-            opts["extractor_args"] = {
-                "youtube": {
-                    "player_client": ["web"],
-                    "pot_provider": "bgutil",
-                    "pot_bgutil_baseurl": ["http://localhost:4416/"],
-                }
-            }
-        else:
-            # Modo lento: Deno arranca frío por cada request (~7s). Funcional pero lento.
-            # (El plugin bgutil-ytdlp-pot-provider lo maneja automáticamente si está instalado)
-            pass  # dejar que yt-dlp use el plugin bgutil instalado vía pip
+    # Cuando el servidor bgutil HTTP está corriendo en :4416, yt-dlp puede pedir
+    # PO Tokens en milisegundos en vez de arrancar Deno frío (~7s).
+    # NO forzamos player_client para evitar el error "SABR-only" que ocurre con
+    # el cliente web cuando YouTube activa el experimento de streaming SABR.
+    if platform == "youtube" and _bgutil_server_running():
+        # Modo rápido: inyectar solo el proveedor HTTP; yt-dlp elige el mejor cliente
+        existing_args = opts.get("extractor_args", {}).get("youtube", {})
+        existing_args["pot_provider"] = "bgutil"
+        existing_args["pot_bgutil_baseurl"] = ["http://localhost:4416/"]
+        opts["extractor_args"] = {"youtube": existing_args}
+
 
     # Usar ffmpeg local si existe en la carpeta bin
     bin_dir = os.path.join(base_dir, 'bin')

@@ -828,6 +828,7 @@ def api_stream_proxy():
             "format": audio_format,
         })
 
+    except Exception as e:
         return jsonify({"success": False, "error": f"Error: {str(e)}"}), 500
 
 

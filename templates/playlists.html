@@ -2639,11 +2639,19 @@
         const modalEl = document.getElementById('downloadOptionsModal');
         const closeBtn = document.getElementById('downloadModalCloseBtn');
         
-        // Evitar que el usuario cierre el modal haciendo click afuera o con ESC
-        modalEl.setAttribute('data-bs-backdrop', 'static');
-        modalEl.setAttribute('data-bs-keyboard', 'false');
-        if (closeBtn) closeBtn.classList.add('d-none');
+        // La única forma 100% segura en Bootstrap 5 de evitar que se cierre
+        window.isDownloadingOffline = true;
+        if (!window.downloadModalListenerAdded) {
+            modalEl.addEventListener('hide.bs.modal', function (e) {
+                if (window.isDownloadingOffline) {
+                    e.preventDefault(); // Bloquea completamente el cierre
+                }
+            });
+            window.downloadModalListenerAdded = true;
+        }
 
+        if (closeBtn) closeBtn.classList.add('d-none');
+        
         document.querySelectorAll('#downloadOptionsBody .dl-option').forEach(b => b.classList.add('d-none'));
         progressContainer.classList.remove('d-none');
 
@@ -2723,26 +2731,21 @@
                 progressCount.textContent = `${completed}/${total}`;
                 progressBar.style.width = `${(completed / total) * 100}%`;
                 if (completed >= total) {
+                    window.isDownloadingOffline = false; // Permitir cerrar
                     if (errors > 0) {
                         progressText.textContent = `✅ Listo. ${completed - errors} guardadas, ${errors} con error.`;
                     } else {
                         progressText.textContent = '✅ Todas las canciones guardadas para escuchar offline.';
                     }
-                    progressBar.style.width = '100%';
-                    checkOfflineStatus();
-
-                    setTimeout(() => {
-                        // Restaurar comportamiento normal del modal
-                        modalEl.removeAttribute('data-bs-backdrop');
-                        modalEl.removeAttribute('data-bs-keyboard');
-                        if (closeBtn) closeBtn.classList.remove('d-none');
-                        
-                        const modal = bootstrap.Modal.getInstance(modalEl);
-                        if (modal) modal.hide();
-                        document.querySelectorAll('#downloadOptionsBody .dl-option').forEach(b => b.classList.remove('d-none'));
-                        progressContainer.classList.add('d-none');
-                        progressBar.style.width = '0%';
-                    }, 2500);
+                    // Solo cerrar automáticamente si no hubo errores, para que el usuario pueda leer el resultado
+                    if (errors === 0) {
+                        setTimeout(() => {
+                            try { bootstrap.Modal.getInstance(modalEl).hide(); } catch(e){}
+                            location.reload();
+                        }, 2500);
+                    } else {
+                        if (closeBtn) closeBtn.classList.remove('d-none'); // Mostrar el botón de cerrar si hubo errores
+                    }
                 } else if (statusMsg) {
                     progressText.textContent = statusMsg;
                 }

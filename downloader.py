@@ -93,6 +93,15 @@ QUALITY_MAP = {
 # -------------------- FUNCIONES PÚBLICAS --------------------
 
 
+def normalize_url(url: str) -> str:
+    """Si la URL es solo un ID de YouTube, la convierte en URL completa."""
+    if not url: return ""
+    if not url.startswith("http"):
+        # Asumir YouTube ID si son ~11 caracteres sin espacios
+        if re.match(r'^[a-zA-Z0-9_-]{10,12}$', url.strip()):
+            return f"https://www.youtube.com/watch?v={url.strip()}"
+    return url.strip()
+
 def detect_platform(url: str) -> str:
     """
     Detecta de qué plataforma es un enlace.
@@ -104,6 +113,7 @@ def detect_platform(url: str) -> str:
         Nombre de la plataforma: 'youtube', 'instagram', 'tiktok'.
         Si no se reconoce, lanza ValueError.
     """
+    url = normalize_url(url)
     for platform, patterns in PLATFORM_PATTERNS.items():
         for pattern in patterns:
             if re.search(pattern, url, re.IGNORECASE):
@@ -395,6 +405,8 @@ def get_audio_direct_url(url: str, quality: str = 'best') -> dict:
     Returns:
         Diccionario con: success, direct_url, title, platform, format, thumbnail, duration.
     """
+    url = normalize_url(url)
+    
     # Seleccionar calidad según el parámetro:
     # - "low": archivo más pequeño posible para descarga offline rápida (~1.5MB vs ~5MB)
     # - "best": mejor calidad para reproducción en streaming

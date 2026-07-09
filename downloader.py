@@ -153,10 +153,8 @@ def _get_ydl_opts(extra_opts: dict = None, url: str = None) -> dict:
 
     if has_cookies:
         # Con cookies: dejar que yt-dlp elija el mejor cliente automáticamente.
-        # bgutil-ytdlp-pot-provider resuelve los PO Tokens via deno.
-        opts["http_headers"] = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-        }
+        # bgutil-ytdlp-pot-provider resuelve los PO Tokens via deno y gestiona sus propios headers.
+        pass
     else:
         # Sin cookies: usar android_vr que no requiere PO Token (para uso local).
         opts["extractor_args"] = {"youtube": {"player_client": ["android_vr"]}}

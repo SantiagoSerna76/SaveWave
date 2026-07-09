@@ -101,23 +101,45 @@ def detect_platform(url: str) -> str:
     raise ValueError(f"URL no soportada o plataforma no reconocida: {url}")
 
 
+def _bgutil_server_running() -> bool:
+    """Comprueba si el servidor bgutil HTTP está activo en localhost:4416."""
+    try:
+        import urllib.request
+        urllib.request.urlopen('http://localhost:4416/', timeout=0.5)
+        return True
+    except Exception:
+        # 404 también significa que está corriendo (el path / no existe pero el server responde)
+        try:
+            import urllib.error
+        except ImportError:
+            pass
+        # Revisar si la conexión fue rechazada (no corriendo) o recibida (corriendo)
+        import socket
+        try:
+            s = socket.create_connection(('127.0.0.1', 4416), timeout=0.5)
+            s.close()
+            return True
+        except (socket.timeout, ConnectionRefusedError, OSError):
+            return False
+
+
 def _get_ydl_opts(extra_opts: dict = None, url: str = None) -> dict:
     """
     Construye las opciones base para yt-dlp.
-    Usa web como player client principal (requiere cookies, pero da formatos completos).
-    Si hay cookies, usa web. Si no hay cookies, usa android (sin formatos de altura).
-    
+
+    Estrategia de velocidad:
+    1. Si el servidor bgutil (Deno persistente) está corriendo en :4416 → usarlo (rápido: ~0.5s/canción).
+    2. Si no → cold-start de Deno por cada canción (lento: ~7s/canción).
+
     Args:
         extra_opts: Opciones adicionales para yt-dlp.
         url: URL opcional para aplicar configuraciones específicas por plataforma.
     """
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    has_cookies = False
 
     opts = {
         "restrictfilenames": True,
         "noplaylist": True,
-        # Remove quiet and no_warnings so we can see errors in the server logs
         "quiet": True,
         "no_warnings": True,
     }
@@ -131,7 +153,6 @@ def _get_ydl_opts(extra_opts: dict = None, url: str = None) -> dict:
             platform = None
 
     # Buscar archivo de cookies específico según la plataforma.
-    # bgutil-ytdlp-pot-provider se encarga automáticamente de los PO Tokens.
     if platform == "youtube":
         cookie_candidates = ['www.youtube.com_cookies.txt', 'youtube_cookies.txt']
     elif platform == "instagram":
@@ -143,13 +164,25 @@ def _get_ydl_opts(extra_opts: dict = None, url: str = None) -> dict:
         cookies_path = os.path.join(base_dir, cookie_name)
         if os.path.exists(cookies_path):
             opts['cookiefile'] = cookies_path
-    if has_cookies:
-        # Con cookies: dejar que yt-dlp elija el mejor cliente automáticamente.
-        # bgutil-ytdlp-pot-provider resuelve los PO Tokens via deno y permite descargar sin error 403.
-        pass
-    else:
-        # Sin cookies: usar android_vr para uso local
-        opts["extractor_args"] = {"youtube": {"player_client": ["android_vr"]}}
+            break
+
+    # ── Estrategia de PO Token ──────────────────────────────────────────────
+    # El cliente 'web' es el que más formatos da pero exige PO Token.
+    # Usamos bgutil server si está corriendo (evita arrancar Deno por cada canción).
+    if platform == "youtube":
+        if _bgutil_server_running():
+            # Modo rápido: servidor Deno persistente ya cargado en memoria → ~0.5s/token
+            opts["extractor_args"] = {
+                "youtube": {
+                    "player_client": ["web"],
+                    "pot_provider": "bgutil",
+                    "pot_bgutil_baseurl": ["http://localhost:4416/"],
+                }
+            }
+        else:
+            # Modo lento: Deno arranca frío por cada request (~7s). Funcional pero lento.
+            # (El plugin bgutil-ytdlp-pot-provider lo maneja automáticamente si está instalado)
+            pass  # dejar que yt-dlp use el plugin bgutil instalado vía pip
 
     # Usar ffmpeg local si existe en la carpeta bin
     bin_dir = os.path.join(base_dir, 'bin')
@@ -164,7 +197,6 @@ def _get_ydl_opts(extra_opts: dict = None, url: str = None) -> dict:
             platform = None
 
         if platform == "instagram":
-            # Instagram requiere autenticación. Intentar con login primero.
             from config import Config
             if Config.INSTAGRAM_USERNAME and Config.INSTAGRAM_PASSWORD:
                 opts["username"] = Config.INSTAGRAM_USERNAME
@@ -173,6 +205,8 @@ def _get_ydl_opts(extra_opts: dict = None, url: str = None) -> dict:
     if extra_opts:
         opts.update(extra_opts)
     return opts
+
+
 
 
 def get_video_info(url: str) -> dict:

@@ -1844,6 +1844,31 @@
         }
     }
 
+    async function preloadNextTrack() {
+        const nextIndex = getNextIndex();
+        if (nextIndex === -1) return;
+        const track = currentPlaylistItems[nextIndex];
+        
+        // No hacer preload si es local o ya está cacheada offline
+        if (track.platform === 'audio_local' || track.platform === 'video_local' || track.cached_url) return;
+        
+        if (!window.preloadPromises) window.preloadPromises = {};
+        if (window.preloadPromises[track.url]) return;
+
+        // Disparar la conexión con el VPS en background silenciosamente
+        window.preloadPromises[track.url] = fetch('/api/stream-proxy', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: 'url=' + encodeURIComponent(track.url)
+        }).then(r => {
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return r.json();
+        }).catch(err => {
+            // Si falla el preload en background, borrar la promesa para que reintente en vivo
+            delete window.preloadPromises[track.url];
+        });
+    }
+
     async function playTrack(index) {
         const statusEl = document.getElementById('playerTitle');
         
@@ -1904,6 +1929,8 @@
                         isPlaying = true;
                         statusEl.textContent = track.title;
                         updatePlayPauseUI();
+                        // Disparar precarga silenciosa de la siguiente
+                        setTimeout(preloadNextTrack, 1000);
                         return;
                     } catch(err) {
                         console.warn('Caché offline corrupto detectado, eliminando y usando red...', err);
@@ -1922,6 +1949,7 @@
                 await audioPlayer.play();
                 isPlaying = true;
                 statusEl.textContent = track.title;
+                setTimeout(preloadNextTrack, 1000);
             } catch(err) {
                 statusEl.textContent = '❌ Error reproduciendo archivo: ' + err.message;
             }
@@ -1929,27 +1957,29 @@
             return;
         }
 
-        statusEl.innerHTML = '⏳ Paso 2: Conectando con el servidor...';
+        statusEl.innerHTML = '⏳ Conectando con el servidor...';
         currentFetchController = new AbortController();
         
         try {
-            // Obtener la URL directa de YouTube + proxy de respaldo
-            const res = await fetch('/api/stream-proxy', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                body: 'url=' + encodeURIComponent(track.url),
-                signal: currentFetchController.signal
-            });
+            // Usar promesa cacheadas si hay un preload activo
+            if (!window.preloadPromises) window.preloadPromises = {};
             
-            currentFetchController = null;
-
-            if (!res.ok) {
-                statusEl.textContent = '❌ Error del servidor: HTTP ' + res.status;
-                updatePlayPauseUI();
-                return;
+            let dataPromise = window.preloadPromises[track.url];
+            if (!dataPromise) {
+                dataPromise = fetch('/api/stream-proxy', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                    body: 'url=' + encodeURIComponent(track.url),
+                    signal: currentFetchController.signal
+                }).then(r => {
+                    if (!r.ok) throw new Error('HTTP ' + r.status);
+                    return r.json();
+                });
+                window.preloadPromises[track.url] = dataPromise;
             }
-
-            const data = await res.json();
+            
+            const data = await dataPromise;
+            currentFetchController = null;
             
             if (currentTrackIndex !== index) return;
 
@@ -1972,6 +2002,7 @@
                         audioPlayer.src = url;
                         audioPlayer.load();
                         resolve();
+                        setTimeout(preloadNextTrack, 1000);
                     };
                     audio.onerror = () => {
                         reject(new Error('CORS or load error'));

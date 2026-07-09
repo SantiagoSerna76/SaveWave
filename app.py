@@ -810,6 +810,12 @@ def api_stream_proxy():
         direct_url = result["direct_url"]
         audio_format = result.get("format", "m4a")
 
+        # Guardar el User-Agent original de yt-dlp en la sesión para el proxy GET
+        # Esto es CRÍTICO para que YouTube no devuelva 403 Forbidden al hacer el proxy
+        headers = result.get("http_headers", {})
+        if "User-Agent" in headers:
+            session["yt_user_agent"] = headers["User-Agent"]
+
         # Construir URL del proxy GET
         import urllib.parse
         proxy_url = url_for("api_stream_proxy_get") + "?direct_url=" + urllib.parse.quote(direct_url) + "&fmt=" + audio_format
@@ -854,9 +860,12 @@ def api_stream_proxy_get():
         }
         mime = mimetype_map.get(audio_format, "audio/mp4")
 
-        # Hacer una request streaming a la URL directa de YouTube
+        # Usar el User-Agent original de yt-dlp si existe en sesión, de lo contrario fallback genérico
+        # YouTube bloquea con 403 Forbidden si el User-Agent no coincide con el que generó el PO Token
+        user_agent = session.get("yt_user_agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+        
         headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+            "User-Agent": user_agent
         }
 
         # Soporte para Range requests (para seek en el reproductor)

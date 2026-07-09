@@ -151,16 +151,16 @@ def _get_ydl_opts(extra_opts: dict = None, url: str = None) -> dict:
             break
 
     if has_cookies:
-        # Con cookies: usar web client (formatos completos, sin bloqueo)
-        opts["extractor_args"] = {"youtube": {"player_client": ["web"]}}
+        # Con cookies: usar tv_embedded + web (formatos completos sin PO token requerido)
+        opts["extractor_args"] = {"youtube": {"player_client": ["tv_embedded", "web"]}}
         opts["http_headers"] = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         }
     else:
-        # Sin cookies: usar mweb (más rápido para audio, sin auth)
-        opts["extractor_args"] = {"youtube": {"player_client": ["mweb", "android"]}}
+        # Sin cookies: ios + tv_embedded (funcionan sin autenticación en yt-dlp 2026+)
+        opts["extractor_args"] = {"youtube": {"player_client": ["ios", "tv_embedded"]}}
         opts["http_headers"] = {
-            "User-Agent": "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36"
+            "User-Agent": "com.google.ios.youtube/19.29.1 (iPhone16,2; U; CPU iOS 17_5_1 like Mac OS X)"
         }
 
     # Usar ffmpeg local si existe en la carpeta bin
@@ -380,51 +380,41 @@ def get_audio_direct_url(url: str) -> dict:
     Returns:
         Diccionario con: success, direct_url, title, platform, format, thumbnail, duration.
     """
-    ydl_opts = _get_ydl_opts({
+    # Usar opciones mínimas sin player_client específico para máxima compatibilidad
+    ydl_opts = {
+        "quiet": True,
+        "no_warnings": True,
+        "nocheckcertificate": True,
         "noplaylist": True,
-        # Solo extraer info, no descargar nada
-    }, url)
+        "format": "bestaudio/best",
+    }
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
 
-            # Buscar el mejor formato de audio (priorizar m4a)
-            best_audio_url = None
-            best_format = "m4a"
-            best_bitrate = 0
+            # yt-dlp con format selector resuelve el mejor formato directamente
+            # La URL está en info['url'] cuando format fue seleccionado
+            best_audio_url = info.get("url")
+            best_format = info.get("ext", "m4a")
 
-            if "formats" in info:
-                for fmt in info["formats"]:
-                    # Solo formatos que tengan audio y URL directa
-                    if fmt.get("url") and fmt.get("acodec") and fmt.get("acodec") != "none":
-                        # Priorizar m4a (AAC) que es el más compatible
-                        ext = fmt.get("ext", "")
-                        abr = fmt.get("abr", 0) or 0
-                        if ext == "m4a" and abr > best_bitrate:
-                            best_audio_url = fmt["url"]
-                            best_format = "m4a"
-                            best_bitrate = abr
-                        elif ext == "webm" and abr > best_bitrate and not best_audio_url:
-                            best_audio_url = fmt["url"]
-                            best_format = "webm"
-                            best_bitrate = abr
-
-            # Si no encontró por formatos, usar bestaudio
-            if not best_audio_url:
-                # Intentar con el formato bestaudio
-                ydl_opts2 = _get_ydl_opts({
-                    "noplaylist": True,
-                    "format": "bestaudio[ext=m4a]/bestaudio/best",
-                }, url)
-                with yt_dlp.YoutubeDL(ydl_opts2) as ydl2:
-                    info2 = ydl2.extract_info(url, download=False)
-                    if "formats" in info2:
-                        for fmt in info2["formats"]:
-                            if fmt.get("url") and fmt.get("acodec") and fmt.get("acodec") != "none":
-                                best_audio_url = fmt["url"]
-                                best_format = fmt.get("ext", "m4a")
-                                break
+            # Si no vino url directa, buscar en formats
+            if not best_audio_url and "formats" in info:
+                # Preferir audio puro m4a > webm > cualquier cosa con audio
+                candidates = [f for f in info["formats"] if f.get("url") and f.get("acodec") not in (None, "none")]
+                # Ordenar: audio-only m4a primero, luego webm, luego mixtos
+                def fmt_score(f):
+                    has_video = f.get("vcodec") not in (None, "none")
+                    ext = f.get("ext", "")
+                    abr = f.get("abr") or 0
+                    if not has_video and ext == "m4a": return (3, abr)
+                    if not has_video and ext == "webm": return (2, abr)
+                    if not has_video: return (1, abr)
+                    return (0, abr)
+                candidates.sort(key=fmt_score, reverse=True)
+                if candidates:
+                    best_audio_url = candidates[0]["url"]
+                    best_format = candidates[0].get("ext", "m4a")
 
             if not best_audio_url:
                 return {
@@ -493,15 +483,26 @@ def download_audio_native(url: str, output_path: str = None) -> dict:
     output_template = os.path.join(output_path, f"native_{url_hash}.%(ext)s")
 
     # Descargar el mejor audio disponible SIN post-procesamiento (sin FFmpeg)
-    # Priorizar m4a (AAC) que es el más compatible con navegadores y móviles
-    format_spec = "bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio/best"
+    format_spec = "bestaudio/best"
 
-    ydl_opts = _get_ydl_opts({
+    # Usar opciones mínimas sin player_client específico (máxima compatibilidad)
+    base_dir2 = os.path.dirname(os.path.abspath(__file__))
+    ydl_opts = {
+        "quiet": True,
+        "no_warnings": True,
+        "nocheckcertificate": True,
+        "noplaylist": True,
         "format": format_spec,
         "outtmpl": output_template,
+        "concurrent_fragment_downloads": 4,
+        "retries": 3,
         # NO postprocessors = sin reconversión FFmpeg
         "progress_hooks": [_progress_hook],
-    }, url)
+    }
+    # Añadir ffmpeg local si existe
+    bin_dir2 = os.path.join(base_dir2, 'bin')
+    if os.path.exists(os.path.join(bin_dir2, 'ffmpeg.exe')):
+        ydl_opts['ffmpeg_location'] = bin_dir2
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:

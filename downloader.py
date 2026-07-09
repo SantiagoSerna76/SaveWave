@@ -181,10 +181,14 @@ def _get_ydl_opts(extra_opts: dict = None, url: str = None) -> dict:
             break
 
     if platform == "youtube":
-        # Dejar que yt-dlp use sus clientes por defecto (mix de web, ios, android).
-        # Ya que el usuario subió cookies.txt, esto funcionará de manera 100% estable
-        # para todos los videos, sin los cuelgues (hangs) de android_vr puro.
-        pass
+        # Siempre priorizar android_vr para YouTube. 
+        # android_vr NO requiere ejecución de JavaScript (Deno) y evade la protección "Sign in to confirm you're not a bot".
+        # Si android_vr falla, cae en mweb y web.
+        opts['extractor_args'] = {
+            'youtube': {
+                'player_client': ['android_vr', 'mweb', 'web']
+            }
+        }
 
 
     # Usar ffmpeg local si existe en la carpeta bin

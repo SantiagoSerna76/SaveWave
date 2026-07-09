@@ -143,14 +143,13 @@ def _get_ydl_opts(extra_opts: dict = None, url: str = None) -> dict:
         cookies_path = os.path.join(base_dir, cookie_name)
         if os.path.exists(cookies_path):
             opts['cookiefile'] = cookies_path
-            has_cookies = True
-            break
-
-    # FORZAR cliente android/android_vr para EVITAR el requerimiento de PO Tokens.
-    # El cliente 'web' exige PO Tokens (lo que dispara bgutil y Deno, tardando 5-7s en CPU de bajo nivel).
-    # Con 'android_vr' saltamos la validación de bots, ahorrando mucha CPU y tiempo,
-    # y los cookies (si los hay) aún permiten ver videos restringidos.
-    opts["extractor_args"] = {"youtube": {"player_client": ["android_vr"]}}
+    if has_cookies:
+        # Con cookies: dejar que yt-dlp elija el mejor cliente automáticamente.
+        # bgutil-ytdlp-pot-provider resuelve los PO Tokens via deno y permite descargar sin error 403.
+        pass
+    else:
+        # Sin cookies: usar android_vr para uso local
+        opts["extractor_args"] = {"youtube": {"player_client": ["android_vr"]}}
 
     # Usar ffmpeg local si existe en la carpeta bin
     bin_dir = os.path.join(base_dir, 'bin')

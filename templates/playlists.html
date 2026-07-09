@@ -2666,7 +2666,6 @@
             const limit = 2;
             const items = [...currentPlaylistItems];
             
-            // Intentar mantener la pantalla encendida (WakeLock API)
             let wakeLock = null;
             try {
                 if ('wakeLock' in navigator) {
@@ -2699,8 +2698,6 @@
                     const data = await res.json();
 
                     if (data.success && data.proxy_url) {
-                        // Paso 2: Descargar audio completo vía proxy y guardarlo en caché
-                        // El proxy es necesario porque YouTube bloquea fetch() directo por CORS
                         progressText.textContent = `⬇️ Descargando: ${shortTitle}...`;
                         let audioRes = null;
 
@@ -2732,6 +2729,12 @@
                 progressBar.style.width = `${(completed / total) * 100}%`;
                 if (completed >= total) {
                     window.isDownloadingOffline = false; // Permitir cerrar
+                    
+                    if (wakeLock !== null) {
+                        wakeLock.release().catch(() => {});
+                        wakeLock = null;
+                    }
+                    
                     if (errors > 0) {
                         progressText.textContent = `✅ Listo. ${completed - errors} guardadas, ${errors} con error.`;
                     } else {
@@ -2767,7 +2770,8 @@
 
         } catch(e) {
             console.error(e);
-            progressText.textContent = 'Error al descargar para uso sin conexión.';
+            window.isDownloadingOffline = false; // Permitir cerrar
+            progressText.textContent = 'Error crítico al descargar.';
             setTimeout(() => {
                 const modal = bootstrap.Modal.getInstance(document.getElementById('downloadOptionsModal'));
                 if (modal) modal.hide();

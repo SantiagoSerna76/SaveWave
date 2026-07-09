@@ -391,9 +391,9 @@ def get_audio_direct_url(url: str, quality: str = 'best') -> dict:
     Returns:
         Diccionario con: success, direct_url, title, platform, format, thumbnail, duration.
     """
-    # Usar mejor calidad de audio siempre para evitar errores de formatos faltantes
-    # en ciertos clientes o videos.
-    format_spec = "bestaudio/best"
+    # Preferir siempre m4a (AAC) sobre webm (Opus) para máxima compatibilidad con iOS y Safari.
+    # Si no hay m4a puro, cae a bestaudio, y si no a best.
+    format_spec = "bestaudio[ext=m4a]/bestaudio/best"
 
     ydl_opts = _get_ydl_opts({
         "noplaylist": True,

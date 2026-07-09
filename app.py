@@ -836,10 +836,11 @@ def api_stream_proxy():
 @limiter.limit("300 per minute")
 def api_download_proxy():
     """
-    API: Proxy optimizado para DESCARGA OFFLINE.
-    Recibe la URL de YouTube, obtiene el direct_url con yt-dlp,
-    y descarga el archivo a RAM enviando exactamente los mismos headers
-    para burlar el escudo 403 Forbidden de YouTube. Devuelve el blob de audio.
+    API: Proxy todo-en-uno para DESCARGA OFFLINE.
+    1. Recibe la URL de YouTube
+    2. Extrae la URL directa con yt-dlp (incluye PO Token + firmas JS)
+    3. Descarga el archivo completo a RAM del VPS usando los MISMOS headers de yt-dlp
+    4. Devuelve el blob de audio al cliente
     """
     if request.is_json:
         data = request.get_json()
@@ -851,34 +852,44 @@ def api_download_proxy():
         return jsonify({"success": False, "error": "URL vacía"}), 400
 
     try:
-        # Extraer URL directa con yt-dlp
+        # Paso 1: Extraer URL directa con yt-dlp (quality=low para archivos pequeños ~1.5MB)
         result = get_audio_direct_url(url, quality="low")
         if not result["success"]:
+            print(f"[download-proxy] yt-dlp FALLÓ para {url}: {result['error']}")
             return jsonify({"success": False, "error": result["error"]}), 400
 
         direct_url = result["direct_url"]
         audio_format = result.get("format", "m4a")
         yt_headers = result.get("http_headers", {})
 
-        # Asegurarnos de mandar el User-Agent exacto que generó yt-dlp
-        req_headers = {
-            "User-Agent": yt_headers.get("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
-        }
+        # Paso 2: Construir headers EXACTOS que yt-dlp usaría para descargar
+        # Esto es CRÍTICO: YouTube verifica que el User-Agent, Accept, etc. coincidan
+        # con los que generaron el PO Token. Si no coinciden → 403 Forbidden.
+        req_headers = {}
+        for key in ["User-Agent", "Accept", "Accept-Language", "Sec-Fetch-Mode"]:
+            if key in yt_headers:
+                req_headers[key] = yt_headers[key]
+        if not req_headers.get("User-Agent"):
+            req_headers["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
 
-        # Descargar completo a RAM
+        # Paso 3: Descargar completo a RAM (timeout=60s por si bgutil tardó)
         import requests as http_requests
-        resp = http_requests.get(direct_url, headers=req_headers, timeout=30)
-        
-        if not resp.ok:
-            return jsonify({"success": False, "error": f"YouTube HTTP {resp.status_code}"}), 400
+        resp = http_requests.get(direct_url, headers=req_headers, timeout=60)
 
-        mimetype_map = {"m4a": "audio/mp4", "webm": "audio/webm"}
+        if not resp.ok:
+            print(f"[download-proxy] YouTube devolvió HTTP {resp.status_code} para {url}")
+            return jsonify({"success": False, "error": f"YouTube HTTP {resp.status_code}"}), 502
+
+        # Paso 4: Devolver el audio como blob
+        mimetype_map = {"m4a": "audio/mp4", "webm": "audio/webm", "mp3": "audio/mpeg"}
         mime = mimetype_map.get(audio_format, "audio/mp4")
 
+        print(f"[download-proxy] ✓ {result.get('title', '?')[:30]} ({len(resp.content)//1024}KB, {audio_format})")
         return Response(resp.content, status=200, mimetype=mime)
 
     except Exception as e:
         import traceback
+        print(f"[download-proxy] EXCEPCIÓN para {url}: {str(e)}")
         traceback.print_exc()
         return jsonify({"success": False, "error": str(e)}), 500
 

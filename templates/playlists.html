@@ -2688,22 +2688,49 @@
                 const shortTitle = (track.title || 'canción').substring(0, 28);
 
                 try {
-                    // Solo mostrar "Descargando..." sin pasos intermedios para no confundir al usuario
                     progressText.textContent = `⬇️ Descargando: ${shortTitle}...`;
                     
-                    const audioRes = await fetch('/api/download-proxy', {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                        body: 'url=' + encodeURIComponent(track.url)
-                    });
+                    let audioRes = null;
+                    let lastError = '';
+
+                    // Intentar hasta 2 veces (1 reintento automático)
+                    for (let attempt = 1; attempt <= 2; attempt++) {
+                        try {
+                            audioRes = await fetch('/api/download-proxy', {
+                                method: 'POST',
+                                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                                body: 'url=' + encodeURIComponent(track.url)
+                            });
+
+                            if (audioRes && audioRes.ok) {
+                                break; // Éxito, salir del loop
+                            } else {
+                                lastError = `HTTP ${audioRes ? audioRes.status : 'null'}`;
+                                console.warn(`[Offline] ${shortTitle}: intento ${attempt} falló (${lastError})`);
+                                if (attempt < 2) {
+                                    await new Promise(r => setTimeout(r, 2000)); // Esperar 2s antes de reintentar
+                                }
+                                audioRes = null;
+                            }
+                        } catch(fetchErr) {
+                            lastError = fetchErr.message || 'Network error';
+                            console.warn(`[Offline] ${shortTitle}: intento ${attempt} excepción: ${lastError}`);
+                            if (attempt < 2) {
+                                await new Promise(r => setTimeout(r, 2000));
+                            }
+                            audioRes = null;
+                        }
+                    }
 
                     if (audioRes && audioRes.ok) {
                         await offlineCache.put(cacheKey, audioRes.clone());
-                        console.log(`[Offline] ${shortTitle}: proxy ✓`);
+                        console.log(`[Offline] ✓ ${shortTitle}`);
                     } else {
+                        console.error(`[Offline] ✗ ${shortTitle}: ${lastError}`);
                         errors++;
                     }
                 } catch(trackErr) {
+                    console.error(`[Offline] ✗ ${shortTitle}: ${trackErr.message}`);
                     errors++;
                 }
 

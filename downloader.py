@@ -12,10 +12,6 @@ Funciones:
 """
 
 import os
-import json
-import logging
-import asyncio
-import subprocess
 
 # INYECTAR DENO AL PATH:
 # Systemd no carga el PATH completo del usuario root. Si yt-dlp no encuentra un motor JS (Deno),
@@ -23,12 +19,14 @@ import subprocess
 if "/root/.deno/bin" not in os.environ.get("PATH", ""):
     os.environ["PATH"] = os.environ.get("PATH", "") + ":/root/.deno/bin"
 
-import yt_dlp
 import re
 import time
 import shutil
 import hashlib
 import glob
+import json
+import logging
+import subprocess
 from datetime import datetime
 from pathlib import Path
 import yt_dlp
@@ -172,15 +170,18 @@ def _get_ydl_opts(extra_opts: dict = None, url: str = None) -> dict:
             opts['cookiefile'] = cookies_path
             break
 
-    if platform == "youtube" and _bgutil_server_running():
-        # Modo rápido: inyectar proveedor HTTP y FORZAR cliente web.
-        # Es obligatorio usar el cliente web, ya que el plugin bgutil solo genera tokens para 'web'.
-        # Si no lo forzamos, yt-dlp usa 'android' o 'android_vr' que no usan PO Token y la IP de DO es bloqueada.
-        existing_args = opts.get("extractor_args", {}).get("youtube", {})
-        existing_args["player_client"] = ["web"]
-        existing_args["pot_provider"] = "bgutil"
-        existing_args["pot_bgutil_baseurl"] = ["http://localhost:4416/"]
-        opts["extractor_args"] = {"youtube": existing_args}
+    if platform == "youtube":
+        if _bgutil_server_running():
+            # Modo rápido: inyectar proveedor HTTP y FORZAR cliente web.
+            # Es obligatorio usar el cliente web, ya que el plugin bgutil solo genera tokens para 'web'.
+            # Si no lo forzamos, yt-dlp usa 'android' o 'android_vr' que no usan PO Token y la IP de DO es bloqueada.
+            existing_args = opts.get("extractor_args", {}).get("youtube", {})
+            existing_args["player_client"] = ["web"]
+            existing_args["pot_provider"] = "bgutil"
+            existing_args["pot_bgutil_baseurl"] = ["http://localhost:4416/"]
+            opts["extractor_args"] = {"youtube": existing_args}
+        else:
+            print("⚠️ BGUTIL SERVER NO DISPONIBLE en puerto 4416. Las descargas de YouTube fallarán con 403.")
 
 
     # Usar ffmpeg local si existe en la carpeta bin
@@ -401,9 +402,14 @@ def get_audio_direct_url(url: str, quality: str = 'best') -> dict:
     Returns:
         Diccionario con: success, direct_url, title, platform, format, thumbnail, duration.
     """
-    # Preferir siempre m4a (AAC) sobre webm (Opus) para máxima compatibilidad con iOS y Safari.
-    # Si no hay m4a puro, cae a bestaudio, y si no a best.
-    format_spec = "bestaudio[ext=m4a]/bestaudio/best"
+    # Seleccionar calidad según el parámetro:
+    # - "low": archivo más pequeño posible para descarga offline rápida (~1.5MB vs ~5MB)
+    # - "best": mejor calidad para reproducción en streaming
+    # Siempre preferir m4a (AAC) sobre webm (Opus) para compatibilidad con iOS/Safari.
+    if quality == "low":
+        format_spec = "worstaudio[ext=m4a]/worstaudio/best"
+    else:
+        format_spec = "bestaudio[ext=m4a]/bestaudio/best"
 
     ydl_opts = _get_ydl_opts({
         "noplaylist": True,

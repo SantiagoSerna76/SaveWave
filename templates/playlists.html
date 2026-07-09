@@ -2690,29 +2690,16 @@
                 try {
                     // Solo mostrar "Descargando..." sin pasos intermedios para no confundir al usuario
                     progressText.textContent = `⬇️ Descargando: ${shortTitle}...`;
-                    const res = await fetch('/api/stream-proxy', {
+                    
+                    const audioRes = await fetch('/api/download-proxy', {
                         method: 'POST',
                         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                        body: 'url=' + encodeURIComponent(track.url) + '&quality=low'
+                        body: 'url=' + encodeURIComponent(track.url)
                     });
-                    const data = await res.json();
 
-                    if (data.success && data.proxy_url) {
-                        progressText.textContent = `⬇️ Descargando: ${shortTitle}...`;
-                        let audioRes = null;
-
-                        try {
-                            audioRes = await fetch(data.proxy_url);
-                        } catch(e) {
-                            audioRes = null;
-                        }
-
-                        if (audioRes && audioRes.ok) {
-                            await offlineCache.put(cacheKey, audioRes.clone());
-                            console.log(`[Offline] ${shortTitle}: proxy ✓`);
-                        } else {
-                            errors++;
-                        }
+                    if (audioRes && audioRes.ok) {
+                        await offlineCache.put(cacheKey, audioRes.clone());
+                        console.log(`[Offline] ${shortTitle}: proxy ✓`);
                     } else {
                         errors++;
                     }

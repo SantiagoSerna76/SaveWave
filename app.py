@@ -828,8 +828,58 @@ def api_stream_proxy():
             "format": audio_format,
         })
 
-    except Exception as e:
         return jsonify({"success": False, "error": f"Error: {str(e)}"}), 500
+
+
+@app.route("/api/download-proxy", methods=["POST"])
+@limiter.limit("300 per minute")
+def api_download_proxy():
+    """
+    API: Proxy optimizado para DESCARGA OFFLINE.
+    Recibe la URL de YouTube, obtiene el direct_url con yt-dlp,
+    y descarga el archivo a RAM enviando exactamente los mismos headers
+    para burlar el escudo 403 Forbidden de YouTube. Devuelve el blob de audio.
+    """
+    if request.is_json:
+        data = request.get_json()
+        url = data.get("url", "").strip() if data else ""
+    else:
+        url = request.form.get("url", "").strip()
+
+    if not url:
+        return jsonify({"success": False, "error": "URL vacía"}), 400
+
+    try:
+        # Extraer URL directa con yt-dlp
+        result = get_audio_direct_url(url, quality="low")
+        if not result["success"]:
+            return jsonify({"success": False, "error": result["error"]}), 400
+
+        direct_url = result["direct_url"]
+        audio_format = result.get("format", "m4a")
+        yt_headers = result.get("http_headers", {})
+
+        # Asegurarnos de mandar el User-Agent exacto que generó yt-dlp
+        req_headers = {
+            "User-Agent": yt_headers.get("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
+        }
+
+        # Descargar completo a RAM
+        import requests as http_requests
+        resp = http_requests.get(direct_url, headers=req_headers, timeout=30)
+        
+        if not resp.ok:
+            return jsonify({"success": False, "error": f"YouTube HTTP {resp.status_code}"}), 400
+
+        mimetype_map = {"m4a": "audio/mp4", "webm": "audio/webm"}
+        mime = mimetype_map.get(audio_format, "audio/mp4")
+
+        return Response(resp.content, status=200, mimetype=mime)
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 @app.route("/api/stream-proxy-get")
@@ -896,7 +946,11 @@ def api_stream_proxy_get():
         )
 
     except Exception as e:
-        return jsonify({"success": False, "error": f"Error en streaming: {str(e)}"}), 500
+        # Imprimir el error exacto en los logs de gunicorn
+        import traceback
+        print("ERROR EN STREAM PROXY GET:", str(e))
+        traceback.print_exc()
+        return jsonify({"success": False, "error": f"Proxy error: {str(e)}"}), 500
 
 
 @app.route("/api/debug-download", methods=["GET"])

@@ -133,7 +133,7 @@ def _get_ydl_opts(extra_opts: dict = None, url: str = None) -> dict:
     # Buscar archivo de cookies específico según la plataforma.
     # bgutil-ytdlp-pot-provider se encarga automáticamente de los PO Tokens.
     if platform == "youtube":
-        cookie_candidates = ['youtube_cookies.txt', 'www.youtube.com_cookies.txt']
+        cookie_candidates = ['www.youtube.com_cookies.txt', 'youtube_cookies.txt']
     elif platform == "instagram":
         cookie_candidates = ['instagram_cookies.txt', 'www.instagram.com_cookies.txt']
     else:

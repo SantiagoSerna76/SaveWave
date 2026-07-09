@@ -874,19 +874,22 @@ def api_download_proxy():
         if not os.path.exists(temp_path) or os.path.getsize(temp_path) == 0:
             return jsonify({"success": False, "error": "yt-dlp no descargó el archivo"}), 502
 
-        print(f"[download-proxy] ✓ yt-dlp direct dl OK ({os.path.getsize(temp_path)//1024}KB)")
+        # Leer el archivo a RAM (son ligeros, ~1.5MB) para enviar con Content-Length
+        # Esto es vital porque la Cache API del móvil (PWA offline) a veces falla
+        # si recibe un Transfer-Encoding: chunked sin Content-Length.
+        with open(temp_path, "rb") as f:
+            file_data = f.read()
+            
+        try:
+            os.remove(temp_path)
+        except:
+            pass
 
-        # Enviar el archivo y luego eliminarlo usando generador para ahorrar memoria
-        def generate():
-            with open(temp_path, "rb") as f:
-                yield from f
-            try:
-                os.remove(temp_path)
-            except:
-                pass
+        print(f"[download-proxy] ✓ yt-dlp direct dl OK ({len(file_data)//1024}KB)")
 
-        return Response(generate(), mimetype="audio/mp4", headers={
-            "Content-Disposition": "attachment; filename=audio.m4a"
+        return Response(file_data, mimetype="audio/mp4", headers={
+            "Content-Disposition": "attachment; filename=audio.m4a",
+            "Content-Length": str(len(file_data))
         })
 
     except Exception as e:

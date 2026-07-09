@@ -125,9 +125,6 @@ def _get_ydl_opts(extra_opts: dict = None, url: str = None) -> dict:
         "buffersize": 1024 * 16,  # 16KB buffer
         "retries": 3,
         "http_chunk_size": 1048576,  # 1MB chunks
-        # Bypass Datacenter IPv4 blocks by preferring IPv6
-        "source_address": "0.0.0.0", # fallback to ipv4 if ipv6 fails
-        "prefer_free_formats": True,
     }
 
     # Determinar la plataforma para cargar cookies específicas
@@ -138,10 +135,10 @@ def _get_ydl_opts(extra_opts: dict = None, url: str = None) -> dict:
         except ValueError:
             platform = None
 
-    # Buscar archivo de cookies específico según la plataforma
+    # Buscar archivo de cookies específico según la plataforma.
+    # bgutil-ytdlp-pot-provider se encarga automáticamente de los PO Tokens.
     if platform == "youtube":
-        # Desactivamos cookies de YouTube. Usaremos android_vr client para saltarnos el bloqueo del VPS.
-        cookie_candidates = []
+        cookie_candidates = ['youtube_cookies.txt', 'www.youtube.com_cookies.txt']
     elif platform == "instagram":
         cookie_candidates = ['instagram_cookies.txt', 'www.instagram.com_cookies.txt']
     else:
@@ -155,16 +152,14 @@ def _get_ydl_opts(extra_opts: dict = None, url: str = None) -> dict:
             break
 
     if has_cookies:
-        opts["extractor_args"] = {"youtube": {"player_client": ["web"]}}
+        # Con cookies: dejar que yt-dlp elija el mejor cliente automáticamente.
+        # bgutil-ytdlp-pot-provider resuelve los PO Tokens via deno.
         opts["http_headers"] = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         }
     else:
-        # Sin cookies: usar android_vr (NO requiere PO Token y no es bloqueado en Datacenter IPs)
+        # Sin cookies: usar android_vr que no requiere PO Token (para uso local).
         opts["extractor_args"] = {"youtube": {"player_client": ["android_vr"]}}
-        opts["http_headers"] = {
-            "User-Agent": "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36"
-        }
 
     # Usar ffmpeg local si existe en la carpeta bin
     bin_dir = os.path.join(base_dir, 'bin')

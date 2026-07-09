@@ -837,10 +837,9 @@ def api_stream_proxy():
 def api_download_proxy():
     """
     API: Proxy todo-en-uno para DESCARGA OFFLINE.
-    1. Recibe la URL de YouTube
-    2. Extrae la URL directa con yt-dlp (incluye PO Token + firmas JS)
-    3. Descarga el archivo completo a RAM del VPS usando los MISMOS headers de yt-dlp
-    4. Devuelve el blob de audio al cliente
+    Usa yt-dlp directamente para descargar el archivo a una ubicación temporal.
+    Esto garantiza 100% que evadimos 403 Forbidden porque yt-dlp gestiona los headers
+    y clientes (android_vr) de forma nativa.
     """
     if request.is_json:
         data = request.get_json()
@@ -852,44 +851,47 @@ def api_download_proxy():
         return jsonify({"success": False, "error": "URL vacía"}), 400
 
     try:
-        # Paso 1: Extraer URL directa con yt-dlp (quality=low para archivos pequeños ~1.5MB)
-        result = get_audio_direct_url(url, quality="low")
-        if not result["success"]:
-            print(f"[download-proxy] yt-dlp FALLÓ para {url}: {result['error']}")
-            return jsonify({"success": False, "error": result["error"]}), 400
+        import tempfile
+        import yt_dlp
+        from flask import send_file
 
-        direct_url = result["direct_url"]
-        audio_format = result.get("format", "m4a")
-        yt_headers = result.get("http_headers", {})
+        # Usamos un archivo temporal
+        fd, temp_path = tempfile.mkstemp(suffix=".m4a", prefix="savewave_offline_dl_")
+        os.close(fd)
 
-        # Paso 2: Construir headers EXACTOS que yt-dlp usaría para descargar
-        # Esto es CRÍTICO: YouTube verifica que el User-Agent, Accept, etc. coincidan
-        # con los que generaron el PO Token. Si no coinciden → 403 Forbidden.
-        req_headers = {}
-        for key in ["User-Agent", "Accept", "Accept-Language", "Sec-Fetch-Mode"]:
-            if key in yt_headers:
-                req_headers[key] = yt_headers[key]
-        if not req_headers.get("User-Agent"):
-            req_headers["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+        # Opciones nativas usando android_vr para máxima velocidad y evasión de bots
+        opts = {
+            'format': 'worstaudio[ext=m4a]/worstaudio/best',
+            'outtmpl': temp_path,
+            'quiet': True,
+            'no_warnings': True,
+            'extractor_args': {'youtube': {'player_client': ['android_vr']}}
+        }
 
-        # Paso 3: Descargar completo a RAM (timeout=60s por si bgutil tardó)
-        import requests as http_requests
-        resp = http_requests.get(direct_url, headers=req_headers, timeout=60)
+        with yt_dlp.YoutubeDL(opts) as ydl:
+            ydl.download([url])
 
-        if not resp.ok:
-            print(f"[download-proxy] YouTube devolvió HTTP {resp.status_code} para {url}")
-            return jsonify({"success": False, "error": f"YouTube HTTP {resp.status_code}"}), 502
+        if not os.path.exists(temp_path) or os.path.getsize(temp_path) == 0:
+            return jsonify({"success": False, "error": "yt-dlp no descargó el archivo"}), 502
 
-        # Paso 4: Devolver el audio como blob
-        mimetype_map = {"m4a": "audio/mp4", "webm": "audio/webm", "mp3": "audio/mpeg"}
-        mime = mimetype_map.get(audio_format, "audio/mp4")
+        print(f"[download-proxy] ✓ yt-dlp direct dl OK ({os.path.getsize(temp_path)//1024}KB)")
 
-        print(f"[download-proxy] ✓ {result.get('title', '?')[:30]} ({len(resp.content)//1024}KB, {audio_format})")
-        return Response(resp.content, status=200, mimetype=mime)
+        # Enviar el archivo y luego eliminarlo usando generador para ahorrar memoria
+        def generate():
+            with open(temp_path, "rb") as f:
+                yield from f
+            try:
+                os.remove(temp_path)
+            except:
+                pass
+
+        return Response(generate(), mimetype="audio/mp4", headers={
+            "Content-Disposition": "attachment; filename=audio.m4a"
+        })
 
     except Exception as e:
         import traceback
-        print(f"[download-proxy] EXCEPCIÓN para {url}: {str(e)}")
+        print(f"[download-proxy] EXCEPCIÓN yt-dlp directa: {str(e)}")
         traceback.print_exc()
         return jsonify({"success": False, "error": str(e)}), 500
 

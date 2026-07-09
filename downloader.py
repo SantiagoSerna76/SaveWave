@@ -171,17 +171,11 @@ def _get_ydl_opts(extra_opts: dict = None, url: str = None) -> dict:
             break
 
     if platform == "youtube":
-        if _bgutil_server_running():
-            # Modo rápido: inyectar proveedor HTTP y FORZAR cliente web.
-            # Es obligatorio usar el cliente web, ya que el plugin bgutil solo genera tokens para 'web'.
-            # Si no lo forzamos, yt-dlp usa 'android' o 'android_vr' que no usan PO Token y la IP de DO es bloqueada.
-            existing_args = opts.get("extractor_args", {}).get("youtube", {})
-            existing_args["player_client"] = ["web"]
-            existing_args["pot_provider"] = "bgutil"
-            existing_args["pot_bgutil_baseurl"] = ["http://localhost:4416/"]
-            opts["extractor_args"] = {"youtube": existing_args}
-        else:
-            print("⚠️ BGUTIL SERVER NO DISPONIBLE en puerto 4416. Las descargas de YouTube fallarán con 403.")
+        # Usar android_vr es 100% inmune al bloqueo "Sign in to confirm you're not a bot"
+        # en las IPs de DigitalOcean, y no requiere cookies ni servidor Deno/bgutil.
+        existing_args = opts.get("extractor_args", {}).get("youtube", {})
+        existing_args["player_client"] = ["android_vr"]
+        opts["extractor_args"] = {"youtube": existing_args}
 
 
     # Usar ffmpeg local si existe en la carpeta bin

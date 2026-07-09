@@ -2652,12 +2652,36 @@
                     });
                     const data = await res.json();
 
-                    if (data.success && data.proxy_url) {
-                        // Paso 2: Descargar audio completo y guardarlo en caché
+                    if (data.success && (data.direct_url || data.proxy_url)) {
+                        // Paso 2: Intentar descarga DIRECTA desde YouTube CDN (sin pasar por el VPS)
+                        // Esto funciona si YouTube respetó el XFF y vinculó la URL al IP del usuario
                         progressText.textContent = `⬇️ Descargando: ${shortTitle}...`;
-                        const audioRes = await fetch(data.proxy_url);
-                        if (audioRes.ok) {
+                        let audioRes = null;
+                        let downloadedDirect = false;
+
+                        if (data.direct_url) {
+                            try {
+                                audioRes = await fetch(data.direct_url);
+                                if (audioRes.ok) {
+                                    downloadedDirect = true;
+                                }
+                            } catch (e) {
+                                audioRes = null;
+                            }
+                        }
+
+                        // Fallback: descargar via proxy del VPS
+                        if (!downloadedDirect) {
+                            try {
+                                audioRes = await fetch(data.proxy_url);
+                            } catch(e) {
+                                audioRes = null;
+                            }
+                        }
+
+                        if (audioRes && audioRes.ok) {
                             await offlineCache.put(cacheKey, audioRes.clone());
+                            console.log(`[Offline] ${shortTitle}: ${downloadedDirect ? 'directo ✓' : 'proxy ✓'}`);
                         } else {
                             errors++;
                         }

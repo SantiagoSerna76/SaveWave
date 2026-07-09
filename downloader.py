@@ -358,7 +358,7 @@ def download_audio(url: str, quality: str = "128", output_path: str = None) -> d
         }
 
 
-def get_audio_direct_url(url: str, quality: str = 'best') -> dict:
+def get_audio_direct_url(url: str, quality: str = 'best', xff: str = None) -> dict:
     """
     Extrae la URL directa del mejor audio disponible SIN descargar nada.
     El servidor solo hace la negociación (<1 segundo) y devuelve la URL.
@@ -382,6 +382,12 @@ def get_audio_direct_url(url: str, quality: str = 'best') -> dict:
         "noplaylist": True,
         "format": format_spec,
     }, url)
+
+    # Si tenemos el IP real del cliente, se lo pasamos a yt-dlp via X-Forwarded-For.
+    # YouTube embeberá ese IP en la URL de CDN en vez del IP del VPS.
+    # Así el navegador puede descargar directamente desde YouTube CDN sin pasar por el VPS.
+    if xff:
+        ydl_opts['xff'] = xff
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:

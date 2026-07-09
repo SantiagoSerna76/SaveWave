@@ -368,12 +368,9 @@ def get_audio_direct_url(url: str, quality: str = 'best') -> dict:
     Returns:
         Diccionario con: success, direct_url, title, platform, format, thumbnail, duration.
     """
-    # Para caché offline usamos calidad reducida (menor peso, descarga 2-3x más rápida).
-    # Para streaming normal usamos la mejor calidad disponible.
-    if quality == 'low':
-        format_spec = "bestaudio[abr<=96][ext=m4a]/bestaudio[abr<=96]/worstaudio/best"
-    else:
-        format_spec = "bestaudio/best"
+    # Usar mejor calidad de audio siempre para evitar errores de formatos faltantes
+    # en ciertos clientes o videos.
+    format_spec = "bestaudio/best"
 
     ydl_opts = _get_ydl_opts({
         "noplaylist": True,

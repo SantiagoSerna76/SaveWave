@@ -125,6 +125,9 @@ def _get_ydl_opts(extra_opts: dict = None, url: str = None) -> dict:
         "buffersize": 1024 * 16,  # 16KB buffer
         "retries": 3,
         "http_chunk_size": 1048576,  # 1MB chunks
+        # Bypass Datacenter IPv4 blocks by preferring IPv6
+        "source_address": "0.0.0.0", # fallback to ipv4 if ipv6 fails
+        "prefer_free_formats": True,
     }
 
     # Determinar la plataforma para cargar cookies específicas
@@ -137,7 +140,8 @@ def _get_ydl_opts(extra_opts: dict = None, url: str = None) -> dict:
 
     # Buscar archivo de cookies específico según la plataforma
     if platform == "youtube":
-        cookie_candidates = ['youtube_cookies.txt', 'www.youtube.com_cookies.txt']
+        # Desactivamos cookies de YouTube. Usaremos android_vr client para saltarnos el bloqueo del VPS.
+        cookie_candidates = []
     elif platform == "instagram":
         cookie_candidates = ['instagram_cookies.txt', 'www.instagram.com_cookies.txt']
     else:
@@ -151,16 +155,15 @@ def _get_ydl_opts(extra_opts: dict = None, url: str = None) -> dict:
             break
 
     if has_cookies:
-        # Con cookies: usar tv_embedded + web (formatos completos sin PO token requerido)
-        opts["extractor_args"] = {"youtube": {"player_client": ["tv_embedded", "web"]}}
+        opts["extractor_args"] = {"youtube": {"player_client": ["web"]}}
         opts["http_headers"] = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         }
     else:
-        # Sin cookies: ios + tv_embedded (funcionan sin autenticación en yt-dlp 2026+)
-        opts["extractor_args"] = {"youtube": {"player_client": ["ios", "tv_embedded"]}}
+        # Sin cookies: usar android_vr (NO requiere PO Token y no es bloqueado en Datacenter IPs)
+        opts["extractor_args"] = {"youtube": {"player_client": ["android_vr"]}}
         opts["http_headers"] = {
-            "User-Agent": "com.google.ios.youtube/19.29.1 (iPhone16,2; U; CPU iOS 17_5_1 like Mac OS X)"
+            "User-Agent": "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36"
         }
 
     # Usar ffmpeg local si existe en la carpeta bin

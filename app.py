@@ -482,7 +482,7 @@ def api_download():
                 "file_size": result["file_size_formatted"],
                 "title": result["title"],
                 "platform": result["platform"],
-                "download_url": url_for("download_file", filename=result["filename"], _external=True),
+                "download_url": url_for("download_file", filename=result["filename"]),
             })
         else:
             return jsonify({"success": False, "error": result["error"]})
@@ -810,7 +810,7 @@ def api_stream_proxy():
 
         # Construir URL del proxy GET por si CORS falla
         import urllib.parse
-        proxy_url = url_for("api_stream_proxy_get", _external=True) + "?direct_url=" + urllib.parse.quote(direct_url) + "&fmt=" + audio_format
+        proxy_url = url_for("api_stream_proxy_get") + "?direct_url=" + urllib.parse.quote(direct_url) + "&fmt=" + audio_format
 
         return jsonify({
             "success": True,

@@ -2635,12 +2635,15 @@
                 
                 if (existing || track.platform === 'audio_local' || track.platform === 'video_local') {
                     completed++;
-                    updateUI(track.title);
+                    updateUI(track.title, '✓ Ya guardada');
                     return;
                 }
 
+                const shortTitle = (track.title || 'canción').substring(0, 28);
+
                 try {
-                    // Usar proxy de streaming en tiempo real (evita guardar archivos en el VPS)
+                    // Paso 1: Resolver URL directa de audio (~5-7s por canción)
+                    progressText.textContent = `🔍 Resolviendo: ${shortTitle}...`;
                     const res = await fetch('/api/stream-proxy', {
                         method: 'POST',
                         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
@@ -2649,6 +2652,8 @@
                     const data = await res.json();
 
                     if (data.success && data.proxy_url) {
+                        // Paso 2: Descargar audio completo y guardarlo en caché
+                        progressText.textContent = `⬇️ Descargando: ${shortTitle}...`;
                         const audioRes = await fetch(data.proxy_url);
                         if (audioRes.ok) {
                             await offlineCache.put(cacheKey, audioRes.clone());
@@ -2666,14 +2671,14 @@
                 updateUI(track.title);
             };
 
-            function updateUI(currentTitle) {
+            function updateUI(currentTitle, statusMsg) {
                 progressCount.textContent = `${completed}/${total}`;
                 progressBar.style.width = `${(completed / total) * 100}%`;
                 if (completed >= total) {
                     if (errors > 0) {
-                        progressText.textContent = `Listo. ${completed - errors} guardadas, ${errors} con error.`;
+                        progressText.textContent = `✅ Listo. ${completed - errors} guardadas, ${errors} con error.`;
                     } else {
-                        progressText.textContent = 'Todas las canciones guardadas para escuchar offline.';
+                        progressText.textContent = '✅ Todas las canciones guardadas para escuchar offline.';
                     }
                     progressBar.style.width = '100%';
                     checkOfflineStatus();
@@ -2685,8 +2690,8 @@
                         progressContainer.classList.add('d-none');
                         progressBar.style.width = '0%';
                     }, 2500);
-                } else {
-                    progressText.textContent = `Descargando: ${currentTitle.substring(0, 30)}...`;
+                } else if (statusMsg) {
+                    progressText.textContent = statusMsg;
                 }
             }
 

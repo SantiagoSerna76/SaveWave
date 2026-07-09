@@ -10,6 +10,12 @@ Funciones:
 """
 
 import stripe
+try:
+    # Parche para el bug de lazy loading de Stripe en Python 3.12
+    import stripe.apps._secret
+except ImportError:
+    pass
+
 from flask import current_app
 from models import db, User, Subscription, PlanType
 from config import Config

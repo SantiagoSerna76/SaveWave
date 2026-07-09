@@ -36,6 +36,7 @@ from flask_jwt_extended import (
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from datetime import datetime
+import yt_dlp
 
 # Importar configuracion
 from config import Config
@@ -46,7 +47,8 @@ from models import db, init_db, User, Download, PlanType, Playlist, PlaylistItem
 # Importar servicios
 from downloader import (
     detect_platform, get_video_info, download_video, download_audio,
-    download_audio_native, get_audio_direct_url, get_available_qualities, cleanup_old_files
+    download_audio_native, get_audio_direct_url, get_available_qualities, cleanup_old_files,
+    _get_ydl_opts
 )
 from auth import (
     register_user, authenticate_user, get_user_by_id,
@@ -838,8 +840,7 @@ def api_download_proxy():
     """
     API: Proxy todo-en-uno para DESCARGA OFFLINE.
     Usa yt-dlp directamente para descargar el archivo a una ubicación temporal.
-    Esto garantiza 100% que evadimos 403 Forbidden porque yt-dlp gestiona los headers
-    y clientes (android_vr) de forma nativa.
+    Reutiliza _get_ydl_opts() de downloader.py para heredar cookies y configuración.
     """
     if request.is_json:
         data = request.get_json()
@@ -850,53 +851,71 @@ def api_download_proxy():
     if not url:
         return jsonify({"success": False, "error": "URL vacía"}), 400
 
+    import tempfile
+    import glob
+
+    # Crear archivo temporal SIN extensión.
+    # yt-dlp SIEMPRE añade la extensión del formato al outtmpl automáticamente.
+    # Si ponemos .m4a aquí, yt-dlp escribe a .m4a.m4a y el archivo "desaparece".
+    temp_dir = tempfile.mkdtemp(prefix="savewave_dl_")
+    temp_base = os.path.join(temp_dir, "audio")
+
     try:
-        import tempfile
-        import yt_dlp
-        from flask import send_file
-
-        # Usamos un archivo temporal
-        fd, temp_path = tempfile.mkstemp(suffix=".m4a", prefix="savewave_offline_dl_")
-        os.close(fd)
-
-        # Opciones nativas para máxima velocidad y evasión de bots
-        opts = {
+        # Reutilizar _get_ydl_opts() para heredar cookies, ffmpeg, etc.
+        opts = _get_ydl_opts({
             'format': 'worstaudio[ext=m4a]/worstaudio/best',
-            'outtmpl': temp_path,
+            'outtmpl': temp_base + '.%(ext)s',
             'quiet': True,
             'no_warnings': True,
-            'cookiefile': os.path.join(os.path.dirname(os.path.abspath(__file__)), 'www.youtube.com_cookies.txt') if os.path.exists(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'www.youtube.com_cookies.txt')) else None
-        }
+            'noplaylist': True,
+        }, url)
 
         with yt_dlp.YoutubeDL(opts) as ydl:
             ydl.download([url])
 
-        if not os.path.exists(temp_path) or os.path.getsize(temp_path) == 0:
-            return jsonify({"success": False, "error": "yt-dlp no descargó el archivo"}), 502
+        # Buscar el archivo que yt-dlp realmente escribió (audio.m4a, audio.webm, etc.)
+        downloaded_files = glob.glob(os.path.join(temp_dir, "audio.*"))
+        if not downloaded_files:
+            print(f"[download-proxy] ✗ No se encontró archivo en {temp_dir}")
+            return jsonify({"success": False, "error": "yt-dlp no generó archivo de audio"}), 502
 
-        # Leer el archivo a RAM (son ligeros, ~1.5MB) para enviar con Content-Length
-        # Esto es vital porque la Cache API del móvil (PWA offline) a veces falla
-        # si recibe un Transfer-Encoding: chunked sin Content-Length.
-        with open(temp_path, "rb") as f:
+        actual_file = downloaded_files[0]
+        file_size = os.path.getsize(actual_file)
+
+        if file_size == 0:
+            print(f"[download-proxy] ✗ Archivo vacío: {actual_file}")
+            return jsonify({"success": False, "error": "Archivo descargado vacío"}), 502
+
+        # Detectar el tipo MIME real según la extensión
+        ext = os.path.splitext(actual_file)[1].lower()
+        mime_map = {".m4a": "audio/mp4", ".webm": "audio/webm", ".mp3": "audio/mpeg", ".ogg": "audio/ogg"}
+        mimetype = mime_map.get(ext, "audio/mp4")
+
+        # Leer a RAM (son ligeros, ~1.5MB) para enviar con Content-Length explícito.
+        # La Cache API de PWA móvil requiere Content-Length para guardar offline correctamente.
+        with open(actual_file, "rb") as f:
             file_data = f.read()
-            
-        try:
-            os.remove(temp_path)
-        except:
-            pass
 
-        print(f"[download-proxy] ✓ yt-dlp direct dl OK ({len(file_data)//1024}KB)")
+        print(f"[download-proxy] ✓ {actual_file} ({len(file_data)//1024}KB, {ext})")
 
-        return Response(file_data, mimetype="audio/mp4", headers={
-            "Content-Disposition": "attachment; filename=audio.m4a",
+        return Response(file_data, mimetype=mimetype, headers={
+            "Content-Disposition": f"attachment; filename=audio{ext}",
             "Content-Length": str(len(file_data))
         })
 
     except Exception as e:
         import traceback
-        print(f"[download-proxy] EXCEPCIÓN yt-dlp directa: {str(e)}")
+        print(f"[download-proxy] EXCEPCIÓN: {str(e)}")
         traceback.print_exc()
         return jsonify({"success": False, "error": str(e)}), 500
+
+    finally:
+        # Limpiar archivos temporales SIEMPRE, incluso si hubo error
+        try:
+            import shutil
+            shutil.rmtree(temp_dir, ignore_errors=True)
+        except:
+            pass
 
 
 @app.route("/api/stream-proxy-get")

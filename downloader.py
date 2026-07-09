@@ -146,13 +146,11 @@ def _get_ydl_opts(extra_opts: dict = None, url: str = None) -> dict:
             has_cookies = True
             break
 
-    if has_cookies:
-        # Con cookies: dejar que yt-dlp elija el mejor cliente automáticamente.
-        # bgutil-ytdlp-pot-provider resuelve los PO Tokens via deno.
-        pass
-    else:
-        # Sin cookies: usar android_vr que no requiere PO Token (para uso local).
-        opts["extractor_args"] = {"youtube": {"player_client": ["android_vr"]}}
+    # FORZAR cliente android/android_vr para EVITAR el requerimiento de PO Tokens.
+    # El cliente 'web' exige PO Tokens (lo que dispara bgutil y Deno, tardando 5-7s en CPU de bajo nivel).
+    # Con 'android_vr' saltamos la validación de bots, ahorrando mucha CPU y tiempo,
+    # y los cookies (si los hay) aún permiten ver videos restringidos.
+    opts["extractor_args"] = {"youtube": {"player_client": ["android_vr"]}}
 
     # Usar ffmpeg local si existe en la carpeta bin
     bin_dir = os.path.join(base_dir, 'bin')
@@ -358,7 +356,7 @@ def download_audio(url: str, quality: str = "128", output_path: str = None) -> d
         }
 
 
-def get_audio_direct_url(url: str, quality: str = 'best', xff: str = None) -> dict:
+def get_audio_direct_url(url: str, quality: str = 'best') -> dict:
     """
     Extrae la URL directa del mejor audio disponible SIN descargar nada.
     El servidor solo hace la negociación (<1 segundo) y devuelve la URL.
@@ -382,12 +380,6 @@ def get_audio_direct_url(url: str, quality: str = 'best', xff: str = None) -> di
         "noplaylist": True,
         "format": format_spec,
     }, url)
-
-    # Si tenemos el IP real del cliente, se lo pasamos a yt-dlp via X-Forwarded-For.
-    # YouTube embeberá ese IP en la URL de CDN en vez del IP del VPS.
-    # Así el navegador puede descargar directamente desde YouTube CDN sin pasar por el VPS.
-    if xff:
-        ydl_opts['xff'] = xff
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:

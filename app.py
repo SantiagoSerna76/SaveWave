@@ -801,41 +801,23 @@ def api_stream_proxy():
     if not url:
         return jsonify({"success": False, "error": "Debes proporcionar una URL."}), 400
 
-    # Obtener el IP real del cliente para pasárselo a yt-dlp via XFF.
-    # Si YouTube respeta el XFF, la URL de CDN quedará vinculada al IP del usuario
-    # y el navegador podrá descargar DIRECTAMENTE desde YouTube CDN sin pasar por el VPS.
-    client_ip = (
-        request.headers.get("X-Forwarded-For", "").split(",")[0].strip()
-        or request.headers.get("X-Real-IP", "")
-        or request.remote_addr
-    )
-    # Solo pasar IPs públicas válidas (no LAN ni loopback)
-    import ipaddress
     try:
-        parsed_ip = ipaddress.ip_address(client_ip)
-        use_xff = not parsed_ip.is_private and not parsed_ip.is_loopback
-    except Exception:
-        use_xff = False
-
-    try:
-        # Extraer la URL directa. Con xff, la URL quedará vinculada al IP del cliente.
-        result = get_audio_direct_url(url, quality=quality, xff=client_ip if use_xff else None)
+        # Extraer la URL directa
+        result = get_audio_direct_url(url, quality=quality)
         if not result["success"]:
             return jsonify({"success": False, "error": result["error"]}), 400
 
         direct_url = result["direct_url"]
         audio_format = result.get("format", "m4a")
 
-        # Construir URL del proxy GET como fallback
+        # Construir URL del proxy GET
         import urllib.parse
         proxy_url = url_for("api_stream_proxy_get") + "?direct_url=" + urllib.parse.quote(direct_url) + "&fmt=" + audio_format
 
         return jsonify({
             "success": True,
-            "direct_url": direct_url,       # Intentar directo primero (si XFF funcionó)
-            "proxy_url": proxy_url,          # Fallback si YouTube no respetó XFF
-            "xff_used": use_xff,             # Para debug
-            "client_ip": client_ip if use_xff else None,
+            "direct_url": direct_url,
+            "proxy_url": proxy_url,
             "title": result.get("title", ""),
             "format": audio_format,
         })

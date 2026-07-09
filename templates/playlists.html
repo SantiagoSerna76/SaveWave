@@ -2615,8 +2615,8 @@
         try {
             const offlineCache = await caches.open(OFFLINE_CACHE_NAME);
             
-            // Aumentar concurrencia para descargas offline mucho más rápidas (antes en 1)
-            const limit = 5;
+            // Limitar concurrencia a 2 para evitar saturar el CPU del VPS (deno gasta mucho CPU)
+            const limit = 2;
             const items = [...currentPlaylistItems];
             
             // Intentar mantener la pantalla encendida (WakeLock API)

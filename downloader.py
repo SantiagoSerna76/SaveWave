@@ -118,8 +118,8 @@ def _get_ydl_opts(extra_opts: dict = None, url: str = None) -> dict:
         "restrictfilenames": True,
         "noplaylist": True,
         # Remove quiet and no_warnings so we can see errors in the server logs
-        "quiet": False,
-        "no_warnings": False,
+        "quiet": True,
+        "no_warnings": True,
     }
 
     # Determinar la plataforma para cargar cookies específicas

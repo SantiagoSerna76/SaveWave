@@ -115,16 +115,11 @@ def _get_ydl_opts(extra_opts: dict = None, url: str = None) -> dict:
     has_cookies = False
 
     opts = {
-        "quiet": True,
-        "no_warnings": True,
-        "nocheckcertificate": True,
         "restrictfilenames": True,
         "noplaylist": True,
-        # Speed optimizations
-        "concurrent_fragment_downloads": 4,
-        "buffersize": 1024 * 16,  # 16KB buffer
-        "retries": 3,
-        "http_chunk_size": 1048576,  # 1MB chunks
+        # Remove quiet and no_warnings so we can see errors in the server logs
+        "quiet": False,
+        "no_warnings": False,
     }
 
     # Determinar la plataforma para cargar cookies específicas
@@ -158,6 +153,8 @@ def _get_ydl_opts(extra_opts: dict = None, url: str = None) -> dict:
     else:
         # Sin cookies: usar android_vr que no requiere PO Token (para uso local).
         opts["extractor_args"] = {"youtube": {"player_client": ["android_vr"]}}
+        
+    print(f"DEBUG YDL OPTS: has_cookies={has_cookies}, cookiefile={opts.get('cookiefile')}, extractor_args={opts.get('extractor_args')}")
 
     # Usar ffmpeg local si existe en la carpeta bin
     bin_dir = os.path.join(base_dir, 'bin')

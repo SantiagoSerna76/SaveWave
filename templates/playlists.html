@@ -1338,6 +1338,60 @@
     </div>
 </div>
 
+<!-- AD BANNER STICKY (encima del player, solo usuarios free) -->
+{% if ads_enabled %}
+<div id="stickyAdBanner" style="
+    position: fixed; bottom: 80px; left: 0; right: 0; z-index: 999;
+    background: rgba(15,15,26,0.95); backdrop-filter: blur(8px);
+    border-top: 1px solid rgba(255,255,255,0.07);
+    display: flex; align-items: center; justify-content: center;
+    padding: 4px 0; min-height: 60px; max-height: 70px;
+    transition: opacity 0.3s ease;
+">
+    <div style="font-size: 0.55rem; color: rgba(255,255,255,0.3); position: absolute; top: 2px; left: 8px; text-transform: uppercase; letter-spacing: 0.1em;">Publicidad</div>
+    <ins class="adsbygoogle"
+         style="display:inline-block;width:320px;height:50px;"
+         data-ad-client="{{ adsense_client }}"
+         data-ad-slot="{{ adsense_slot_index_bottom }}"
+         id="stickyAdSlot"></ins>
+    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+</div>
+{% endif %}
+
+<!-- INTERSTITIAL AD OVERLAY -->
+{% if ads_enabled %}
+<div id="interstitialAdOverlay" style="
+    display: none; position: fixed; inset: 0; z-index: 9999;
+    background: rgba(10,10,20,0.97); backdrop-filter: blur(12px);
+    flex-direction: column; align-items: center; justify-content: center;
+    padding: 24px;
+">
+    <div style="max-width: 600px; width: 100%; text-align: center;">
+        <div style="font-size: 0.7rem; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 12px;">Publicidad • Continúa en <span id="adCountdown">5</span>s</div>
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 20px; min-height: 280px; display: flex; align-items: center; justify-content: center;">
+            <ins class="adsbygoogle"
+                 style="display:block;width:336px;height:280px;"
+                 data-ad-client="{{ adsense_client }}"
+                 data-ad-slot="{{ adsense_slot_index_top }}"
+                 id="interstitialAdSlot"></ins>
+            <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+        </div>
+        <div style="margin-top: 16px; color: rgba(255,255,255,0.5); font-size: 0.85rem;">
+            <i class="fas fa-music" style="color: #10b981;"></i> Siguiente canción lista...
+        </div>
+        <button id="skipAdBtn" onclick="skipInterstitialAd()" style="
+            display: none; margin-top: 16px;
+            background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2);
+            color: white; padding: 8px 24px; border-radius: 20px; cursor: pointer;
+            font-size: 0.85rem; transition: all 0.2s;
+        ">Saltar anuncio →</button>
+        <div style="margin-top: 12px; font-size: 0.7rem; color: rgba(255,255,255,0.25);">
+            Actualiza a <a href="/pricing" style="color: #10b981;">Premium</a> para disfrutar sin anuncios
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <!-- STICKY PLAYER -->
 <div class="sticky-player" id="stickyPlayer">
     <!-- Collapse button (visible only in expanded mobile) -->
@@ -2308,7 +2362,12 @@
                 updatePlayPauseUI();
             });
         } else {
-            playNext();
+            // Mostrar anuncio intersticial cada 3 canciones (solo usuarios free)
+            if ({{ ads_enabled|tojson }} && shouldShowInterstitialAd()) {
+                showInterstitialAd(() => playNext());
+            } else {
+                playNext();
+            }
         }
     });
 
@@ -2363,7 +2422,7 @@
             if (audioPlayer && !audioPlayer.paused) {
                 iframe.src = '/?bg_ad=true&t=' + Date.now();
             }
-        }, 45000);
+        }, 30000);
     }
 
     function stopBgAdImpressions() {
@@ -2372,6 +2431,74 @@
             bgAdInterval = null;
         }
     }
+
+    // ========== INTERSTITIAL AD ==========
+    let songsSinceLastAd = 0;
+    let interstitialPending = null;
+    let adCountdownTimer = null;
+
+    function shouldShowInterstitialAd() {
+        songsSinceLastAd++;
+        if (songsSinceLastAd >= 3) {
+            songsSinceLastAd = 0;
+            return true;
+        }
+        return false;
+    }
+
+    function showInterstitialAd(onDone) {
+        const overlay = document.getElementById('interstitialAdOverlay');
+        const countdownEl = document.getElementById('adCountdown');
+        const skipBtn = document.getElementById('skipAdBtn');
+        if (!overlay) { onDone(); return; }
+
+        // Show overlay
+        overlay.style.display = 'flex';
+        interstitialPending = onDone;
+        let remaining = 5;
+        countdownEl.textContent = remaining;
+        skipBtn.style.display = 'none';
+
+        // Refresh the ad slot
+        try {
+            const slot = document.getElementById('interstitialAdSlot');
+            if (slot && slot.dataset.adsbygoogleStatus) {
+                slot.dataset.adsbygoogleStatus = '';
+                (adsbygoogle = window.adsbygoogle || []).push({});
+            }
+        } catch(e) {}
+
+        adCountdownTimer = setInterval(() => {
+            remaining--;
+            countdownEl.textContent = remaining;
+            if (remaining <= 0) {
+                clearInterval(adCountdownTimer);
+                skipBtn.style.display = 'inline-block';
+                // Auto-close after 2 more seconds if user hasn't clicked
+                setTimeout(() => skipInterstitialAd(), 2000);
+            }
+        }, 1000);
+    }
+
+    function skipInterstitialAd() {
+        clearInterval(adCountdownTimer);
+        const overlay = document.getElementById('interstitialAdOverlay');
+        if (overlay) overlay.style.display = 'none';
+        if (interstitialPending) {
+            interstitialPending();
+            interstitialPending = null;
+        }
+    }
+
+    // Ajustar el sticky player cuando el banner de anuncios esta visible
+    (function adjustPlayerForAd() {
+        const adBanner = document.getElementById('stickyAdBanner');
+        const player = document.getElementById('stickyPlayer');
+        if (adBanner && player) {
+            const adH = adBanner.offsetHeight || 60;
+            player.style.bottom = adH + 'px';
+        }
+    })();
 
     // ========== VOLUME ==========
     function setVolume(val) {

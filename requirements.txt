@@ -8,6 +8,8 @@ cryptography==42.0.5
 # Seguridad y autenticacion
 flask-jwt-extended==4.7.4
 flask-limiter==4.1.1
+firebase-admin==6.4.0
+google-auth==2.28.1
 
 # Cache (Redis)
 flask-caching==2.4.0

@@ -120,3 +120,15 @@ class Config:
     ADSENSE_SLOT_DASHBOARD = os.getenv("ADSENSE_SLOT_DASHBOARD", "5555555555")
     ADSENSE_SLOT_TERMS = os.getenv("ADSENSE_SLOT_TERMS", "6666666666")
     ADSENSE_SLOT_BG = os.getenv("ADSENSE_SLOT_BG", "1111111111")
+
+    # -------------------- SEGURIDAD AVANZADA (OAUTH Y FIREBASE) --------------------
+    # Ruta al archivo JSON descargado desde Firebase Console -> Cuentas de servicio
+    FIREBASE_CREDENTIALS_PATH = os.getenv("FIREBASE_CREDENTIALS_PATH", "firebase-adminsdk.json")
+    
+    # Credenciales web de Firebase (Publicas)
+    FIREBASE_API_KEY = os.getenv("FIREBASE_API_KEY", "AIzaSyBRJ18RKv_5uD6Qo7D14qEOHhau2Dw-1V0")
+    FIREBASE_AUTH_DOMAIN = os.getenv("FIREBASE_AUTH_DOMAIN", "savewave-9f623.firebaseapp.com")
+    FIREBASE_PROJECT_ID = os.getenv("FIREBASE_PROJECT_ID", "savewave-9f623")
+    FIREBASE_STORAGE_BUCKET = os.getenv("FIREBASE_STORAGE_BUCKET", "savewave-9f623.firebasestorage.app")
+    FIREBASE_MESSAGING_SENDER_ID = os.getenv("FIREBASE_MESSAGING_SENDER_ID", "696492622522")
+    FIREBASE_APP_ID = os.getenv("FIREBASE_APP_ID", "1:696492622522:web:8848d1e195713d9088f883")

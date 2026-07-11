@@ -82,6 +82,24 @@ limiter = Limiter(
     storage_uri=Config.RATELIMIT_STORAGE_URL,
 )
 
+# Inicializar Firebase Admin SDK (para validar tokens OTP)
+import firebase_admin
+from firebase_admin import credentials
+import os
+
+if not firebase_admin._apps:
+    try:
+        firebase_creds_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), Config.FIREBASE_CREDENTIALS_PATH)
+        if os.path.exists(firebase_creds_path):
+            cred = credentials.Certificate(firebase_creds_path)
+            firebase_admin.initialize_app(cred)
+            print("[OK] Firebase Admin inicializado.")
+        else:
+            print(f"[WARN] No se encontro Firebase Admin SDK en {firebase_creds_path}. Autenticacion SMS deshabilitada en backend.")
+    except Exception as e:
+        print(f"[ERROR] Fallo al inicializar Firebase Admin: {e}")
+
+
 # Inicializar Flask-Login (sesiones de usuario web)
 login_manager = LoginManager()
 login_manager.init_app(app)

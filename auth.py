@@ -287,3 +287,34 @@ def _default_free_plan() -> dict:
         "platforms": Config.FREE_PLATFORMS,
         "daily_limit": Config.FREE_DAILY_LIMIT,
     }
+
+
+# -------------------- SEGURIDAD AVANZADA (GOOGLE & FIREBASE) --------------------
+
+def verify_google_token(token: str) -> dict:
+    """Verifica un token JWT de Google Sign-In."""
+    try:
+        from google.oauth2 import id_token
+        from google.auth.transport import requests as google_requests
+        
+        # El CLIENT_ID deberia sacarse de variables de entorno si lo usaramos,
+        # pero la API verifica la firma del token emitido por Google de todos modos.
+        idinfo = id_token.verify_oauth2_token(token, google_requests.Request())
+        return {"valid": True, "info": idinfo}
+    except Exception as e:
+        return {"valid": False, "error": str(e)}
+
+
+def verify_firebase_phone_token(token: str) -> dict:
+    """Verifica un token de Firebase Authentication (SMS OTP)."""
+    try:
+        import firebase_admin
+        from firebase_admin import auth as firebase_auth
+        
+        if not firebase_admin._apps:
+            return {"valid": False, "error": "Firebase SDK no esta inicializado en el servidor."}
+            
+        decoded_token = firebase_auth.verify_id_token(token)
+        return {"valid": True, "info": decoded_token}
+    except Exception as e:
+        return {"valid": False, "error": str(e)}

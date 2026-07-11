@@ -1261,7 +1261,113 @@ def api_docs():
     )
 
 
-@app.route("/api/token", methods=["POST"])
+@app.route("/api/auth/google", methods=["POST"])
+@limiter.limit("5 per minute")
+def api_auth_google():
+    """Endpoint para loguear o registrar a un usuario mediante Google Sign-In."""
+    data = request.get_json()
+    token = data.get("token")
+    if not token:
+        return jsonify({"success": False, "error": "Token no proporcionado"}), 400
+        
+    from auth import verify_google_token
+    verification = verify_google_token(token)
+    
+    if not verification["valid"]:
+        return jsonify({"success": False, "error": verification["error"]}), 401
+        
+    google_info = verification["info"]
+    email = google_info.get("email")
+    google_id = google_info.get("sub")
+    name = google_info.get("name", "Usuario Google")
+    
+    # Buscar si el usuario ya existe
+    user = User.query.filter((User.email == email) | (User.google_id == google_id)).first()
+    
+    if user:
+        # Si existe pero no tenia google_id, lo vinculamos
+        if not user.google_id:
+            user.google_id = google_id
+            user.is_verified = True # Google valida emails automaticamente
+            db.session.commit()
+    else:
+        # Registrar nuevo usuario de Google
+        # Generamos un username unico basado en el email
+        base_username = email.split('@')[0]
+        username = base_username
+        counter = 1
+        while User.query.filter_by(username=username).first():
+            username = f"{base_username}{counter}"
+            counter += 1
+            
+        user = User(
+            username=username,
+            email=email,
+            password_hash=None, # Sin contrasena, usa Google
+            google_id=google_id,
+            is_verified=True # Validado por Google
+        )
+        db.session.add(user)
+        db.session.commit()
+        
+        # Asignar plan free
+        from models import Subscription, PlanType
+        sub = Subscription(user_id=user.id, plan=PlanType.FREE.value)
+        db.session.add(sub)
+        db.session.commit()
+        
+    # Loguear al usuario en la web
+    from flask_login import login_user
+    login_user(user, remember=True)
+    return jsonify({"success": True, "message": "Inicio de sesion con Google exitoso"})
+
+
+@app.route("/api/auth/firebase", methods=["POST"])
+@limiter.limit("5 per minute")
+def api_auth_firebase():
+    """Endpoint para validar o registrar mediante numero de telefono."""
+    data = request.get_json()
+    token = data.get("token")
+    action = data.get("action", "verify") # verify o reset
+    
+    if not token:
+        return jsonify({"success": False, "error": "Token no proporcionado"}), 400
+        
+    from auth import verify_firebase_phone_token
+    verification = verify_firebase_phone_token(token)
+    
+    if not verification["valid"]:
+        return jsonify({"success": False, "error": verification["error"]}), 401
+        
+    phone_info = verification["info"]
+    phone_number = phone_info.get("phone_number")
+    
+    if not phone_number:
+        return jsonify({"success": False, "error": "El token no contiene un numero de telefono"}), 400
+        
+    user = User.query.filter_by(phone_number=phone_number).first()
+    
+    if action == "verify" and current_user.is_authenticated:
+        # Vincular telefono al usuario actual
+        if user and user.id != current_user.id:
+            return jsonify({"success": False, "error": "Este numero de telefono ya esta vinculado a otra cuenta"}), 400
+            
+        current_user.phone_number = phone_number
+        current_user.is_verified = True
+        db.session.commit()
+        return jsonify({"success": True, "message": "Telefono vinculado y cuenta verificada"})
+        
+    elif action == "login":
+        if not user:
+            return jsonify({"success": False, "error": "No hay ninguna cuenta vinculada a este numero. Crea una cuenta primero."}), 404
+        from flask_login import login_user
+        login_user(user, remember=True)
+        return jsonify({"success": True, "message": "Inicio de sesion por SMS exitoso"})
+        
+    return jsonify({"success": False, "error": "Accion no soportada"}), 400
+
+
+@app.route("/api/login", methods=["POST"])
 @login_required
 def api_generate_token():
     """

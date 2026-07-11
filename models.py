@@ -38,7 +38,10 @@ class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False, index=True)
     email = db.Column(db.String(120), unique=True, nullable=False, index=True)
-    password_hash = db.Column(db.String(256), nullable=False)
+    password_hash = db.Column(db.String(256), nullable=True) # Nullable para usuarios de Google
+    google_id = db.Column(db.String(120), unique=True, nullable=True, index=True)
+    phone_number = db.Column(db.String(50), unique=True, nullable=True, index=True)
+    is_verified = db.Column(db.Boolean, default=False) # Para obligar a validar SMS/Email
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     is_active = db.Column(db.Boolean, default=True)
 

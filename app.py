@@ -48,7 +48,7 @@ from models import db, init_db, User, Download, PlanType, Playlist, PlaylistItem
 from downloader import (
     detect_platform, get_video_info, download_video, download_audio,
     download_audio_native, get_audio_direct_url, get_available_qualities, cleanup_old_files,
-    _get_ydl_opts
+    _get_ydl_opts, normalize_url
 )
 from auth import (
     register_user, authenticate_user, get_user_by_id,
@@ -239,6 +239,17 @@ def serve_manifest():
 @app.route('/sw.js')
 def serve_sw():
     return current_app.send_static_file('sw.js')
+
+@app.route('/ads.txt')
+def serve_ads_txt():
+    """Archivo requerido por Google AdSense para monetizacion."""
+    client_id = Config.ADSENSE_CLIENT_ID or ""
+    # El archivo ads.txt requiere el formato 'pub-XXXX', sin el prefijo 'ca-'
+    if client_id.startswith('ca-'):
+        client_id = client_id[3:]
+    
+    content = f"google.com, {client_id}, DIRECT, f08c47fec0942fa0"
+    return content, 200, {'Content-Type': 'text/plain'}
 
 
 # ============================================================
@@ -850,6 +861,8 @@ def api_download_proxy():
 
     if not url:
         return jsonify({"success": False, "error": "URL vacía"}), 400
+
+    url = normalize_url(url)
 
     import tempfile
     import glob

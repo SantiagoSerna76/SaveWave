@@ -49,6 +49,38 @@
                     </button>
                 </form>
 
+                <div class="d-flex align-items-center my-4">
+                    <hr class="flex-grow-1">
+                    <span class="mx-3 text-muted">o continúa con</span>
+                    <hr class="flex-grow-1">
+                </div>
+
+                <div class="d-grid gap-2 mb-3">
+                    <button type="button" class="btn btn-outline-dark" id="btnGoogleLogin">
+                        <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" width="20" class="me-2"> Google
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" id="btnPhoneLogin">
+                        <i class="fas fa-mobile-alt me-2"></i> Teléfono (SMS)
+                    </button>
+                </div>
+
+                <!-- Phone Login Modal/Div (Hidden by default) -->
+                <div id="phoneAuthContainer" class="d-none mt-3 p-3 border rounded bg-light">
+                    <h6>Verificación por SMS</h6>
+                    <div class="mb-2">
+                        <label class="form-label small">Número con código de país (ej. +34600...)</label>
+                        <input type="tel" id="phoneNumber" class="form-control" placeholder="+1234567890">
+                    </div>
+                    <div id="recaptcha-container" class="mb-2"></div>
+                    <button type="button" class="btn btn-primary btn-sm w-100" id="btnSendSMS">Enviar Código</button>
+                    
+                    <div id="codeContainer" class="d-none mt-3">
+                        <label class="form-label small">Código de 6 dígitos</label>
+                        <input type="text" id="smsCode" class="form-control" placeholder="123456">
+                        <button type="button" class="btn btn-success btn-sm w-100 mt-2" id="btnVerifyCode">Verificar y Entrar</button>
+                    </div>
+                </div>
+
                 <div class="text-center mt-3">
                     <p class="mb-0">
                         ¿No tienes cuenta?
@@ -59,6 +91,106 @@
                 </div>
             </div>
         </div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getAuth, signInWithPopup, GoogleAuthProvider, RecaptchaVerifier, signInWithPhoneNumber } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+  const firebaseConfig = {
+    apiKey: "{{ config.FIREBASE_API_KEY }}",
+    authDomain: "{{ config.FIREBASE_AUTH_DOMAIN }}",
+    projectId: "{{ config.FIREBASE_PROJECT_ID }}",
+    storageBucket: "{{ config.FIREBASE_STORAGE_BUCKET }}",
+    messagingSenderId: "{{ config.FIREBASE_MESSAGING_SENDER_ID }}",
+    appId: "{{ config.FIREBASE_APP_ID }}"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  auth.useDeviceLanguage();
+
+  // --- Google Login ---
+  document.getElementById('btnGoogleLogin').addEventListener('click', () => {
+    const provider = new GoogleAuthProvider();
+    signInWithPopup(auth, provider).then((result) => {
+      result.user.getIdToken().then((token) => {
+        // Enviar token al backend de Firebase (que maneja tanto google como phone via verify_id_token)
+        fetch('/api/auth/firebase', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ token: token, action: 'login' })
+        }).then(res => res.json()).then(data => {
+            if(data.success) {
+                window.location.href = "{{ url_for('dashboard') }}";
+            } else if (data.error && data.error.includes("No hay ninguna cuenta vinculada")) {
+                // Si la cuenta no existía pero Google nos dio el token, 
+                // podemos intentar crearla dinamicamente o redirigir al registro.
+                // Lo mandamos al registro pero pasamos el token para que el registro lo maneje.
+                alert("Cuenta no encontrada. Por favor registrate.");
+                window.location.href = "{{ url_for('register') }}";
+            } else {
+                alert("Error: " + data.error);
+            }
+        });
+      });
+    }).catch((error) => {
+      console.error(error);
+      alert("Error al iniciar sesion con Google");
+    });
+  });
+
+  // --- Phone Login ---
+  let confirmationResult = null;
+  
+  document.getElementById('btnPhoneLogin').addEventListener('click', () => {
+      document.getElementById('phoneAuthContainer').classList.remove('d-none');
+      if(!window.recaptchaVerifier) {
+          window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+            'size': 'normal',
+            'callback': (response) => {}
+          });
+          window.recaptchaVerifier.render();
+      }
+  });
+
+  document.getElementById('btnSendSMS').addEventListener('click', () => {
+      const phoneNumber = document.getElementById('phoneNumber').value;
+      const appVerifier = window.recaptchaVerifier;
+      signInWithPhoneNumber(auth, phoneNumber, appVerifier)
+          .then((result) => {
+              confirmationResult = result;
+              document.getElementById('codeContainer').classList.remove('d-none');
+              document.getElementById('btnSendSMS').classList.add('d-none');
+          }).catch((error) => {
+              console.error(error);
+              alert("Error al enviar SMS. Revisa el numero (debe incluir código de país, ej: +34).");
+              window.recaptchaVerifier.render().then(function(widgetId) {
+                grecaptcha.reset(widgetId);
+              });
+          });
+  });
+
+  document.getElementById('btnVerifyCode').addEventListener('click', () => {
+      const code = document.getElementById('smsCode').value;
+      confirmationResult.confirm(code).then((result) => {
+          result.user.getIdToken().then((token) => {
+              fetch('/api/auth/firebase', {
+                  method: 'POST',
+                  headers: {'Content-Type': 'application/json'},
+                  body: JSON.stringify({ token: token, action: 'login' })
+              }).then(res => res.json()).then(data => {
+                  if(data.success) {
+                      window.location.href = "{{ url_for('dashboard') }}";
+                  } else {
+                      alert("Error: " + data.error);
+                  }
+              });
+          });
+      }).catch((error) => {
+          alert("Código incorrecto");
+      });
+  });
+</script>
 
         <!-- Anuncio cuadrado pequeño -->
         {% if ads_enabled %}

@@ -144,8 +144,10 @@
         box-shadow: 0 4px 12px rgba(0,0,0,0.05);
     }
     body.light-mode .glass-card { background: rgba(255,255,255,0.9) !important; border-color: var(--card-border) !important; }
-    body.light-mode .btn-nav-theme { background: rgba(0,0,0,0.08); color: #555; border-color: rgba(0,0,0,0.15); }
-    
+    body.light-mode .btn-nav-theme { background: rgba(0,0,0,0.1); color: #222 !important; border-color: rgba(0,0,0,0.2); }
+    body.light-mode .btn-nav-theme:hover { background: rgba(0,0,0,0.15); color: #000 !important; }
+    body.light-mode .btn-nav-theme-mobile { background: rgba(0,0,0,0.08) !important; color: #333 !important; border-color: rgba(0,0,0,0.15) !important; }
+    body.light-mode .btn-nav-theme-mobile:hover { background: rgba(0,0,0,0.15) !important; color: #000 !important; }
     /* Mobile Menu Toggle Premium */
     .btn-mobile-menu {
         border: none;
@@ -284,8 +286,8 @@
                         </button>
                     </li>
                     <li class="nav-item d-lg-none">
-                        <!-- Boton de tema en movil (se delega el click en JS al darkModeToggle original si es necesario, o se usa el mismo listener si seleccionamos por clase) -->
-                        <button class="btn-nav-pill btn-nav-theme-mobile w-100" style="background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.15); justify-content: flex-start;">
+                        <!-- Boton de tema en movil -->
+                        <button class="btn-nav-pill btn-nav-theme-mobile w-100" style="background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.15); justify-content: flex-start; transition: all 0.3s;">
                             <i class="fas fa-sun me-2"></i> Cambiar tema
                         </button>
                     </li>

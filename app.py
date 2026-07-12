@@ -449,6 +449,13 @@ def api_video_info():
         # Verificar permisos segun plataforma (sesion web o JWT)
         user, is_jwt = _get_api_user()
         if user:
+            if not user.is_verified:
+                return jsonify({
+                    "success": False,
+                    "error": "Para continuar, debes verificar tu cuenta con Google o Teléfono en Iniciar Sesión.",
+                    "upgrade_required": False,
+                })
+            
             if not can_download_platform(user, info["platform"]):
                 return jsonify({
                     "success": False,
@@ -502,6 +509,13 @@ def api_download():
     user, is_jwt = _get_api_user()
 
     if user:
+        if not user.is_verified:
+            return jsonify({
+                "success": False,
+                "error": "Para continuar, debes verificar tu cuenta con Google o Teléfono en Iniciar Sesión.",
+                "upgrade_required": False,
+            })
+            
         # Verificar limite diario
         limit_check = check_daily_limit(user)
         if not limit_check["allowed"]:

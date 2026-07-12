@@ -5,6 +5,14 @@
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-lg-8">
+        {% if current_user.is_authenticated and not current_user.is_verified %}
+        <div class="alert alert-warning shadow-sm mt-4 text-center">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <strong>¡Atención!</strong> Debes verificar tu cuenta para poder descargar videos.
+            <a href="{{ url_for('login') }}" class="alert-link ms-1">Ir a verificar <i class="fas fa-arrow-right"></i></a>
+        </div>
+        {% endif %}
+        
         <!-- ==================== HERO / TITULO (PREMIUM SAAS UI) ==================== -->
         <div class="text-center position-relative py-5 mt-4 mb-5 hero-section-wrapper">
             <!-- Glow background effect -->

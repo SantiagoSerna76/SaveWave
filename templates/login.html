@@ -6,197 +6,34 @@
 <div class="row justify-content-center">
     <div class="col-md-5">
         <div class="card shadow-sm border-0">
-            <div class="card-body p-4">
+            <div class="card-body p-4 p-md-5">
                 <div class="text-center mb-4">
-                    <i class="fas fa-sign-in-alt fa-3x text-primary mb-3"></i>
-                    <h3>Iniciar sesión</h3>
-                    <p class="text-muted">Accede a tu cuenta para descargas ilimitadas</p>
-                </div>
-
-                <form method="POST" action="{{ url_for('login') }}">
-                    <div class="mb-3">
-                        <label for="email" class="form-label">Correo electrónico</label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-envelope"></i></span>
-                            <input
-                                type="email"
-                                class="form-control"
-                                id="email"
-                                name="email"
-                                placeholder="tu@email.com"
-                                required
-                            >
-                        </div>
+                    <div class="mx-auto mb-3 d-inline-flex align-items-center justify-content-center" style="width:70px;height:70px;border-radius:18px;background:rgba(79,172,254,0.1);border:1px solid rgba(79,172,254,0.2);">
+                        <i class="fas fa-user-shield fa-2x" style="color:#4facfe;"></i>
                     </div>
-
-                    <div class="mb-3">
-                        <label for="password" class="form-label">Contraseña</label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-lock"></i></span>
-                            <input
-                                type="password"
-                                class="form-control"
-                                id="password"
-                                name="password"
-                                placeholder="••••••••"
-                                required
-                            >
-                        </div>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary w-100 py-2">
-                        <i class="fas fa-sign-in-alt me-2"></i>Iniciar sesión
-                    </button>
-                </form>
-
-                <div class="text-end mt-2 mb-2">
-                    <a href="{{ url_for('forgot_password') }}" class="text-muted small">
-                        <i class="fas fa-key me-1"></i>¿Olvidaste tu contraseña?
-                    </a>
+                    <h3 class="fw-bold">Bienvenido a SaveWave</h3>
+                    <p class="text-muted">Inicia sesión con tu cuenta de Google para continuar</p>
                 </div>
 
-                <div class="d-flex align-items-center my-4">
-                    <hr class="flex-grow-1">
-                    <span class="mx-3 text-muted">o continúa con</span>
-                    <hr class="flex-grow-1">
+                <button type="button" class="btn btn-lg w-100 fw-bold py-3 d-flex align-items-center justify-content-center gap-3" id="btnGoogleLogin" style="background: #fff; color: #333; border: 2px solid #e0e0e0; border-radius: 14px; font-size: 1.05rem; transition: all 0.2s ease;">
+                    <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" width="24">
+                    Continuar con Google
+                </button>
+
+                <div id="googleLoginStatus" class="text-center mt-3" style="display:none;">
+                    <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+                    <span class="text-muted small">Conectando con Google...</span>
                 </div>
 
-                <div class="d-grid gap-2 mb-3">
-                    <button type="button" class="btn btn-outline-dark" id="btnGoogleLogin">
-                        <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" width="20" class="me-2"> Google
-                    </button>
-                    <button type="button" class="btn btn-outline-primary" id="btnPhoneLogin">
-                        <i class="fas fa-mobile-alt me-2"></i> Teléfono (SMS)
-                    </button>
-                </div>
-
-                <!-- Phone Login Modal/Div (Hidden by default) -->
-                <div id="phoneAuthContainer" class="d-none mt-3 p-3 border rounded bg-light">
-                    <h6>Verificación por SMS</h6>
-                    <div class="mb-2">
-                        <label class="form-label small">Número con código de país (ej. +34600...)</label>
-                        <input type="tel" id="phoneNumber" class="form-control" placeholder="+1234567890">
-                    </div>
-                    <div id="recaptcha-container" class="mb-2"></div>
-                    <button type="button" class="btn btn-primary btn-sm w-100" id="btnSendSMS">Enviar Código</button>
-                    
-                    <div id="codeContainer" class="d-none mt-3">
-                        <label class="form-label small">Código de 6 dígitos</label>
-                        <input type="text" id="smsCode" class="form-control" placeholder="123456">
-                        <button type="button" class="btn btn-success btn-sm w-100 mt-2" id="btnVerifyCode">Verificar y Entrar</button>
-                    </div>
-                </div>
-
-                <div class="text-center mt-3">
-                    <p class="mb-0">
-                        ¿No tienes cuenta?
-                        <a href="{{ url_for('register') }}" class="text-primary fw-bold">
-                            Regístrate gratis
-                        </a>
+                <div class="text-center mt-4 pt-3 border-top">
+                    <p class="text-muted small mb-0">
+                        <i class="fas fa-shield-alt me-1 text-success"></i>
+                        Autenticación segura proporcionada por Google.
+                        <br>No almacenamos contraseñas.
                     </p>
                 </div>
             </div>
         </div>
-
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-  import { getAuth, signInWithPopup, GoogleAuthProvider, RecaptchaVerifier, signInWithPhoneNumber } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-
-  const firebaseConfig = {
-    apiKey: "{{ config.FIREBASE_API_KEY }}",
-    authDomain: "{{ config.FIREBASE_AUTH_DOMAIN }}",
-    projectId: "{{ config.FIREBASE_PROJECT_ID }}",
-    storageBucket: "{{ config.FIREBASE_STORAGE_BUCKET }}",
-    messagingSenderId: "{{ config.FIREBASE_MESSAGING_SENDER_ID }}",
-    appId: "{{ config.FIREBASE_APP_ID }}"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  auth.useDeviceLanguage();
-
-  // --- Google Login ---
-  document.getElementById('btnGoogleLogin').addEventListener('click', () => {
-    const provider = new GoogleAuthProvider();
-    signInWithPopup(auth, provider).then((result) => {
-      result.user.getIdToken().then((token) => {
-        // Enviar token al backend de Firebase (que maneja tanto google como phone via verify_id_token)
-        fetch('/api/auth/firebase', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ token: token, action: 'login' })
-        }).then(res => res.json()).then(data => {
-            if(data.success) {
-                window.location.href = "{{ url_for('dashboard') }}";
-            } else if (data.error && data.error.includes("No hay ninguna cuenta vinculada")) {
-                // Si la cuenta no existía pero Google nos dio el token, 
-                // podemos intentar crearla dinamicamente o redirigir al registro.
-                // Lo mandamos al registro pero pasamos el token para que el registro lo maneje.
-                alert("Cuenta no encontrada. Por favor registrate.");
-                window.location.href = "{{ url_for('register') }}";
-            } else {
-                alert("Error: " + data.error);
-            }
-        });
-      });
-    }).catch((error) => {
-      console.error(error);
-      alert("Error al iniciar sesion con Google");
-    });
-  });
-
-  // --- Phone Login ---
-  let confirmationResult = null;
-  
-  document.getElementById('btnPhoneLogin').addEventListener('click', () => {
-      document.getElementById('phoneAuthContainer').classList.remove('d-none');
-      if(!window.recaptchaVerifier) {
-          window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-            'size': 'normal',
-            'callback': (response) => {}
-          });
-          window.recaptchaVerifier.render();
-      }
-  });
-
-  document.getElementById('btnSendSMS').addEventListener('click', () => {
-      const phoneNumber = document.getElementById('phoneNumber').value;
-      const appVerifier = window.recaptchaVerifier;
-      signInWithPhoneNumber(auth, phoneNumber, appVerifier)
-          .then((result) => {
-              confirmationResult = result;
-              document.getElementById('codeContainer').classList.remove('d-none');
-              document.getElementById('btnSendSMS').classList.add('d-none');
-          }).catch((error) => {
-              console.error(error);
-              alert("Error al enviar SMS. Revisa el numero (debe incluir código de país, ej: +34).");
-              window.recaptchaVerifier.render().then(function(widgetId) {
-                grecaptcha.reset(widgetId);
-              });
-          });
-  });
-
-  document.getElementById('btnVerifyCode').addEventListener('click', () => {
-      const code = document.getElementById('smsCode').value;
-      confirmationResult.confirm(code).then((result) => {
-          result.user.getIdToken().then((token) => {
-              fetch('/api/auth/firebase', {
-                  method: 'POST',
-                  headers: {'Content-Type': 'application/json'},
-                  body: JSON.stringify({ token: token, action: 'login' })
-              }).then(res => res.json()).then(data => {
-                  if(data.success) {
-                      window.location.href = "{{ url_for('dashboard') }}";
-                  } else {
-                      alert("Error: " + data.error);
-                  }
-              });
-          });
-      }).catch((error) => {
-          alert("Código incorrecto");
-      });
-  });
-</script>
 
         <!-- Anuncio cuadrado pequeño -->
         {% if ads_enabled %}
@@ -215,15 +52,74 @@
         <!-- Beneficios de tener cuenta -->
         <div class="card shadow-sm border-0 mt-4">
             <div class="card-body">
-                <h6 class="fw-bold"><i class="fas fa-gift text-primary me-2"></i>Beneficios al registrarte:</h6>
+                <h6 class="fw-bold"><i class="fas fa-gift text-primary me-2"></i>Beneficios al iniciar sesión:</h6>
                 <ul class="list-unstyled mb-0 small">
-                    <li><i class="fas fa-check text-success me-2"></i>5 descargas gratis por dia</li>
+                    <li><i class="fas fa-check text-success me-2"></i>5 descargas gratis por día</li>
                     <li><i class="fas fa-check text-success me-2"></i>Descarga desde cientos de plataformas</li>
                     <li><i class="fas fa-check text-success me-2"></i>Historial de descargas</li>
-                    <li><i class="fas fa-check text-success me-2"></i>Sin limite de tiempo</li>
+                    <li><i class="fas fa-check text-success me-2"></i>Crea y gestiona playlists</li>
+                    <li><i class="fas fa-check text-success me-2"></i>Sin contraseñas que recordar</li>
                 </ul>
             </div>
         </div>
     </div>
 </div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getAuth, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+  const firebaseConfig = {
+    apiKey: "{{ config.FIREBASE_API_KEY }}",
+    authDomain: "{{ config.FIREBASE_AUTH_DOMAIN }}",
+    projectId: "{{ config.FIREBASE_PROJECT_ID }}",
+    storageBucket: "{{ config.FIREBASE_STORAGE_BUCKET }}",
+    messagingSenderId: "{{ config.FIREBASE_MESSAGING_SENDER_ID }}",
+    appId: "{{ config.FIREBASE_APP_ID }}"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  auth.useDeviceLanguage();
+
+  document.getElementById('btnGoogleLogin').addEventListener('click', () => {
+    const statusEl = document.getElementById('googleLoginStatus');
+    const btn = document.getElementById('btnGoogleLogin');
+    
+    const provider = new GoogleAuthProvider();
+    signInWithPopup(auth, provider).then((result) => {
+      // Show loading state
+      btn.style.display = 'none';
+      statusEl.style.display = 'block';
+      
+      result.user.getIdToken().then((token) => {
+        fetch('/api/auth/firebase', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ token: token, action: 'login' })
+        }).then(res => res.json()).then(data => {
+            if(data.success) {
+                // Redirect to the page they were trying to access, or dashboard
+                const urlParams = new URLSearchParams(window.location.search);
+                const next = urlParams.get('next');
+                window.location.href = next || "{{ url_for('dashboard') }}";
+            } else {
+                btn.style.display = 'flex';
+                statusEl.style.display = 'none';
+                alert("Error: " + data.error);
+            }
+        }).catch(() => {
+            btn.style.display = 'flex';
+            statusEl.style.display = 'none';
+            alert("Error de conexión con el servidor.");
+        });
+      });
+    }).catch((error) => {
+      console.error(error);
+      if (error.code !== 'auth/popup-closed-by-user') {
+        alert("Error al conectar con Google. Intenta de nuevo.");
+      }
+    });
+  });
+</script>
 {% endblock %}

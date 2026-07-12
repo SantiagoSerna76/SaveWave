@@ -275,58 +275,24 @@ def serve_ads_txt():
 # RUTAS - AUTENTICACION WEB (Flask-Login)
 # ============================================================
 
-@app.route("/login", methods=["GET", "POST"])
+@app.route("/login", methods=["GET"])
 def login():
-    """Inicio de sesion web."""
+    """Pagina de inicio de sesion (solo Google)."""
     if current_user.is_authenticated:
         return redirect(url_for("dashboard"))
-
-    if request.method == "POST":
-        email = request.form.get("email", "").strip().lower()
-        password = request.form.get("password", "")
-
-        if not email or not password:
-            flash("Todos los campos son obligatorios.", "danger")
-            return render_template("login.html")
-
-        result = authenticate_user(email, password)
-        if result["success"]:
-            # Marcar sesion como permanente antes de loguear
-            session.permanent = True
-            login_user_web(result["user"])
-            flash(f"Bienvenido de nuevo, {result['user'].username}!", "success")
-            next_page = request.args.get("next")
-            return redirect(next_page or url_for("dashboard"))
-        else:
-            flash(result["error"], "danger")
-
     return render_template("login.html")
 
 
-@app.route("/register", methods=["GET", "POST"])
+@app.route("/register")
 def register():
-    """Registro de nuevo usuario."""
-    if current_user.is_authenticated:
-        return redirect(url_for("dashboard"))
+    """Redirige a login ya que ahora solo usamos Google."""
+    return redirect(url_for("login"))
 
-    if request.method == "POST":
-        username = request.form.get("username", "").strip()
-        email = request.form.get("email", "").strip().lower()
-        password = request.form.get("password", "")
-        confirm_password = request.form.get("confirm_password", "")
 
-        if password != confirm_password:
-            flash("Las contrasenas no coinciden.", "danger")
-            return render_template("register.html")
-
-        result = register_user(username, email, password)
-        if result["success"]:
-            flash("Registro exitoso! Ahora puedes iniciar sesion.", "success")
-            return redirect(url_for("login"))
-        else:
-            flash(result["error"], "danger")
-
-    return render_template("register.html")
+@app.route("/forgot-password")
+def forgot_password():
+    """Ya no se usa, redirige a login."""
+    return redirect(url_for("login"))
 
 
 @app.route("/logout")
@@ -337,53 +303,6 @@ def logout():
     logout_user()
     flash("Has cerrado sesion correctamente.", "success")
     return redirect(url_for("index"))
-
-
-@app.route("/forgot-password", methods=["GET", "POST"])
-def forgot_password():
-    """Vista para recuperar la contraseña mediante SMS (Firebase) o email (Google)."""
-    if current_user.is_authenticated:
-        return redirect(url_for("dashboard"))
-        
-    # La logica de actualizacion de contrasena via SMS se maneja via API REST y Firebase
-    return render_template(
-        "forgot_password.html",
-        ads_enabled=Config.ADS_ENABLED,
-        adsense_client=Config.ADSENSE_CLIENT_ID
-    )
-
-@app.route("/api/auth/reset-password", methods=["POST"])
-@limiter.limit("5 per minute")
-def api_auth_reset_password():
-    """Permite cambiar la contraseña si se provee un token valido de Firebase (SMS)."""
-    data = request.get_json()
-    token = data.get("token")
-    new_password = data.get("new_password")
-    
-    if not token or not new_password:
-        return jsonify({"success": False, "error": "Faltan datos"}), 400
-        
-    from auth import verify_firebase_phone_token, _validate_password
-    verification = verify_firebase_phone_token(token)
-    
-    if not verification["valid"]:
-        return jsonify({"success": False, "error": verification["error"]}), 401
-        
-    phone_number = verification["info"].get("phone_number")
-    user = User.query.filter_by(phone_number=phone_number).first()
-    
-    if not user:
-        return jsonify({"success": False, "error": "No hay cuenta asociada a este numero"}), 404
-        
-    pass_validation = _validate_password(new_password)
-    if not pass_validation["valid"]:
-        return jsonify({"success": False, "error": pass_validation["message"]}), 400
-        
-    from werkzeug.security import generate_password_hash
-    user.password_hash = generate_password_hash(new_password)
-    db.session.commit()
-    
-    return jsonify({"success": True, "message": "Contraseña actualizada exitosamente"})
 
 
 # ============================================================

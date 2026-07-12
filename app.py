@@ -210,6 +210,7 @@ def inject_ads_enabled():
         adsense_slot_dashboard=Config.ADSENSE_SLOT_DASHBOARD,
         adsense_slot_terms=Config.ADSENSE_SLOT_TERMS,
         adsense_slot_bg=Config.ADSENSE_SLOT_BG,
+        config=Config,
     )
 
 # ============================================================
@@ -331,15 +332,62 @@ def register():
 @app.route("/logout")
 @login_required
 def logout():
-    """Cierra la sesion."""
-    from flask_login import logout_user as flask_logout
-    flask_logout()
-    flash("Has cerrado sesion correctamente.", "info")
+    """Cierra la sesion del usuario en la web."""
+    from flask_login import logout_user
+    logout_user()
+    flash("Has cerrado sesion correctamente.", "success")
     return redirect(url_for("index"))
 
 
+@app.route("/forgot-password", methods=["GET", "POST"])
+def forgot_password():
+    """Vista para recuperar la contraseña mediante SMS (Firebase) o email (Google)."""
+    if current_user.is_authenticated:
+        return redirect(url_for("dashboard"))
+        
+    # La logica de actualizacion de contrasena via SMS se maneja via API REST y Firebase
+    return render_template(
+        "forgot_password.html",
+        ads_enabled=Config.ADS_ENABLED,
+        adsense_client=Config.ADSENSE_CLIENT_ID
+    )
+
+@app.route("/api/auth/reset-password", methods=["POST"])
+@limiter.limit("5 per minute")
+def api_auth_reset_password():
+    """Permite cambiar la contraseña si se provee un token valido de Firebase (SMS)."""
+    data = request.get_json()
+    token = data.get("token")
+    new_password = data.get("new_password")
+    
+    if not token or not new_password:
+        return jsonify({"success": False, "error": "Faltan datos"}), 400
+        
+    from auth import verify_firebase_phone_token, _validate_password
+    verification = verify_firebase_phone_token(token)
+    
+    if not verification["valid"]:
+        return jsonify({"success": False, "error": verification["error"]}), 401
+        
+    phone_number = verification["info"].get("phone_number")
+    user = User.query.filter_by(phone_number=phone_number).first()
+    
+    if not user:
+        return jsonify({"success": False, "error": "No hay cuenta asociada a este numero"}), 404
+        
+    pass_validation = _validate_password(new_password)
+    if not pass_validation["valid"]:
+        return jsonify({"success": False, "error": pass_validation["message"]}), 400
+        
+    from werkzeug.security import generate_password_hash
+    user.password_hash = generate_password_hash(new_password)
+    db.session.commit()
+    
+    return jsonify({"success": True, "message": "Contraseña actualizada exitosamente"})
+
+
 # ============================================================
-# RUTAS - DASHBOARD (USUARIO AUTENTICADO)
+# RUTAS DE LA INTERFAZ WEB (Frontend)
 # ============================================================
 
 @app.route("/dashboard")
@@ -1325,10 +1373,10 @@ def api_auth_google():
 @app.route("/api/auth/firebase", methods=["POST"])
 @limiter.limit("5 per minute")
 def api_auth_firebase():
-    """Endpoint para validar o registrar mediante numero de telefono."""
+    """Endpoint universal para tokens Firebase (Google popup o Phone SMS)."""
     data = request.get_json()
     token = data.get("token")
-    action = data.get("action", "verify") # verify o reset
+    action = data.get("action", "verify")
     
     if not token:
         return jsonify({"success": False, "error": "Token no proporcionado"}), 400
@@ -1339,19 +1387,56 @@ def api_auth_firebase():
     if not verification["valid"]:
         return jsonify({"success": False, "error": verification["error"]}), 401
         
-    phone_info = verification["info"]
-    phone_number = phone_info.get("phone_number")
+    firebase_info = verification["info"]
+    phone_number = firebase_info.get("phone_number")
+    email = firebase_info.get("email")
+    firebase_uid = firebase_info.get("uid", "")
+    provider = firebase_info.get("firebase", {}).get("sign_in_provider", "")
     
+    # ---- FLUJO GOOGLE (via Firebase popup) ----
+    if email and not phone_number:
+        user = User.query.filter_by(email=email).first()
+        
+        if user:
+            if not user.google_id:
+                user.google_id = firebase_uid
+                user.is_verified = True
+                db.session.commit()
+        else:
+            # Auto-registrar usuario de Google
+            base_username = email.split('@')[0]
+            username = base_username
+            counter = 1
+            while User.query.filter_by(username=username).first():
+                username = f"{base_username}{counter}"
+                counter += 1
+            user = User(
+                username=username,
+                email=email,
+                password_hash=None,
+                google_id=firebase_uid,
+                is_verified=True
+            )
+            db.session.add(user)
+            db.session.commit()
+            from models import Subscription, PlanType
+            sub = Subscription(user_id=user.id, plan=PlanType.FREE.value)
+            db.session.add(sub)
+            db.session.commit()
+            
+        from flask_login import login_user
+        login_user(user, remember=True)
+        return jsonify({"success": True, "message": "Inicio de sesion con Google exitoso"})
+    
+    # ---- FLUJO TELEFONO (SMS OTP) ----
     if not phone_number:
-        return jsonify({"success": False, "error": "El token no contiene un numero de telefono"}), 400
+        return jsonify({"success": False, "error": "El token no contiene email ni telefono"}), 400
         
     user = User.query.filter_by(phone_number=phone_number).first()
     
     if action == "verify" and current_user.is_authenticated:
-        # Vincular telefono al usuario actual
         if user and user.id != current_user.id:
-            return jsonify({"success": False, "error": "Este numero de telefono ya esta vinculado a otra cuenta"}), 400
-            
+            return jsonify({"success": False, "error": "Este numero ya esta vinculado a otra cuenta"}), 400
         current_user.phone_number = phone_number
         current_user.is_verified = True
         db.session.commit()

@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}Política DMCA - SaveWave{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-5 mb-5">
+    <div class="col-lg-8">
+        <div class="card shadow-md border-0 glass-card" style="border-radius: 20px;">
+            <div class="card-body p-5">
+                <div class="text-center mb-5">
+                    <div class="mx-auto mb-3 d-inline-flex align-items-center justify-content-center" style="width:70px;height:70px;border-radius:18px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);">
+                        <i class="fas fa-balance-scale fa-2x text-danger"></i>
+                    </div>
+                    <h2 class="fw-bold">Política DMCA (Derechos de Autor)</h2>
+                    <p class="text-muted">Última actualización: {{ date | default('Agosto 2026') }}</p>
+                </div>
+
+                <div class="legal-content text-start" style="color: var(--text-color); font-size: 1.05rem; line-height: 1.7;">
+                    <h5 class="fw-bold mt-4 text-primary">1. Nuestra Posición respecto al Copyright</h5>
+                    <p>
+                        SaveWave ("nosotros", "el servicio") respeta profundamente los derechos de propiedad intelectual de terceros y esperamos que nuestros usuarios hagan lo mismo. 
+                        <strong>SaveWave es únicamente una herramienta técnica de descarga de uso personal.</strong>
+                    </p>
+                    <p>
+                        SaveWave <strong>NO aloja, almacena ni guarda en sus servidores</strong> ningún tipo de contenido audiovisual (videos, audios o imágenes). Todo el contenido se descarga directamente desde los servidores de las plataformas de origen al dispositivo personal del usuario.
+                    </p>
+
+                    <h5 class="fw-bold mt-4 text-primary">2. Política de Uso Aceptable</h5>
+                    <p>
+                        El uso de nuestra plataforma está estrictamente limitado a la descarga de contenido sobre el cual el usuario tenga derechos, como contenido propio, material libre de derechos (Creative Commons), o contenido para el cual cuente con el permiso explícito del creador original.
+                        Queda terminantemente prohibido utilizar SaveWave para infringir derechos de autor.
+                    </p>
+
+                    <h5 class="fw-bold mt-4 text-primary">3. Notificación de Infracción (Takedown Notice)</h5>
+                    <p>
+                        Si usted es un titular de derechos de autor (o un agente del mismo) y cree que el uso de nuestra herramienta infringe sus derechos, tenga en cuenta que <strong>no alojamos ningún contenido</strong>. Sin embargo, en cumplimiento con la Digital Millennium Copyright Act (DMCA), tomamos medidas para bloquear el acceso a la descarga de materiales específicos que infrinjan la ley.
+                    </p>
+                    <p>
+                        Para solicitar el bloqueo de una URL específica en nuestro sistema, envíenos una notificación formal de infracción de derechos de autor que incluya:
+                    </p>
+                    <ul>
+                        <li>Firma física o electrónica de una persona autorizada para actuar en nombre del titular de un derecho exclusivo que supuestamente se ha infringido.</li>
+                        <li>Identificación precisa de la URL original del contenido.</li>
+                        <li>Información razonablemente suficiente para permitirnos contactarlo (correo electrónico).</li>
+                        <li>Una declaración de que usted cree de buena fe que el uso del material de la manera denunciada no está autorizado por el titular de los derechos de autor.</li>
+                    </ul>
+
+                    <h5 class="fw-bold mt-4 text-primary">4. Contacto</h5>
+                    <p>
+                        Por favor, envíe sus avisos de DMCA al correo electrónico de soporte:
+                        <br><strong>soporte@savewave.software</strong>
+                    </p>
+                    <p>
+                        Procesaremos su solicitud en un plazo no mayor a 48 horas hábiles y añadiremos la URL a nuestra lista de bloqueo técnico para que no pueda ser procesada mediante nuestra herramienta.
+                    </p>
+                </div>
+
+                <div class="text-center mt-5">
+                    <a href="{{ url_for('index') }}" class="btn btn-outline-primary px-4 py-2" style="border-radius: 12px;">
+                        <i class="fas fa-arrow-left me-2"></i>Volver al inicio
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

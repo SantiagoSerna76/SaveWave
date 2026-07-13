@@ -246,6 +246,10 @@ def privacy():
     """Pagina de politica de privacidad."""
     return render_template("privacy.html")
 
+@app.route("/dmca")
+def dmca():
+    return render_template("dmca.html")
+
 
 # ============================================================
 # RUTAS - PWA (Progressive Web App)

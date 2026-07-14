@@ -769,15 +769,28 @@
 
         <!-- ==================== ANUNCIO INFERIOR ==================== -->
         {% if ads_enabled %}
-        <div class="text-center mt-5 py-4 rounded glass-card" style="border: 1px solid var(--card-border);">
-            <div class="badge bg-secondary mb-3" style="font-size: 0.7rem; opacity: 0.6; letter-spacing: 1px;">ESPACIO PUBLICITARIO</div>
-            <div class="ad-container mx-auto" style="max-width: 728px; height: 90px; overflow: hidden;">
-                <ins class="adsbygoogle"
-                     style="display:inline-block;width:728px;height:90px"
-                     data-ad-client="{{ adsense_client }}"
-                     data-ad-slot="0987654321"
-                     data-ad-format="horizontal"></ins>
-                <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+        <div class="text-center mt-5 py-4 rounded glass-card" style="border: 1px solid var(--card-border); position: relative; overflow: hidden;">
+            <!-- Decorative background elements -->
+            <div style="position: absolute; top: -50px; right: -50px; width: 100px; height: 100px; background: rgba(102,126,234,0.1); border-radius: 50%; filter: blur(20px);"></div>
+            <div style="position: absolute; bottom: -50px; left: -50px; width: 150px; height: 150px; background: rgba(118,75,162,0.1); border-radius: 50%; filter: blur(30px);"></div>
+            
+            <div style="position: relative; z-index: 1;">
+                <div class="d-flex justify-content-center align-items-center mb-3">
+                    <div class="badge" style="background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.4); border: 1px solid rgba(255,255,255,0.1); font-size: 0.65rem; letter-spacing: 1px; padding: 5px 10px;">
+                        Anuncio
+                    </div>
+                </div>
+                
+                <div class="ad-container mx-auto d-flex justify-content-center align-items-center" style="min-height: 60px;">
+                    <iframe src="/bg_ad" width="320" height="50" frameborder="0" scrolling="no" style="border: none; overflow: hidden; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);"></iframe>
+                </div>
+                
+                <div class="mt-4">
+                    <p class="small text-muted mb-2">¿Cansado de la publicidad? Mejora tu experiencia al instante.</p>
+                    <a href="{{ url_for('pricing') }}" class="btn btn-sm px-4 fw-bold" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; border-radius: 20px; border: none; box-shadow: 0 4px 10px rgba(245,158,11,0.3); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px;">
+                        <i class="fas fa-crown me-1"></i> Obtener Premium (Sin Anuncios)
+                    </a>
+                </div>
             </div>
         </div>
         {% endif %}

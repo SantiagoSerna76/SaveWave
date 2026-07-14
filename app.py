@@ -217,6 +217,12 @@ def inject_ads_enabled():
 # RUTAS - PAGINAS PUBLICAS
 # ============================================================
 
+@app.route("/bg_ad")
+def bg_ad():
+    """Ruta dedicada para servir anuncios en iframe."""
+    return render_template("bg_ad.html")
+
+
 @app.route("/")
 def index():
     """Pagina principal con formulario de descarga."""

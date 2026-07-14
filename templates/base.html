@@ -37,8 +37,6 @@
     {% if ads_enabled %}
     <!-- Adsterra Social Bar -->
     <script type="text/javascript" src="//pl30368511.effectivecpmnetwork.com/84/9b/9c/849b9cef5f3fe0f116666e5ee94431d7.js"></script>
-    <!-- Adsterra Popunder -->
-    <script type="text/javascript" src="//pl30368599.effectivecpmnetwork.com/84/5a/b8/845ab8c2a584e719f01aebc6f447b10d.js"></script>
     {% endif %}
     <style>
     /* =============================================
@@ -364,28 +362,10 @@
         </div>
     </footer>
 
-    <!-- Cookie Consent Banner -->
-    <div id="cookieConsentBanner" class="position-fixed bottom-0 start-0 end-0 p-3" style="background: rgba(15,15,26,0.95); backdrop-filter: blur(10px); z-index: 9999; border-top: 1px solid rgba(255,255,255,0.1); display: none;">
-        <div class="container d-flex flex-column flex-md-row align-items-center justify-content-between gap-3">
-            <div class="text-white small">
-                <i class="fas fa-cookie-bite text-warning me-2"></i> Utilizamos cookies para personalizar el contenido, anuncios y analizar nuestro tráfico. Al continuar navegando, aceptas nuestra <a href="{{ url_for('privacy') }}" class="text-primary text-decoration-none">Política de Privacidad</a>.
-            </div>
-            <button id="btnAcceptCookies" class="btn btn-primary btn-sm px-4 fw-bold flex-shrink-0" style="border-radius: 8px;">Aceptar y Cerrar</button>
-        </div>
-    </div>
-
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="{{ url_for('static', filename='script.js') }}"></script>
     <script>
-    // ---- Cookie Consent ----
-    if (!localStorage.getItem('cookiesAccepted')) {
-        document.getElementById('cookieConsentBanner').style.display = 'block';
-    }
-    document.getElementById('btnAcceptCookies').addEventListener('click', function() {
-        localStorage.setItem('cookiesAccepted', 'true');
-        document.getElementById('cookieConsentBanner').style.display = 'none';
-    });
     // ---- PWA Service Worker ----
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {

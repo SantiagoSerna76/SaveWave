@@ -1289,14 +1289,11 @@
         {% if ads_enabled %}
         <!-- AD: Sidebar ad (solo usuarios gratuitos) -->
         <div style="padding: 12px; margin-top: auto;">
-            <div style="font-size: 0.6rem; color: var(--text-muted); text-align: center; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em;">Patrocinado</div>
-            <ins class="adsbygoogle"
-                 style="display:block;width:100%;min-height:90px;"
-                 data-ad-client="{{ adsense_client }}"
-                 data-ad-slot="{{ adsense_slot_dashboard }}"
-                 data-ad-format="auto"
-                 data-full-width-responsive="true"></ins>
-            <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+            <div style="font-size: 0.6rem; color: var(--text-muted); text-align: center; margin-bottom: 4px; letter-spacing: 0.05em;">Anuncio</div>
+            <div class="sw-ad-slot mx-auto" style="width:100%;max-width:280px;height:50px;"></div>
+            <div class="text-center mt-2">
+                <a href="/pricing" style="font-size: 0.65rem; color: #10b981; text-decoration: none;"><i class="fas fa-crown me-1"></i>Quitar anuncios</a>
+            </div>
         </div>
         {% endif %}
     </div>
@@ -1392,39 +1389,7 @@
 </script>
 {% endif %}
 
-<!-- INTERSTITIAL AD OVERLAY -->
-{% if ads_enabled %}
-<div id="interstitialAdOverlay" style="
-    display: none; position: fixed; inset: 0; z-index: 9999;
-    background: rgba(10,10,20,0.97); backdrop-filter: blur(12px);
-    flex-direction: column; align-items: center; justify-content: center;
-    padding: 24px;
-">
-    <div style="max-width: 600px; width: 100%; text-align: center;">
-        <div style="font-size: 0.7rem; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 12px;">Publicidad • Continúa en <span id="adCountdown">5</span>s</div>
-        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 20px; min-height: 280px; display: flex; align-items: center; justify-content: center;">
-            <ins class="adsbygoogle"
-                 style="display:block;width:336px;height:280px;"
-                 data-ad-client="{{ adsense_client }}"
-                 data-ad-slot="{{ adsense_slot_index_top }}"
-                 id="interstitialAdSlot"></ins>
-            <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-        </div>
-        <div style="margin-top: 16px; color: rgba(255,255,255,0.5); font-size: 0.85rem;">
-            <i class="fas fa-music" style="color: #10b981;"></i> Siguiente canción lista...
-        </div>
-        <button id="skipAdBtn" onclick="skipInterstitialAd()" style="
-            display: none; margin-top: 16px;
-            background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2);
-            color: white; padding: 8px 24px; border-radius: 20px; cursor: pointer;
-            font-size: 0.85rem; transition: all 0.2s;
-        ">Saltar anuncio →</button>
-        <div style="margin-top: 12px; font-size: 0.7rem; color: rgba(255,255,255,0.25);">
-            Actualiza a <a href="/pricing" style="color: #10b981;">Premium</a> para disfrutar sin anuncios
-        </div>
-    </div>
-</div>
-{% endif %}
+
 
 <!-- STICKY PLAYER -->
 <div class="sticky-player" id="stickyPlayer">
@@ -3010,4 +2975,32 @@
     }
 
 </script>
+
+{% if ads_enabled %}
+<script>
+// === SISTEMA DE ANUNCIOS AUTO-REFRESH (PLAYLISTS) ===
+function loadAllAds() {
+    document.querySelectorAll('.sw-ad-slot').forEach(function(slot) {
+        slot.innerHTML = '';
+        var frame = document.createElement('iframe');
+        frame.src = '/bg_ad?t=' + Date.now();
+        frame.width = '320';
+        frame.height = '50';
+        frame.frameBorder = '0';
+        frame.scrolling = 'no';
+        frame.style.cssText = 'border:none;overflow:hidden;border-radius:6px;max-width:100%;';
+        slot.appendChild(frame);
+    });
+}
+document.addEventListener('DOMContentLoaded', function() {
+    loadAllAds();
+    setInterval(function() {
+        if (document.visibilityState === 'visible') {
+            loadAllAds();
+        }
+    }, 30000);
+});
+</script>
+{% endif %}
+
 {% endblock %}

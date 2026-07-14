@@ -4,9 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>SaveWave Ads</title>
-    {% if ads_enabled %}
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ adsense_client }}" crossorigin="anonymous"></script>
-    {% endif %}
+    <!-- Removed AdSense script from head -->
     <style>
         html, body {
             margin: 0;
@@ -24,16 +22,17 @@
 <body>
     {% if ads_enabled %}
     <div style="width: 100%; height: 100%;">
-        <!-- Render a standard link/display ad unit -->
-        <ins class="adsbygoogle"
-             style="display:block;width:100%;height:100%;"
-             data-ad-client="{{ adsense_client }}"
-             data-ad-slot="{{ adsense_slot_bg }}"
-             data-ad-format="auto"
-             data-full-width-responsive="true"></ins>
-        <script>
-             (adsbygoogle = window.adsbygoogle || []).push({});
-        </script>
+    <!-- Adsterra 320x50 Banner -->
+    <script type="text/javascript">
+        atOptions = {
+            'key' : '2101b216ab7323524cf1cd07c077bae1',
+            'format' : 'iframe',
+            'height' : 50,
+            'width' : 320,
+            'params' : {}
+        };
+    </script>
+    <script type="text/javascript" src="//www.highperformanceformat.com/2101b216ab7323524cf1cd07c077bae1/invoke.js"></script>
     </div>
     {% else %}
     <div style="color: rgba(255,255,255,0.2); font-family: sans-serif; font-size: 11px;">SaveWave Premium Ad-Free</div>

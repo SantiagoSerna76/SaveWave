@@ -1338,7 +1338,7 @@
     </div>
 </div>
 
-<!-- AD BANNER STICKY (encima del player, solo usuarios free) -->
+<!-- AD BANNER STICKY (encima del player, auto-refresh) -->
 {% if ads_enabled %}
 <div id="stickyAdBanner" style="
     position: fixed; bottom: 80px; left: 0; right: 0; z-index: 999;
@@ -1349,13 +1349,47 @@
     transition: opacity 0.3s ease;
 ">
     <div style="font-size: 0.55rem; color: rgba(255,255,255,0.3); position: absolute; top: 2px; left: 8px; text-transform: uppercase; letter-spacing: 0.1em;">Publicidad</div>
-    <ins class="adsbygoogle"
-         style="display:inline-block;width:320px;height:50px;"
-         data-ad-client="{{ adsense_client }}"
-         data-ad-slot="{{ adsense_slot_index_bottom }}"
-         id="stickyAdSlot"></ins>
-    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+    
+    <!-- Contenedor del anuncio (Aquí inyectaremos el iframe de Adsterra) -->
+    <div id="adsterra-banner-container" style="width: 320px; height: 50px;">
+        <!-- El iframe se insertará vía JS para permitir auto-refresh seguro sin romper el DOM -->
+    </div>
 </div>
+
+<script>
+    // Lógica para el Auto-Refresh inteligente del Banner usando iframe
+    function loadAdsterraBanner() {
+        const container = document.getElementById('adsterra-banner-container');
+        if (!container) return;
+
+        // Limpiar anuncio anterior
+        container.innerHTML = '';
+
+        // Usar iframe para aislar el document.write de Adsterra y evitar que borre la página
+        const adFrame = document.createElement('iframe');
+        adFrame.src = '/bg_ad';
+        adFrame.width = '320';
+        adFrame.height = '50';
+        adFrame.frameBorder = '0';
+        adFrame.scrolling = 'no';
+        adFrame.style.border = 'none';
+        adFrame.style.overflow = 'hidden';
+        
+        container.appendChild(adFrame);
+    }
+
+    // Cargar la primera vez cuando la página esté lista
+    document.addEventListener('DOMContentLoaded', () => {
+        loadAdsterraBanner();
+        
+        // Auto-refresh cada 30 segundos, SOLO si la pestaña está visible
+        setInterval(() => {
+            if (document.visibilityState === 'visible') {
+                loadAdsterraBanner();
+            }
+        }, 30000);
+    });
+</script>
 {% endif %}
 
 <!-- INTERSTITIAL AD OVERLAY -->

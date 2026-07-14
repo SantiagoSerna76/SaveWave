@@ -40,6 +40,22 @@ h1, h2, h3, h4, h5, h6, .text-body {
   opacity: 0.8 !important;
 }
 
+/* --- Select/Dropdown dark theme fix --- */
+select.form-select,
+select.form-select option {
+  background-color: #1e1e2e !important;
+  color: #ffffff !important;
+}
+select.form-select option:hover,
+select.form-select option:checked {
+  background-color: #667eea !important;
+  color: #ffffff !important;
+}
+select.form-select:focus {
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3) !important;
+  border-color: #667eea !important;
+}
+
 /* --- Clases Premium UI (Elegantes) --- */
 .hero-title {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);

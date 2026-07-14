@@ -31,6 +31,42 @@
                 <p class="lead mb-4 mx-auto" style="max-width: 650px; color: var(--text-muted); font-size: 1.2rem; font-weight: 400; line-height: 1.6;">
                     Guarda videos y música en calidad original desde <strong style="color: var(--text-color);">YouTube, Instagram, TikTok</strong> y más de 1,000 plataformas. Sin límites, sin instalación.
                 </p>
+                
+                <button type="button" class="btn btn-outline-light rounded-pill px-4 py-2 mb-2" data-bs-toggle="modal" data-bs-target="#platformsModal" style="font-weight: 500; font-size: 0.9rem; border-color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); backdrop-filter: blur(5px); transition: all 0.3s ease;">
+                    <i class="fas fa-globe me-2 text-info"></i>Ver sitios compatibles
+                </button>
+            </div>
+        </div>
+
+        <!-- MODAL DE PLATAFORMAS -->
+        <div class="modal fade" id="platformsModal" tabindex="-1" aria-labelledby="platformsModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content" style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 20px;">
+                    <div class="modal-header border-0 pb-0">
+                        <h5 class="modal-title fw-bold" id="platformsModalLabel"><i class="fas fa-globe me-2 text-info"></i>Sitios Compatibles</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body pt-3 pb-4 px-4">
+                        <p class="text-muted small mb-4">SaveWave soporta más de 1,000 sitios web utilizando la tecnología avanzada de yt-dlp. Aquí tienes algunos de los más populares:</p>
+                        
+                        <div class="d-flex flex-wrap gap-2 justify-content-center">
+                            <span class="badge" style="background: rgba(255,0,0,0.1); color: #ff0000; font-size: 1rem; padding: 10px 15px;"><i class="fab fa-youtube me-2"></i>YouTube</span>
+                            <span class="badge" style="background: rgba(225,48,108,0.1); color: #e1306c; font-size: 1rem; padding: 10px 15px;"><i class="fab fa-instagram me-2"></i>Instagram</span>
+                            <span class="badge" style="background: rgba(0,0,0,0.3); color: #fff; border: 1px solid rgba(255,255,255,0.2); font-size: 1rem; padding: 10px 15px;"><i class="fab fa-tiktok me-2 text-info"></i>TikTok</span>
+                            <span class="badge" style="background: rgba(24,119,242,0.1); color: #1877f2; font-size: 1rem; padding: 10px 15px;"><i class="fab fa-facebook me-2"></i>Facebook</span>
+                            <span class="badge" style="background: rgba(29,161,242,0.1); color: #1da1f2; font-size: 1rem; padding: 10px 15px;"><i class="fab fa-twitter me-2"></i>X (Twitter)</span>
+                            <span class="badge" style="background: rgba(255,69,0,0.1); color: #ff4500; font-size: 1rem; padding: 10px 15px;"><i class="fab fa-reddit me-2"></i>Reddit</span>
+                            <span class="badge" style="background: rgba(145,70,255,0.1); color: #9146ff; font-size: 1rem; padding: 10px 15px;"><i class="fab fa-twitch me-2"></i>Twitch</span>
+                            <span class="badge" style="background: rgba(0,175,240,0.1); color: #00aff0; font-size: 1rem; padding: 10px 15px;"><i class="fab fa-vimeo me-2"></i>Vimeo</span>
+                            <span class="badge" style="background: rgba(235,16,43,0.1); color: #eb102b; font-size: 1rem; padding: 10px 15px;"><i class="fab fa-pinterest me-2"></i>Pinterest</span>
+                        </div>
+                        
+                        <div class="text-center mt-4 pt-3 border-top" style="border-color: rgba(255,255,255,0.1) !important;">
+                            <p class="mb-0 text-white fw-bold">¡Y cientos de sitios más!</p>
+                            <small class="text-muted">Si puedes verlo, probablemente puedes descargarlo.</small>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 

@@ -97,21 +97,25 @@
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({ token: token, action: 'login' })
-        }).then(res => res.json()).then(data => {
+        }).then(res => {
+            if (!res.ok && res.status === 429) {
+                throw new Error('Demasiados intentos. Espera un minuto.');
+            }
+            return res.json();
+        }).then(data => {
             if(data.success) {
-                // Redirect to the page they were trying to access, or dashboard
                 const urlParams = new URLSearchParams(window.location.search);
                 const next = urlParams.get('next');
                 window.location.href = next || "{{ url_for('dashboard') }}";
             } else {
                 btn.style.display = 'flex';
                 statusEl.style.display = 'none';
-                alert("Error: " + data.error);
+                alert("Error: " + (data.error || 'Error desconocido'));
             }
-        }).catch(() => {
+        }).catch((err) => {
             btn.style.display = 'flex';
             statusEl.style.display = 'none';
-            alert("Error de conexión con el servidor.");
+            alert(err.message || "Error de conexión con el servidor.");
         });
       });
     }).catch((error) => {

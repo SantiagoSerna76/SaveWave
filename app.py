@@ -1308,7 +1308,7 @@ def api_auth_google():
 
 
 @app.route("/api/auth/firebase", methods=["POST"])
-@limiter.limit("5 per minute")
+@limiter.limit("15 per minute")
 def api_auth_firebase():
     """Endpoint universal para tokens Firebase (Google popup o Phone SMS)."""
     data = request.get_json()

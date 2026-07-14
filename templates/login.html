@@ -92,10 +92,18 @@
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({ token: token, action: 'login' })
         }).then(res => {
-            if (!res.ok && res.status === 429) {
+            if (res.status === 429) {
                 throw new Error('Demasiados intentos. Espera un minuto.');
             }
-            return res.json();
+            // Read as text first to avoid JSON parse crash on HTML error pages
+            return res.text().then(text => {
+                try {
+                    return JSON.parse(text);
+                } catch(e) {
+                    console.error('Server returned non-JSON:', text.substring(0, 200));
+                    throw new Error('Error en el servidor. Intenta de nuevo en unos segundos.');
+                }
+            });
         }).then(data => {
             if(data.success) {
                 const urlParams = new URLSearchParams(window.location.search);

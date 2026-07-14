@@ -1317,82 +1317,89 @@ def api_auth_google():
 @limiter.limit("15 per minute")
 def api_auth_firebase():
     """Endpoint universal para tokens Firebase (Google popup o Phone SMS)."""
-    data = request.get_json()
-    token = data.get("token")
-    action = data.get("action", "verify")
-    
-    if not token:
-        return jsonify({"success": False, "error": "Token no proporcionado"}), 400
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"success": False, "error": "Datos no proporcionados"}), 400
+        token = data.get("token")
+        action = data.get("action", "verify")
         
-    from auth import verify_firebase_phone_token
-    verification = verify_firebase_phone_token(token)
-    
-    if not verification["valid"]:
-        return jsonify({"success": False, "error": verification["error"]}), 401
-        
-    firebase_info = verification["info"]
-    phone_number = firebase_info.get("phone_number")
-    email = firebase_info.get("email")
-    firebase_uid = firebase_info.get("uid", "")
-    provider = firebase_info.get("firebase", {}).get("sign_in_provider", "")
-    
-    # ---- FLUJO GOOGLE (via Firebase popup) ----
-    if email and not phone_number:
-        user = User.query.filter_by(email=email).first()
-        
-        if user:
-            if not user.google_id:
-                user.google_id = firebase_uid
-                user.is_verified = True
-                db.session.commit()
-        else:
-            # Auto-registrar usuario de Google
-            base_username = email.split('@')[0]
-            username = base_username
-            counter = 1
-            while User.query.filter_by(username=username).first():
-                username = f"{base_username}{counter}"
-                counter += 1
-            user = User(
-                username=username,
-                email=email,
-                password_hash=None,
-                google_id=firebase_uid,
-                is_verified=True
-            )
-            db.session.add(user)
-            db.session.commit()
-            from models import Subscription, PlanType
-            sub = Subscription(user_id=user.id, plan=PlanType.FREE.value)
-            db.session.add(sub)
-            db.session.commit()
+        if not token:
+            return jsonify({"success": False, "error": "Token no proporcionado"}), 400
             
-        from flask_login import login_user
-        login_user(user, remember=True)
-        return jsonify({"success": True, "message": "Inicio de sesion con Google exitoso"})
-    
-    # ---- FLUJO TELEFONO (SMS OTP) ----
-    if not phone_number:
-        return jsonify({"success": False, "error": "El token no contiene email ni telefono"}), 400
+        from auth import verify_firebase_phone_token
+        verification = verify_firebase_phone_token(token)
         
-    user = User.query.filter_by(phone_number=phone_number).first()
-    
-    if action == "verify" and current_user.is_authenticated:
-        if user and user.id != current_user.id:
-            return jsonify({"success": False, "error": "Este numero ya esta vinculado a otra cuenta"}), 400
-        current_user.phone_number = phone_number
-        current_user.is_verified = True
-        db.session.commit()
-        return jsonify({"success": True, "message": "Telefono vinculado y cuenta verificada"})
+        if not verification["valid"]:
+            return jsonify({"success": False, "error": verification["error"]}), 401
+            
+        firebase_info = verification["info"]
+        phone_number = firebase_info.get("phone_number")
+        email = firebase_info.get("email")
+        firebase_uid = firebase_info.get("uid", "")
+        provider = firebase_info.get("firebase", {}).get("sign_in_provider", "")
         
-    elif action == "login":
-        if not user:
-            return jsonify({"success": False, "error": "No hay ninguna cuenta vinculada a este numero. Crea una cuenta primero."}), 404
-        from flask_login import login_user
-        login_user(user, remember=True)
-        return jsonify({"success": True, "message": "Inicio de sesion por SMS exitoso"})
+        # ---- FLUJO GOOGLE (via Firebase popup) ----
+        if email and not phone_number:
+            user = User.query.filter_by(email=email).first()
+            
+            if user:
+                if not user.google_id:
+                    user.google_id = firebase_uid
+                    user.is_verified = True
+                    db.session.commit()
+            else:
+                # Auto-registrar usuario de Google
+                base_username = email.split('@')[0]
+                username = base_username
+                counter = 1
+                while User.query.filter_by(username=username).first():
+                    username = f"{base_username}{counter}"
+                    counter += 1
+                user = User(
+                    username=username,
+                    email=email,
+                    password_hash=None,
+                    google_id=firebase_uid,
+                    is_verified=True
+                )
+                db.session.add(user)
+                db.session.commit()
+                from models import Subscription, PlanType
+                sub = Subscription(user_id=user.id, plan=PlanType.FREE.value)
+                db.session.add(sub)
+                db.session.commit()
+                
+            from flask_login import login_user
+            login_user(user, remember=True)
+            return jsonify({"success": True, "message": "Inicio de sesion con Google exitoso"})
         
-    return jsonify({"success": False, "error": "Accion no soportada"}), 400
+        # ---- FLUJO TELEFONO (SMS OTP) ----
+        if not phone_number:
+            return jsonify({"success": False, "error": "El token no contiene email ni telefono"}), 400
+            
+        user = User.query.filter_by(phone_number=phone_number).first()
+        
+        if action == "verify" and current_user.is_authenticated:
+            if user and user.id != current_user.id:
+                return jsonify({"success": False, "error": "Este numero ya esta vinculado a otra cuenta"}), 400
+            current_user.phone_number = phone_number
+            current_user.is_verified = True
+            db.session.commit()
+            return jsonify({"success": True, "message": "Telefono vinculado y cuenta verificada"})
+            
+        elif action == "login":
+            if not user:
+                return jsonify({"success": False, "error": "No hay ninguna cuenta vinculada a este numero. Crea una cuenta primero."}), 404
+            from flask_login import login_user
+            login_user(user, remember=True)
+            return jsonify({"success": True, "message": "Inicio de sesion por SMS exitoso"})
+            
+        return jsonify({"success": False, "error": "Accion no soportada"}), 400
+    except Exception as e:
+        db.session.rollback()
+        print(f"[ERROR] api_auth_firebase: {e}")
+        return jsonify({"success": False, "error": "Error interno del servidor. Intenta de nuevo."}), 500
 
 
 @app.route("/api/login", methods=["POST"])

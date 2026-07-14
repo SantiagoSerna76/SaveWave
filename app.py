@@ -1303,7 +1303,7 @@ def api_auth_google():
         
         # Asignar plan free
         from models import Subscription, PlanType
-        sub = Subscription(user_id=user.id, plan=PlanType.FREE.value)
+        sub = Subscription(user_id=user.id, plan=PlanType.FREE)
         db.session.add(sub)
         db.session.commit()
         
@@ -1366,7 +1366,7 @@ def api_auth_firebase():
                 db.session.add(user)
                 db.session.commit()
                 from models import Subscription, PlanType
-                sub = Subscription(user_id=user.id, plan=PlanType.FREE.value)
+                sub = Subscription(user_id=user.id, plan=PlanType.FREE)
                 db.session.add(sub)
                 db.session.commit()
                 

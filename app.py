@@ -1359,7 +1359,7 @@ def api_auth_firebase():
                 user = User(
                     username=username,
                     email=email,
-                    password_hash=None,
+                    password_hash="google_oauth",
                     google_id=firebase_uid,
                     is_verified=True
                 )

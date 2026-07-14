@@ -1399,7 +1399,7 @@ def api_auth_firebase():
     except Exception as e:
         db.session.rollback()
         print(f"[ERROR] api_auth_firebase: {e}")
-        return jsonify({"success": False, "error": "Error interno del servidor. Intenta de nuevo."}), 500
+        return jsonify({"success": False, "error": f"Error interno: {str(e)}"}), 500
 
 
 @app.route("/api/login", methods=["POST"])

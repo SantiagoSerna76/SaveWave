@@ -1198,12 +1198,12 @@ function loadAllAds() {
 }
 document.addEventListener('DOMContentLoaded', function() {
     loadAllAds();
-    // Auto-refresh cada 30 segundos si la pestaña esta visible
+    // Auto-refresh cada 10 segundos si la pestaña esta visible
     setInterval(function() {
         if (document.visibilityState === 'visible') {
             loadAllAds();
         }
-    }, 30000);
+    }, 10000);
 });
 </script>
 {% endif %}

@@ -1312,6 +1312,13 @@
             <h2>Selecciona una Playlist</h2>
             <p>Puedes abrir <strong>"Mi Biblioteca"</strong> para ver toda tu colección, o seleccionar rápidamente una de tus listas recientes:</p>
             
+            {% if ads_enabled %}
+            <div class="mt-4 mb-2 text-center">
+                <div style="font-size: 0.6rem; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px;">Anuncio Recomendado</div>
+                <div class="sw-ad-slot mx-auto" style="width:100%;max-width:320px;height:50px;border-radius:12px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.2);"></div>
+            </div>
+            {% endif %}
+            
             {% if playlists and playlists|length > 0 %}
             <div class="quick-playlists-grid">
                 {% for pl in playlists %}
@@ -1779,8 +1786,18 @@
                 <button class="btn-action ms-2" onclick="document.getElementById('uploadFileInput').click()">
                     <i class="fas fa-upload"></i> Subir MP3/MP4
                 </button>
+                <button class="btn-action btn-danger ms-auto" onclick="deletePlaylist(${playlist.id})">
+                    <i class="fas fa-trash"></i> <span class="d-none d-sm-inline">Eliminar</span>
+                </button>
                 <input type="file" id="uploadFileInput" class="d-none" accept=".mp3,.mp4,.wav,.m4a,.aac,.ogg,.webm" onchange="uploadLocalFile(${playlist.id})">
             </div>
+
+            {% if ads_enabled %}
+            <div class="mt-4 mb-4 text-center">
+                <div style="font-size: 0.6rem; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px;">Patrocinado por Adsterra</div>
+                <div class="sw-ad-slot mx-auto" style="width:100%;max-width:320px;height:50px;border-radius:12px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.2);"></div>
+            </div>
+            {% endif %}
 
             ${playlist.items.length > 0 ? `
             <div class="info-note" style="background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.2); border-radius: 12px; padding: 14px 18px; color: rgba(255,255,255,0.7); font-size: 0.85rem; margin-bottom: 24px; display: flex; align-items: flex-start; gap: 12px;">
@@ -2998,7 +3015,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (document.visibilityState === 'visible') {
             loadAllAds();
         }
-    }, 30000);
+    }, 10000);
 });
 </script>
 {% endif %}

@@ -11,6 +11,16 @@ Funciones:
   - cleanup_old_files()        -> Elimina archivos temporales antiguos
 """
 
+# =========================================================================================
+# ⚠️ ADVERTENCIA CRÍTICA / CRITICAL WARNING ⚠️
+# =========================================================================================
+# ESTE CÓDIGO FUNCIONA PERFECTAMENTE (15/JULIO/2026). 
+# REGLA DE ORO: "SI FUNCIONA, NO LO TOQUES".
+# TODO EL SISTEMA DE YT-DLP, OBTENCIÓN DE FORMATOS, FFMPEG Y RUTAS ES EXTREMADAMENTE FRÁGIL.
+# CUALQUIER CAMBIO AQUÍ PUEDE ROMPER LAS DESCARGAS DE INSTAGRAM, TIKTOK O YOUTUBE.
+# ESTÁ ESTRICTAMENTE PROHIBIDO MODIFICAR ESTE ARCHIVO SIN UNA RAZÓN DE FUERZA MAYOR.
+# =========================================================================================
+
 import os
 
 # INYECTAR DENO AL PATH:

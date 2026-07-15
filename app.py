@@ -422,6 +422,12 @@ def api_download():
     API: Descarga un video.
     Acepta autenticacion via sesion web O via JWT (Authorization: Bearer <token>).
     """
+    # =========================================================================
+    # ⚠️ REGLA DE ORO: SI FUNCIONA, NO LO TOQUES ⚠️
+    # ESTE ENDPOINT ESTÁ ALTAMENTE OPTIMIZADO PARA MANEJAR LÍMITES DE DESCARGA,
+    # RESTRICCIONES DE TIEMPO, PLATAFORMAS (IG/TIKTOK/YT) Y AUTENTICACIÓN JWT.
+    # PROHIBIDO MODIFICAR LA LÓGICA CORE DE ESTA RUTA SIN AUTORIZACIÓN EXPRESA.
+    # =========================================================================
     # Soportar tanto form data como JSON
     if request.is_json:
         data = request.get_json()

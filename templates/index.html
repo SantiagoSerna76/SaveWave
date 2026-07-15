@@ -1193,7 +1193,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 10000);
 
     // === SOCIAL BAR (Solo PC) ===
-    if (window.innerWidth > 768) {
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+    if (!isMobile) {
         var socialBar = document.createElement('script');
         socialBar.src = "https://pl30368511.effectivecpmnetwork.com/84/9b/9c/849b9cef5f3fe0f116666e5ee94431d7.js";
         document.body.appendChild(socialBar);

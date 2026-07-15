@@ -420,8 +420,10 @@
             const navBtn = document.getElementById('navInstallBtnContainer');
             if (navBtn) navBtn.style.display = 'block';
             
-            // Show floating install banner (only if user hasn't dismissed it before)
-            if (!localStorage.getItem('installBannerDismissed')) {
+            // Show floating install banner (reappears every 24h after dismiss)
+            const dismissed = localStorage.getItem('installBannerDismissed');
+            const canShow = !dismissed || (Date.now() - parseInt(dismissed)) > 86400000;
+            if (canShow) {
                 showInstallBanner();
             }
         });
@@ -467,8 +469,8 @@
                             <img src="/static/icon-192.png" alt="SaveWave" style="width:100%; height:100%; object-fit:cover;">
                         </div>
                         <div style="flex:1; min-width:0;">
-                            <div style="color:#fff; font-weight:700; font-size:0.95rem; margin-bottom:2px;">Instala SaveWave</div>
-                            <div style="color:rgba(255,255,255,0.55); font-size:0.8rem; line-height:1.3;">Lleva tu música a todas partes, incluso sin internet</div>
+                            <div style="color:#fff; font-weight:700; font-size:0.95rem; margin-bottom:2px;">📲 Instala SaveWave</div>
+                            <div style="color:rgba(255,255,255,0.55); font-size:0.8rem; line-height:1.3;">Sin anuncios molestos · Música offline · Más rápido</div>
                         </div>
                     </div>
                     <div style="display:flex; gap:10px; margin-top:14px;">
@@ -500,7 +502,7 @@
                 banner.style.transform = 'translateY(20px)';
                 setTimeout(() => banner.remove(), 300);
             }
-            localStorage.setItem('installBannerDismissed', 'true');
+            localStorage.setItem('installBannerDismissed', Date.now().toString());
         };
     })();
 
@@ -519,6 +521,49 @@
             slot.appendChild(frame);
         });
     }
+
+    // === KILLER GLOBAL: Destruir Social Bar de Adsterra en MOVIL y PWA ===
+    (function() {
+        const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        const isInstalledApp = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+        
+        if (isMobileDevice || isInstalledApp) {
+            // Observador agresivo: mata cualquier elemento fixed/sticky que Adsterra inyecte
+            var adKiller = new MutationObserver(function(mutations) {
+                mutations.forEach(function(m) {
+                    m.addedNodes.forEach(function(node) {
+                        if (node.nodeType !== 1) return;
+                        var style = window.getComputedStyle ? window.getComputedStyle(node) : node.style;
+                        var pos = style ? style.position : '';
+                        if ((pos === 'fixed' || pos === 'sticky') &&
+                            !node.classList.contains('navbar') &&
+                            !node.closest('.navbar') &&
+                            !node.closest('.alert') &&
+                            node.id !== 'pwaInstallBanner' &&
+                            !node.closest('#pwaInstallBanner') &&
+                            !node.dataset.swSafe) {
+                            node.remove();
+                        }
+                    });
+                });
+            });
+            adKiller.observe(document.documentElement, { childList: true, subtree: true });
+            
+            // Barrido periodico cada 2 seg por si se cuela algo
+            setInterval(function() {
+                document.querySelectorAll('*').forEach(function(el) {
+                    var style = window.getComputedStyle(el);
+                    if ((style.position === 'fixed' || style.position === 'sticky') &&
+                        !el.classList.contains('navbar') && !el.closest('.navbar') &&
+                        !el.closest('.alert') && !el.closest('#pwaInstallBanner') &&
+                        el.tagName !== 'NAV' && !el.dataset.swSafe &&
+                        el.offsetHeight > 0 && el.offsetHeight < 200) {
+                        el.remove();
+                    }
+                });
+            }, 2000);
+        }
+    })();
     </script>
     {% block extra_scripts %}{% endblock %}
 </body>

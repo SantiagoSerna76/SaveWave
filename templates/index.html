@@ -1182,46 +1182,109 @@ $(document).ready(function() {
 
 {% if ads_enabled %}
 <script>
-// === SISTEMA DE ANUNCIOS AUTO-REFRESH ===
+// === SISTEMA DE ANUNCIOS ===
 document.addEventListener('DOMContentLoaded', function() {
     loadAllAds();
-    // Auto-refresh cada 10 segundos si la pestaña esta visible
     setInterval(function() {
-        if (document.visibilityState === 'visible') {
-            loadAllAds();
-        }
+        if (document.visibilityState === 'visible') loadAllAds();
     }, 10000);
 
-    // === SOCIAL BAR (Solo PC) ===
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
-    if (!isMobile) {
+    // Detectar si estamos en la PWA (app instalada)
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches 
+        || window.navigator.standalone === true;
+
+    // Detectar si estamos en movil
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+    // === SOCIAL BAR (Solo PC, NUNCA en app ni movil) ===
+    if (!isMobile && !isStandalone) {
         var socialBar = document.createElement('script');
         socialBar.src = "https://pl30368511.effectivecpmnetwork.com/84/9b/9c/849b9cef5f3fe0f116666e5ee94431d7.js";
         document.body.appendChild(socialBar);
+
+        // Vigilar cuando Adsterra inyecte su contenedor para agregarle un boton X
+        var observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(m) {
+                m.addedNodes.forEach(function(node) {
+                    if (node.nodeType === 1 && node.style && 
+                        (node.style.position === 'fixed' || node.style.position === 'sticky') &&
+                        !node.classList.contains('navbar') && 
+                        !node.id && !node.querySelector('.navbar') &&
+                        !node.dataset.swHandled) {
+                        
+                        node.dataset.swHandled = 'true';
+                        // Agregar boton X grande y visible
+                        var closeBtn = document.createElement('div');
+                        closeBtn.innerHTML = '✕';
+                        closeBtn.style.cssText = 'position:absolute;top:4px;right:8px;width:32px;height:32px;' +
+                            'background:rgba(0,0,0,0.7);color:#fff;border-radius:50%;display:flex;' +
+                            'align-items:center;justify-content:center;cursor:pointer;font-size:18px;' +
+                            'font-weight:bold;z-index:2147483647;border:2px solid rgba(255,255,255,0.3);' +
+                            'transition:all 0.2s;line-height:1;';
+                        closeBtn.onmouseenter = function() { this.style.background = 'rgba(220,38,38,0.9)'; };
+                        closeBtn.onmouseleave = function() { this.style.background = 'rgba(0,0,0,0.7)'; };
+                        closeBtn.onclick = function(e) {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            node.style.display = 'none';
+                            node.remove();
+                        };
+                        node.style.position = 'relative';
+                        node.appendChild(closeBtn);
+                    }
+                });
+            });
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
     }
 
-    // === POPUNDER (Solo al intentar descargar, maximo 2) ===
-    let popCount = parseInt(localStorage.getItem('sw_pop_count') || '0');
-    let popInjected = false;
-    
-    const downloadBtn = document.getElementById('downloadBtn');
-    if (downloadBtn && popCount < 2) {
-        // Inyectamos el script justo cuando el mouse entra al boton, 
-        // para que intercepte el clic inminente.
-        downloadBtn.addEventListener('mouseenter', function() {
-            if (!popInjected) {
-                var popScript = document.createElement('script');
-                popScript.src = "https://pl30368599.effectivecpmnetwork.com/84/5a/b8/845ab8c2a584e719f01aebc6f447b10d.js";
-                document.body.appendChild(popScript);
-                popInjected = true;
-            }
+    // === SOCIAL BAR: Destruir en movil si de alguna manera se colo ===
+    if (isMobile || isStandalone) {
+        var killObserver = new MutationObserver(function(mutations) {
+            mutations.forEach(function(m) {
+                m.addedNodes.forEach(function(node) {
+                    if (node.nodeType === 1 && node.style && 
+                        (node.style.position === 'fixed' || node.style.position === 'sticky') &&
+                        !node.classList.contains('navbar') && 
+                        !node.querySelector('.navbar') &&
+                        !node.id) {
+                        node.remove();
+                    }
+                });
+            });
         });
+        killObserver.observe(document.body, { childList: true, subtree: true });
+    }
+
+    // === POPUNDER (Solo al descargar, maximo 2, NUNCA en app) ===
+    if (!isStandalone) {
+        let popCount = parseInt(localStorage.getItem('sw_pop_count') || '0');
+        let popInjected = false;
         
-        // Contamos el clic
-        downloadBtn.addEventListener('click', function() {
-            popCount++;
-            localStorage.setItem('sw_pop_count', popCount);
-        });
+        const downloadBtn = document.getElementById('downloadBtn');
+        if (downloadBtn && popCount < 2) {
+            downloadBtn.addEventListener('mouseenter', function() {
+                if (!popInjected) {
+                    var popScript = document.createElement('script');
+                    popScript.src = "https://pl30368599.effectivecpmnetwork.com/84/5a/b8/845ab8c2a584e719f01aebc6f447b10d.js";
+                    document.body.appendChild(popScript);
+                    popInjected = true;
+                }
+            });
+            // En movil: touchstart en vez de mouseenter
+            downloadBtn.addEventListener('touchstart', function() {
+                if (!popInjected && popCount < 2) {
+                    var popScript = document.createElement('script');
+                    popScript.src = "https://pl30368599.effectivecpmnetwork.com/84/5a/b8/845ab8c2a584e719f01aebc6f447b10d.js";
+                    document.body.appendChild(popScript);
+                    popInjected = true;
+                }
+            });
+            downloadBtn.addEventListener('click', function() {
+                popCount++;
+                localStorage.setItem('sw_pop_count', popCount);
+            });
+        }
     }
 });
 </script>

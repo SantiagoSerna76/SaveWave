@@ -1183,7 +1183,6 @@ $(document).ready(function() {
 {% if ads_enabled %}
 <script>
 // === SISTEMA DE ANUNCIOS AUTO-REFRESH ===
-
 document.addEventListener('DOMContentLoaded', function() {
     loadAllAds();
     // Auto-refresh cada 10 segundos si la pestaña esta visible
@@ -1192,6 +1191,37 @@ document.addEventListener('DOMContentLoaded', function() {
             loadAllAds();
         }
     }, 10000);
+
+    // === SOCIAL BAR (Solo PC) ===
+    if (window.innerWidth > 768) {
+        var socialBar = document.createElement('script');
+        socialBar.src = "https://pl30368511.effectivecpmnetwork.com/84/9b/9c/849b9cef5f3fe0f116666e5ee94431d7.js";
+        document.body.appendChild(socialBar);
+    }
+
+    // === POPUNDER (Solo al intentar descargar, maximo 2) ===
+    let popCount = parseInt(localStorage.getItem('sw_pop_count') || '0');
+    let popInjected = false;
+    
+    const downloadBtn = document.getElementById('downloadBtn');
+    if (downloadBtn && popCount < 2) {
+        // Inyectamos el script justo cuando el mouse entra al boton, 
+        // para que intercepte el clic inminente.
+        downloadBtn.addEventListener('mouseenter', function() {
+            if (!popInjected) {
+                var popScript = document.createElement('script');
+                popScript.src = "https://pl30368599.effectivecpmnetwork.com/84/5a/b8/845ab8c2a584e719f01aebc6f447b10d.js";
+                document.body.appendChild(popScript);
+                popInjected = true;
+            }
+        });
+        
+        // Contamos el clic
+        downloadBtn.addEventListener('click', function() {
+            popCount++;
+            localStorage.setItem('sw_pop_count', popCount);
+        });
+    }
 });
 </script>
 {% endif %}

@@ -2996,21 +2996,8 @@
 {% if ads_enabled %}
 <script>
 // === SISTEMA DE ANUNCIOS AUTO-REFRESH (PLAYLISTS) ===
-function loadAllAds() {
-    document.querySelectorAll('.sw-ad-slot').forEach(function(slot) {
-        slot.innerHTML = '';
-        var frame = document.createElement('iframe');
-        frame.src = '/bg_ad?t=' + Date.now();
-        frame.width = '320';
-        frame.height = '50';
-        frame.frameBorder = '0';
-        frame.scrolling = 'no';
-        frame.style.cssText = 'border:none;overflow:hidden;border-radius:6px;max-width:100%;';
-        slot.appendChild(frame);
-    });
-}
 document.addEventListener('DOMContentLoaded', function() {
-    loadAllAds();
+    if (typeof loadAllAds === 'function') loadAllAds();
     setInterval(function() {
         if (document.visibilityState === 'visible') {
             loadAllAds();

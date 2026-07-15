@@ -503,6 +503,22 @@
             localStorage.setItem('installBannerDismissed', 'true');
         };
     })();
+
+    // === SISTEMA GLOBAL DE ANUNCIOS ===
+    function loadAllAds() {
+        const slots = document.querySelectorAll('.sw-ad-slot');
+        slots.forEach(slot => {
+            slot.innerHTML = '';
+            const frame = document.createElement('iframe');
+            frame.src = '/bg_ad?t=' + Date.now();
+            frame.width = '320';
+            frame.height = '50';
+            frame.frameBorder = '0';
+            frame.scrolling = 'no';
+            frame.style.cssText = 'border:none;overflow:hidden;border-radius:6px;width:100%;height:100%;';
+            slot.appendChild(frame);
+        });
+    }
     </script>
     {% block extra_scripts %}{% endblock %}
 </body>

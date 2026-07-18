@@ -1454,6 +1454,14 @@ def playlists_view():
 def api_playlist_create():
     """Crea una nueva playlist."""
 
+    # --- LÍMITES USUARIOS GRATUITOS ---
+    is_free = not current_user.subscription or current_user.subscription.plan == PlanType.FREE
+    if is_free and current_user.playlists.count() >= 2:
+        return jsonify({
+            "success": False, 
+            "error": "Límite alcanzado: Los usuarios gratuitos solo pueden tener hasta 2 playlists. ¡Actualízate a Premium para crear listas ilimitadas!"
+        }), 403
+
     data = request.get_json() or {}
     name = data.get("name", "").strip()
     if not name:
@@ -1479,6 +1487,23 @@ def api_playlist_add():
     playlist = Playlist.query.filter_by(id=playlist_id, user_id=current_user.id).first()
     if not playlist:
         return jsonify({"success": False, "error": "Playlist no encontrada."}), 404
+
+    # --- LÍMITES USUARIOS GRATUITOS ---
+    is_free = not current_user.subscription or current_user.subscription.plan == PlanType.FREE
+    if is_free:
+        current_count = playlist.items.count()
+        if current_count >= 10:
+            return jsonify({
+                "success": False, 
+                "error": "Límite alcanzado: Los usuarios gratuitos solo pueden tener hasta 10 canciones por playlist. ¡Actualízate a Premium!"
+            }), 403
+        
+        allowed_new = 10 - current_count
+        if len(items) > allowed_new:
+            return jsonify({
+                "success": False,
+                "error": f"Límite alcanzado: Ya tienes {current_count} canciones y el máximo es 10. Solo puedes agregar {allowed_new} canciones más. ¡Actualízate a Premium!"
+            }), 403
 
     added_count = 0
     for item in items:

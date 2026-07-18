@@ -1013,7 +1013,15 @@
         .pl-header { flex-direction: column; align-items: center; text-align: center; gap: 15px; margin-bottom: 20px; padding-bottom: 20px; }
         .pl-cover { width: 140px; height: 140px; }
         .pl-meta h1 { font-size: 1.6rem; }
-        .pl-controls { flex-wrap: wrap; justify-content: center; gap: 10px; }
+        .pl-controls { 
+            display: grid !important; 
+            grid-template-columns: auto 1fr; 
+            gap: 10px; 
+            align-items: center;
+        }
+        .pl-controls .btn-play-main { grid-row: 1 / 3; }
+        .pl-controls .btn-action { font-size: 0.8rem; padding: 8px 16px; }
+        .pl-controls .btn-danger { justify-self: end; }
         .track-actions { opacity: 1; }
         /* On mobile: hide play/download inline buttons, use three-dots bottom sheet instead */
         .track-actions .btn-play-track,
@@ -1733,7 +1741,7 @@
                 const safeTitle = item.title.replace(/'/g, "\\'").replace(/"/g, '&quot;');
                 const platformLabel = item.platform === 'audio_local' ? 'Archivo local' : item.platform === 'video_local' ? 'Video local' : item.platform;
                 rows += `
-                    <tr class="track-row" ondblclick="playTrack(${index})" id="trackRow${index}">
+                    <tr class="track-row" ondblclick="playTrack(${index})" onclick="handleTrackTap(event, ${index}, ${playlist.id}, ${item.id}, '${safeUrl}', '${safeThumb}', '${safeTitle}')" id="trackRow${index}">
                         <td class="track-number">${index + 1}</td>
                         <td style="width:100%;">
                             <div style="display:flex; align-items:center; gap:12px; min-width:0;">
@@ -2606,6 +2614,17 @@
                 uploadBtn.disabled = false;
             }
             fileInput.value = '';
+        }
+    }
+
+    // Single tap handler: on mobile opens bottom sheet, on desktop does nothing (dblclick plays)
+    function handleTrackTap(event, index, playlistId, itemId, safeUrl, safeThumb, safeTitle) {
+        // Don't trigger if tapping a button inside the row
+        if (event.target.closest('button')) return;
+        
+        const isMobile = window.innerWidth <= 768;
+        if (isMobile) {
+            openTrackSheet(index, playlistId, itemId, safeUrl, safeThumb, safeTitle);
         }
     }
 

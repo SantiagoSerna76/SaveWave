@@ -605,9 +605,16 @@
                             </ul>
                             <style>
                                 #playlistModalTabs .nav-link.active {
-                                    background: #fff;
-                                    color: #1e1e2e !important;
-                                    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+                                    background: linear-gradient(135deg, #6366f1, #818cf8) !important;
+                                    color: #fff !important;
+                                    box-shadow: 0 4px 15px rgba(99,102,241,0.35);
+                                }
+                                #playlistModalTabs .nav-link:not(.active) {
+                                    color: rgba(255,255,255,0.5) !important;
+                                }
+                                #playlistModalTabs .nav-link:not(.active):hover {
+                                    color: rgba(255,255,255,0.8) !important;
+                                    background: rgba(255,255,255,0.05);
                                 }
                             </style>
                         </div>
@@ -618,11 +625,11 @@
                                     <p class="text-secondary small"><i class="fas fa-spinner fa-spin me-1"></i> Cargando...</p>
                                 </div>
                                 <div class="mt-2">
-                                    <p class="text-secondary fw-semibold small mb-2"><i class="fas fa-plus-circle me-1" style="color:#a6e3a1;"></i>O crea una nueva playlist:</p>
+                                    <p class="text-secondary fw-semibold small mb-2"><i class="fas fa-plus-circle me-1" style="color:#818cf8;"></i>O crea una nueva playlist:</p>
                                     <div id="quickCreateError" class="alert alert-warning py-2 small d-none"></div>
                                     <div class="d-flex gap-2">
                                         <input type="text" class="form-control" id="quickNewPlaylistName" placeholder="Nombre de la nueva" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius: 12px; padding: 12px 16px;">
-                                        <button class="btn fw-bold" onclick="quickCreateAndAdd()" id="quickCreateBtn" style="background:#a6e3a1; border:none; color:#1e1e2e; border-radius: 12px; padding: 0 20px; white-space: nowrap;"><i class="fas fa-check me-1"></i>Crear y guardar</button>
+                                        <button class="btn fw-bold" onclick="quickCreateAndAdd()" id="quickCreateBtn" style="background:linear-gradient(135deg, #6366f1, #818cf8); border:none; color:#fff; border-radius: 12px; padding: 0 20px; white-space: nowrap;"><i class="fas fa-check me-1"></i>Crear y guardar</button>
                                     </div>
                                 </div>
                             </div>
@@ -640,10 +647,10 @@
                                     <input class="form-control" type="file" id="localFileInput" accept="audio/*,video/*" style="background:#313244; border:1px solid #45475a; color:#fff;">
                                 </div>
                                 <div class="progress mb-3 d-none" id="uploadProgressBar" style="height:8px; background:#313244;">
-                                    <div class="progress-bar" id="uploadProgressFill" role="progressbar" style="width:0%; background:#a6e3a1;"></div>
+                                    <div class="progress-bar" id="uploadProgressFill" role="progressbar" style="width:0%; background:linear-gradient(135deg, #6366f1, #818cf8);"></div>
                                 </div>
                                 <div id="uploadStatus" class="small text-secondary d-none"></div>
-                                <button class="btn fw-bold w-100" id="uploadFileBtn" onclick="uploadLocalFile()" style="background:#a6e3a1; border:none; color:#1e1e2e;">
+                                <button class="btn fw-bold w-100" id="uploadFileBtn" onclick="uploadLocalFile()" style="background:linear-gradient(135deg, #6366f1, #818cf8); border:none; color:#fff;">
                                     <i class="fas fa-cloud-upload-alt me-1"></i>Subir a Playlist
                                 </button>
                             </div>

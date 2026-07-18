@@ -1950,6 +1950,10 @@
     }
 
     async function playTrack(index) {
+        // Helper to safely set text/html on an element
+        const safeText = (el, txt) => { if (el) el.textContent = txt; };
+        const safeHtml = (el, html) => { if (el) el.innerHTML = html; };
+
         try {
             // Force player to be visible
             const stickyPlayer = document.getElementById('stickyPlayer');
@@ -1973,8 +1977,7 @@
             const statusEl = document.getElementById('playerTitle');
             
             if (index < 0 || index >= currentPlaylistItems.length) {
-                if (statusEl) statusEl.textContent = '⚠ Índice de pista inválido';
-                alert("Error: Índice de pista inválido (" + index + ")");
+                safeText(statusEl, '⚠ Índice de pista inválido');
                 return;
             }
 
@@ -1993,177 +1996,172 @@
             currentTrackIndex = index;
             const track = currentPlaylistItems[index];
 
-
-        const platformLabel = track.platform === 'audio_local' ? 'Archivo local' : track.platform === 'video_local' ? 'Video local' : track.platform;
-        
-        const artistEl = document.getElementById('playerArtist');
-        if (artistEl) artistEl.textContent = platformLabel;
-        
-        const coverEl = document.getElementById('playerCover');
-        if (coverEl) {
-            if (track.thumbnail) {
-                coverEl.src = track.thumbnail;
-                coverEl.classList.remove('d-none');
-            } else {
-                coverEl.classList.add('d-none');
-            }
-        }
-        highlightCurrentTrack();
-        setupMediaSession(track);
-
-        isPlaying = false;
-        updatePlayPauseUI();
-        if (statusEl) statusEl.innerHTML = '⏳ Paso 1: Preparando...';
-
-        const progBar = document.getElementById('progressBar');
-        if (progBar) progBar.style.width = '0%';
-        
-        const tc = document.getElementById('timeCurrent');
-        if (tc) tc.textContent = '0:00';
-        
-        const tt = document.getElementById('timeTotal');
-        if (tt) tt.textContent = '0:00';
-
-        try {
-            if ('caches' in window) {
-                const offlineCache = await caches.open(OFFLINE_CACHE_NAME);
-                const cacheKey = '/offline-cache/?url=' + encodeURIComponent(track.url);
-                const cachedRes = await offlineCache.match(cacheKey);
-                if (cachedRes) {
-                    // Usar la URL del Service Worker en vez de blob URL.
-                    // Los blob URLs se destruyen cuando el móvil manda la app al fondo,
-                    // causando que la música se detenga. El SW proxy mantiene el audio vivo.
-                    statusEl.textContent = '⏳ Cargando offline...';
-                    audioPlayer.src = cacheKey;
-                    audioPlayer.load();
-                    try {
-                        await audioPlayer.play();
-                        isPlaying = true;
-                        statusEl.textContent = track.title;
-                        updatePlayPauseUI();
-                        // Disparar precarga silenciosa de la siguiente
-                        setTimeout(preloadNextTrack, 1000);
-                        return;
-                    } catch(err) {
-                        console.warn('Caché offline corrupto detectado, eliminando y usando red...', err);
-                        await offlineCache.delete(cacheKey);
-                    }
+            const platformLabel = track.platform === 'audio_local' ? 'Archivo local' : track.platform === 'video_local' ? 'Video local' : track.platform;
+            
+            const artistEl = document.getElementById('playerArtist');
+            safeText(artistEl, platformLabel);
+            
+            const coverEl = document.getElementById('playerCover');
+            if (coverEl) {
+                if (track.thumbnail) {
+                    coverEl.src = track.thumbnail;
+                    coverEl.classList.remove('d-none');
+                } else {
+                    coverEl.classList.add('d-none');
                 }
             }
-        } catch(e) { }
+            highlightCurrentTrack();
+            setupMediaSession(track);
 
-        if (track.platform === 'audio_local' || track.platform === 'video_local' || track.cached_url) {
-            const localSrc = track.cached_url || track.url;
-            statusEl.textContent = '⏳ Cargando archivo local...';
-            audioPlayer.src = localSrc;
-            audioPlayer.load();
-            try {
-                await audioPlayer.play();
-                isPlaying = true;
-                statusEl.textContent = track.title;
-                setTimeout(preloadNextTrack, 1000);
-            } catch(err) {
-                statusEl.textContent = '❌ Error reproduciendo archivo: ' + err.message;
-            }
+            isPlaying = false;
             updatePlayPauseUI();
-            return;
-        }
+            safeHtml(statusEl, '⏳ Paso 1: Preparando...');
 
-        statusEl.innerHTML = '⏳ Conectando con el servidor...';
-        currentFetchController = new AbortController();
-        
-        try {
-            // Usar promesa cacheadas si hay un preload activo
-            if (!window.preloadPromises) window.preloadPromises = {};
+            const progBar = document.getElementById('progressBar');
+            if (progBar) progBar.style.width = '0%';
             
-            let dataPromise = window.preloadPromises[track.url];
-            if (!dataPromise) {
-                dataPromise = fetch('/api/stream-proxy', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                    body: 'url=' + encodeURIComponent(track.url),
-                    signal: currentFetchController.signal
-                }).then(r => {
-                    if (!r.ok) throw new Error('HTTP ' + r.status);
-                    return r.json();
-                });
-                window.preloadPromises[track.url] = dataPromise;
-            }
+            const tc = document.getElementById('timeCurrent');
+            safeText(tc, '0:00');
             
-            const data = await dataPromise;
-            currentFetchController = null;
-            
-            if (currentTrackIndex !== index) return;
+            const tt = document.getElementById('timeTotal');
+            safeText(tt, '0:00');
 
-            if (!data.success) {
-                statusEl.textContent = '❌ ' + (data.error || 'Sin respuesta del servidor');
+            try {
+                if ('caches' in window) {
+                    const offlineCache = await caches.open(OFFLINE_CACHE_NAME);
+                    const cacheKey = '/offline-cache/?url=' + encodeURIComponent(track.url);
+                    const cachedRes = await offlineCache.match(cacheKey);
+                    if (cachedRes) {
+                        safeText(statusEl, '⏳ Cargando offline...');
+                        audioPlayer.src = cacheKey;
+                        audioPlayer.load();
+                        try {
+                            await audioPlayer.play();
+                            isPlaying = true;
+                            safeText(statusEl, track.title);
+                            updatePlayPauseUI();
+                            setTimeout(preloadNextTrack, 1000);
+                            return;
+                        } catch(err) {
+                            console.warn('Caché offline corrupto detectado, eliminando y usando red...', err);
+                            await offlineCache.delete(cacheKey);
+                        }
+                    }
+                }
+            } catch(e) { }
+
+            if (track.platform === 'audio_local' || track.platform === 'video_local' || track.cached_url) {
+                const localSrc = track.cached_url || track.url;
+                safeText(statusEl, '⏳ Cargando archivo local...');
+                audioPlayer.src = localSrc;
+                audioPlayer.load();
+                try {
+                    await audioPlayer.play();
+                    isPlaying = true;
+                    safeText(statusEl, track.title);
+                    setTimeout(preloadNextTrack, 1000);
+                } catch(err) {
+                    safeText(statusEl, '❌ Error reproduciendo archivo: ' + err.message);
+                }
                 updatePlayPauseUI();
                 return;
             }
 
-            statusEl.innerHTML = '⏳ Paso 3: Cargando audio...';
+            safeHtml(statusEl, '⏳ Conectando con el servidor...');
+            currentFetchController = new AbortController();
             
-            // Intentar con la URL directa de YouTube primero (más rápido, el móvil descarga directo)
-            // Si falla por CORS, usar el proxy como respaldo
-            const tryPlay = async (url) => {
-                return new Promise((resolve, reject) => {
-                    const audio = new Audio();
-                    audio.preload = 'auto';
-                    
-                    audio.oncanplay = () => {
-                        audioPlayer.src = url;
-                        audioPlayer.load();
-                        resolve();
-                        setTimeout(preloadNextTrack, 1000);
-                    };
-                    audio.onerror = () => {
-                        reject(new Error('CORS or load error'));
-                    };
-                    audio.src = url;
-                    audio.load();
-                    
-                    // Timeout de 3 segundos para la carga directa
-                    setTimeout(() => {
-                        if (!audio.readyState || audio.readyState < 2) {
-                            audio.src = '';
-                            reject(new Error('Timeout'));
-                        }
-                    }, 3000);
-                });
-            };
+            try {
+                // Usar promesa cacheadas si hay un preload activo
+                if (!window.preloadPromises) window.preloadPromises = {};
+                
+                let dataPromise = window.preloadPromises[track.url];
+                if (!dataPromise) {
+                    dataPromise = fetch('/api/stream-proxy', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                        body: 'url=' + encodeURIComponent(track.url),
+                        signal: currentFetchController.signal
+                    }).then(r => {
+                        if (!r.ok) throw new Error('HTTP ' + r.status);
+                        return r.json();
+                    });
+                    window.preloadPromises[track.url] = dataPromise;
+                }
+                
+                const data = await dataPromise;
+                currentFetchController = null;
+                
+                if (currentTrackIndex !== index) return;
 
-            try {
-                // Primero intentar con la URL directa de YouTube
-                await tryPlay(data.direct_url);
-                track.cached_url = data.direct_url;
-                statusEl.innerHTML = '⏳ Reproduciendo (directo desde YouTube)...';
-            } catch (directErr) {
-                // Fallback al proxy si CORS bloquea
-                statusEl.innerHTML = '⏳ Usando proxy de streaming...';
-                track.cached_url = data.proxy_url;
-                audioPlayer.src = data.proxy_url;
-                audioPlayer.load();
+                if (!data.success) {
+                    safeText(statusEl, '❌ ' + (data.error || 'Sin respuesta del servidor'));
+                    updatePlayPauseUI();
+                    return;
+                }
+
+                safeHtml(statusEl, '⏳ Paso 3: Cargando audio...');
+                
+                // Intentar con la URL directa de YouTube primero (más rápido, el móvil descarga directo)
+                // Si falla por CORS, usar el proxy como respaldo
+                const tryPlay = async (url) => {
+                    return new Promise((resolve, reject) => {
+                        const audio = new Audio();
+                        audio.preload = 'auto';
+                        
+                        audio.oncanplay = () => {
+                            audioPlayer.src = url;
+                            audioPlayer.load();
+                            resolve();
+                            setTimeout(preloadNextTrack, 1000);
+                        };
+                        audio.onerror = () => {
+                            reject(new Error('CORS or load error'));
+                        };
+                        audio.src = url;
+                        audio.load();
+                        
+                        // Timeout de 3 segundos para la carga directa
+                        setTimeout(() => {
+                            if (!audio.readyState || audio.readyState < 2) {
+                                audio.src = '';
+                                reject(new Error('Timeout'));
+                            }
+                        }, 3000);
+                    });
+                };
+
+                try {
+                    // Primero intentar con la URL directa de YouTube
+                    await tryPlay(data.direct_url);
+                    track.cached_url = data.direct_url;
+                    safeHtml(statusEl, '⏳ Reproduciendo (directo desde YouTube)...');
+                } catch (directErr) {
+                    // Fallback al proxy si CORS bloquea
+                    safeHtml(statusEl, '⏳ Usando proxy de streaming...');
+                    track.cached_url = data.proxy_url;
+                    audioPlayer.src = data.proxy_url;
+                    audioPlayer.load();
+                }
+                
+                safeHtml(statusEl, '⏳ Paso 4: Reproduciendo...');
+                
+                try {
+                    await audioPlayer.play();
+                    isPlaying = true;
+                    safeText(statusEl, '🎵 ' + track.title);
+                } catch(playErr) {
+                    safeText(statusEl, '❌ Play falló: ' + playErr.message);
+                }
+            } catch(e) {
+                if (e.name !== 'AbortError') {
+                    safeText(statusEl, '❌ Error: ' + e.message);
+                }
+                currentFetchController = null;
             }
             
-            statusEl.innerHTML = '⏳ Paso 4: Reproduciendo...';
-            
-            try {
-                await audioPlayer.play();
-                isPlaying = true;
-                statusEl.textContent = '🎵 ' + track.title;
-            } catch(playErr) {
-                statusEl.textContent = '❌ Play falló: ' + playErr.message;
+            if (currentTrackIndex === index) {
+                updatePlayPauseUI();
             }
-        } catch(e) {
-            if (e.name !== 'AbortError') {
-                statusEl.textContent = '❌ Error: ' + e.message;
-            }
-            currentFetchController = null;
-        }
-        
-        if (currentTrackIndex === index) {
-            updatePlayPauseUI();
-        }
 
         } catch (fatalErr) {
             console.error("FATAL ERROR IN playTrack:", fatalErr);
@@ -2191,7 +2189,8 @@
                 updatePlayPauseUI();
             }).catch((err) => {
                 console.error("Play error:", err);
-                document.getElementById('playerTitle').innerHTML = '<span style="color:#f87171;"><i class="fas fa-exclamation-triangle me-1"></i>Error al reproducir el archivo</span>';
+                const pt = document.getElementById('playerTitle');
+                if (pt) pt.innerHTML = '<span style="color:#f87171;"><i class="fas fa-exclamation-triangle me-1"></i>Error al reproducir el archivo</span>';
             });
         } else {
             audioPlayer.pause();
@@ -2201,9 +2200,11 @@
     }
 
     function updatePlayPauseUI() {
-        playPauseBtn.innerHTML = isPlaying
-            ? '<i class="fas fa-pause"></i>'
-            : '<i class="fas fa-play" style="margin-left:2px;"></i>';
+        if (playPauseBtn) {
+            playPauseBtn.innerHTML = isPlaying
+                ? '<i class="fas fa-pause"></i>'
+                : '<i class="fas fa-play" style="margin-left:2px;"></i>';
+        }
         const mobileBtn = document.getElementById('mobilePlayBtn');
         if (mobileBtn) {
             mobileBtn.innerHTML = isPlaying
@@ -2294,7 +2295,8 @@
         } else {
             isPlaying = false;
             updatePlayPauseUI();
-            document.getElementById('playerTitle').textContent = 'Fin de la playlist';
+            const pt = document.getElementById('playerTitle');
+            if (pt) pt.textContent = 'Fin de la playlist';
         }
     }
 
@@ -2390,9 +2392,12 @@
     audioPlayer.addEventListener('timeupdate', function() {
         if (!audioPlayer.duration || isNaN(audioPlayer.duration)) return;
         const pct = (audioPlayer.currentTime / audioPlayer.duration) * 100;
-        document.getElementById('progressBar').style.width = pct + '%';
-        document.getElementById('timeCurrent').textContent = formatTime(audioPlayer.currentTime);
-        document.getElementById('timeTotal').textContent = formatTime(audioPlayer.duration);
+        const pb = document.getElementById('progressBar');
+        if (pb) pb.style.width = pct + '%';
+        const tcEl = document.getElementById('timeCurrent');
+        if (tcEl) tcEl.textContent = formatTime(audioPlayer.currentTime);
+        const ttEl = document.getElementById('timeTotal');
+        if (ttEl) ttEl.textContent = formatTime(audioPlayer.duration);
     });
 
     audioPlayer.addEventListener('error', function(e) {
@@ -2400,7 +2405,8 @@
         if (currentFetchController !== null) return;
 
         if (currentTrackIndex >= 0) {
-            document.getElementById('playerTitle').innerHTML = `<span style="color:#f87171;"><i class="fas fa-exclamation-triangle me-1"></i>Error al cargar el audio. Intenta de nuevo.</span>`;
+            const pt = document.getElementById('playerTitle');
+            if (pt) pt.innerHTML = `<span style="color:#f87171;"><i class="fas fa-exclamation-triangle me-1"></i>Error al cargar el audio. Intenta de nuevo.</span>`;
         }
         isPlaying = false;
         currentFetchController = null;
@@ -2410,9 +2416,9 @@
     audioPlayer.addEventListener('canplay', function() {
         if (currentTrackIndex >= 0 && currentPlaylistItems[currentTrackIndex]) {
             const track = currentPlaylistItems[currentTrackIndex];
-            if (document.getElementById('playerTitle').innerHTML.includes('spinner-border') ||
-                document.getElementById('playerTitle').innerHTML.includes('fa-spinner')) {
-                document.getElementById('playerTitle').textContent = track.title;
+            const pt = document.getElementById('playerTitle');
+            if (pt && (pt.innerHTML.includes('spinner-border') || pt.innerHTML.includes('fa-spinner'))) {
+                pt.textContent = track.title;
             }
         }
     });

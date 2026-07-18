@@ -604,6 +604,24 @@
         overflow: hidden;
     }
 
+    /* Cover fallback (music icon when no thumbnail) */
+    .cover-fallback {
+        width: 48px;
+        height: 48px;
+        border-radius: 8px;
+        background: linear-gradient(135deg, #2a2a4a, #3a3a5a);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: rgba(255,255,255,0.5);
+        font-size: 1.2rem;
+        flex-shrink: 0;
+    }
+    /* When cover image is visible, hide fallback */
+    .player-cover-img:not(.d-none) ~ .cover-fallback {
+        display: none;
+    }
+
     .player-section {
         display: flex;
         align-items: center;
@@ -1269,6 +1287,23 @@
             box-shadow: 0 15px 45px rgba(0,0,0,0.4);
         }
 
+        .sticky-player.expanded .cover-fallback {
+            width: 80vw;
+            max-width: 340px;
+            aspect-ratio: 1/1;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #2a2a4a 0%, #3a3a6a 50%, #2a2a4a 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 5rem;
+            color: rgba(255,255,255,0.25);
+            box-shadow: 0 15px 45px rgba(0,0,0,0.4);
+        }
+        .sticky-player.expanded .player-cover-img:not(.d-none) ~ .cover-fallback {
+            display: none !important;
+        }
+
         .sticky-player.expanded .track-info-wrapper {
             display: flex;
             align-items: center;
@@ -1592,6 +1627,9 @@
         <div class="player-section player-left">
             <div class="cover-wrapper">
                 <img src="" id="playerCover" class="player-cover-img d-none" alt="Cover">
+                <div class="cover-fallback" id="coverFallback">
+                    <i class="fas fa-music"></i>
+                </div>
             </div>
             <div class="track-info-wrapper">
                 <div style="overflow: hidden; flex: 1;">
@@ -2335,6 +2373,11 @@
                     await audioPlayer.play();
                     isPlaying = true;
                     safeText(statusEl, '🎵 ' + track.title);
+                    
+                    // Auto-cache: save audio to Cache API in background so next play is instant
+                    if ('caches' in window && track.cached_url) {
+                        autoCacheTrack(track).catch(e => console.warn('Auto-cache failed:', e));
+                    }
                 } catch(playErr) {
                     safeText(statusEl, '❌ Play falló: ' + playErr.message);
                 }
@@ -2401,18 +2444,15 @@
 
     // ========== MOBILE FULLSCREEN PLAYER ==========
     function expandPlayer() {
-        alert('[DEBUG] expandPlayer() fue llamada. innerWidth=' + window.innerWidth);
+        // Close any open bottom sheet first
+        if (typeof closeTrackSheet === 'function') closeTrackSheet();
+        
         const player = document.getElementById('stickyPlayer');
         if (player) {
             // Clear any inline styles that could conflict with .expanded CSS
-            player.style.height = '';
-            player.style.padding = '';
-            player.style.flexDirection = '';
+            player.style.cssText = '';
             player.classList.add('expanded');
             document.body.style.overflow = 'hidden';
-            alert('[DEBUG] Clase expanded añadida. classList=' + player.className);
-        } else {
-            alert('[DEBUG] ERROR: stickyPlayer no encontrado!');
         }
         const adBanner = document.getElementById('stickyAdBanner');
         if (adBanner) {
@@ -2985,6 +3025,50 @@
 
     // ========== DOWNLOAD ==========
     const OFFLINE_CACHE_NAME = 'savewave-offline';
+
+    // Auto-cache: download audio in background and save to Cache API
+    // So next time the user plays this track, it loads instantly from cache
+    async function autoCacheTrack(track) {
+        if (!track || !track.url || !track.cached_url) return;
+        if (track.platform === 'audio_local' || track.platform === 'video_local') return;
+        
+        const cacheKey = '/offline-cache/?url=' + encodeURIComponent(track.url);
+        const offlineCache = await caches.open(OFFLINE_CACHE_NAME);
+        
+        // Check if already cached
+        const existing = await offlineCache.match(cacheKey);
+        if (existing) return;
+        
+        console.log('[SaveWave] Auto-caching track:', track.title);
+        
+        try {
+            // Use the download-proxy endpoint to get a cacheable response
+            const response = await fetch('/api/download-proxy', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: 'url=' + encodeURIComponent(track.url)
+            });
+            
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+            
+            // Clone the response and cache it
+            const cacheResponse = new Response(await response.blob(), {
+                headers: {
+                    'Content-Type': response.headers.get('Content-Type') || 'audio/mpeg'
+                }
+            });
+            
+            await offlineCache.put(cacheKey, cacheResponse);
+            console.log('[SaveWave] Track auto-cached:', track.title);
+            
+            // Update offline badge if visible
+            if (typeof checkOfflineStatus === 'function') {
+                checkOfflineStatus();
+            }
+        } catch(e) {
+            console.warn('[SaveWave] Auto-cache failed for:', track.title, e);
+        }
+    }
 
     async function removeTrack(playlistId, itemId, url) {
         const confirmed = await showConfirm('¿Eliminar esta canción de tu playlist?');

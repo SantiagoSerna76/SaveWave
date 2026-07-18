@@ -2401,6 +2401,7 @@
 
     // ========== MOBILE FULLSCREEN PLAYER ==========
     function expandPlayer() {
+        alert('[DEBUG] expandPlayer() fue llamada. innerWidth=' + window.innerWidth);
         const player = document.getElementById('stickyPlayer');
         if (player) {
             // Clear any inline styles that could conflict with .expanded CSS
@@ -2409,7 +2410,9 @@
             player.style.flexDirection = '';
             player.classList.add('expanded');
             document.body.style.overflow = 'hidden';
-            console.log('[SaveWave] Player expanded, class list:', player.className);
+            alert('[DEBUG] Clase expanded añadida. classList=' + player.className);
+        } else {
+            alert('[DEBUG] ERROR: stickyPlayer no encontrado!');
         }
         const adBanner = document.getElementById('stickyAdBanner');
         if (adBanner) {

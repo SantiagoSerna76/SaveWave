@@ -2584,10 +2584,13 @@
                 nb = Math.max(0, Math.min(255, nb));
 
                 _vizColor = {r: Math.round(nr), g: Math.round(ng), b: Math.round(nb)};
-                // Secondary color: Analogous color (stays in the same family)
-                var secR = nr * 0.7 + nb * 0.3; // Shift slightly towards adjacent color
-                var secG = ng * 0.7 + nr * 0.3;
-                var secB = nb * 0.7 + ng * 0.3;
+                // Secondary color: un degradado sutil hacia un tono más brillante y levemente análogo
+                var secR = Math.min(255, nr + 40);
+                var secG = Math.min(255, ng + 40);
+                var secB = Math.min(255, nb + 40);
+                secR = secR * 0.85 + secG * 0.15;
+                secG = secG * 0.85 + secB * 0.15;
+                secB = secB * 0.85 + secR * 0.15;
                 _vizColor2 = {r: Math.round(secR), g: Math.round(secG), b: Math.round(secB)};
             }
         } catch(e) {
@@ -2651,9 +2654,7 @@
 
         var S = canvas._logicalSize || 350;
         var ctx = canvas.getContext('2d');
-        ctx.globalCompositeOperation = 'source-over'; // Reset to clear properly
         ctx.clearRect(0, 0, S, S);
-        ctx.globalCompositeOperation = 'lighter'; // True glowing neon effect
 
         // Smooth intensity transition
         var target = isPlaying ? 1.0 : 0.0;
@@ -2679,13 +2680,13 @@
         var bass = 0;
         for (var b = 0; b < 12; b++) bass += _vizBars[b];
         bass = bass / 12;
-        if (bass > 0.04) {
+        if (bass > 0.06) {
             var glowR = innerR + 8;
-            var pulseR = glowR + maxBar * bass * 1.5; // Bigger pulse
-            var grad = ctx.createRadialGradient(cx, cy, innerR * 0.75, cx, cy, pulseR);
-            grad.addColorStop(0, 'rgba(' + c1 + ',' + (bass * 0.5) + ')'); // Stronger opacity
-            grad.addColorStop(0.45, 'rgba(' + c2 + ',' + (bass * 0.3) + ')');
-            grad.addColorStop(0.8, 'rgba(' + c2 + ',' + (bass * 0.1) + ')');
+            var pulseR = glowR + maxBar * bass * 1.2;
+            var grad = ctx.createRadialGradient(cx, cy, innerR * 0.8, cx, cy, pulseR);
+            grad.addColorStop(0, 'rgba(' + c1 + ',' + (bass * 0.3) + ')');
+            grad.addColorStop(0.45, 'rgba(' + c2 + ',' + (bass * 0.18) + ')');
+            grad.addColorStop(0.7, 'rgba(' + c2 + ',' + (bass * 0.1) + ')');
             grad.addColorStop(1, 'rgba(' + c2 + ',0)');
             ctx.beginPath();
             ctx.arc(cx, cy, pulseR, 0, Math.PI * 2);
@@ -2697,7 +2698,7 @@
         for (var j = 0; j < barCount; j++) {
             var val = _vizBars[j];
             if (val < 0.01) continue;
-            var barH = Math.max(2.0, val * maxBar);
+            var barH = Math.max(1.5, val * maxBar);
             var angle = (j / barCount) * Math.PI * 2 - Math.PI / 2;
             var cos = Math.cos(angle), sin = Math.sin(angle);
 
@@ -2712,19 +2713,18 @@
             var mixB = Math.round(_vizColor.b * (1-mix) + _vizColor2.b * mix);
             var barColor = mixR + ',' + mixG + ',' + mixB;
             
-            var alpha = 0.4 + val * 0.6; // Higher baseline opacity
+            var alpha = 0.3 + val * 0.7;
 
             ctx.beginPath();
             ctx.moveTo(x1, y1);
             ctx.lineTo(x2, y2);
             ctx.strokeStyle = 'rgba(' + barColor + ',' + alpha + ')';
-            ctx.lineWidth = 3.0; // Thicker lines
-            if (val > 0.35) {
-                ctx.shadowBlur = 18; // Bigger glow
-                ctx.shadowColor = 'rgba(' + barColor + ',0.8)';
+            ctx.lineWidth = 2.5;
+            if (val > 0.45) {
+                ctx.shadowBlur = 12;
+                ctx.shadowColor = 'rgba(' + barColor + ',0.55)';
             } else {
-                ctx.shadowBlur = 6;
-                ctx.shadowColor = 'rgba(' + barColor + ',0.3)';
+                ctx.shadowBlur = 0;
             }
             ctx.stroke();
         }
@@ -2734,20 +2734,16 @@
         var ringAngle = now * 0.6;
         ctx.beginPath();
         ctx.arc(cx, cy, innerR + 2, ringAngle, ringAngle + Math.PI * 0.8);
-        ctx.strokeStyle = 'rgba(' + c1 + ',' + (0.3 + _vizIntensity * 0.2) + ')';
-        ctx.lineWidth = 1.5;
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = 'rgba(' + c1 + ',0.5)';
+        ctx.strokeStyle = 'rgba(' + c1 + ',' + (0.15 + _vizIntensity * 0.15) + ')';
+        ctx.lineWidth = 1.2;
         ctx.stroke();
 
         // --- Second ring (opposite side, different speed) ---
         var ringAngle2 = -now * 0.4;
         ctx.beginPath();
         ctx.arc(cx, cy, innerR + 2, ringAngle2, ringAngle2 + Math.PI * 0.5);
-        ctx.strokeStyle = 'rgba(' + c2 + ',' + (0.2 + _vizIntensity * 0.2) + ')';
-        ctx.lineWidth = 1.2;
-        ctx.shadowBlur = 8;
-        ctx.shadowColor = 'rgba(' + c2 + ',0.5)';
+        ctx.strokeStyle = 'rgba(' + c2 + ',' + (0.1 + _vizIntensity * 0.12) + ')';
+        ctx.lineWidth = 0.8;
         ctx.stroke();
     }
 

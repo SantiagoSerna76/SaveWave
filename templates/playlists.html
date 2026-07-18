@@ -3157,28 +3157,27 @@
         console.log('[SaveWave] Auto-caching track:', track.title);
         
         try {
-            // Use the download-proxy endpoint to get a cacheable response
-            const response = await fetch('/api/download-proxy', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                body: 'url=' + encodeURIComponent(track.url)
-            });
+            // Fetch directly from the URL that's already playing (proxy_url or direct_url)
+            // This avoids making the server download the song a second time
+            const response = await fetch(track.cached_url);
             
             if (!response.ok) throw new Error('HTTP ' + response.status);
             
-            // Clone the response and cache it
-            const cacheResponse = new Response(await response.blob(), {
+            const blob = await response.blob();
+            if (blob.size < 1000) throw new Error('Audio too small, skipping cache');
+            
+            const cacheResponse = new Response(blob, {
                 headers: {
                     'Content-Type': response.headers.get('Content-Type') || 'audio/mpeg'
                 }
             });
             
             await offlineCache.put(cacheKey, cacheResponse);
-            console.log('[SaveWave] Track auto-cached:', track.title);
+            console.log('[SaveWave] Track auto-cached:', track.title, '(' + Math.round(blob.size/1024) + 'KB)');
             
-            // Update offline badge if visible
-            if (typeof checkOfflineStatus === 'function') {
-                checkOfflineStatus();
+            // Show a subtle toast
+            if (typeof showToast === 'function') {
+                showToast('<i class="fas fa-check-circle" style="color:#10b981;"></i> Canción guardada para reproducción rápida');
             }
         } catch(e) {
             console.warn('[SaveWave] Auto-cache failed for:', track.title, e);

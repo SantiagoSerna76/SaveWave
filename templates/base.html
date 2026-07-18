@@ -541,6 +541,10 @@
                             !node.closest('.alert') &&
                             node.id !== 'pwaInstallBanner' &&
                             !node.closest('#pwaInstallBanner') &&
+                            node.id !== 'stickyPlayer' &&
+                            node.id !== 'mobileFullPlayer' &&
+                            !node.closest('#stickyPlayer') &&
+                            !node.closest('#mobileFullPlayer') &&
                             !node.dataset.swSafe) {
                             node.remove();
                         }
@@ -557,6 +561,8 @@
                         !el.classList.contains('navbar') && !el.closest('.navbar') &&
                         !el.closest('.alert') && !el.closest('#pwaInstallBanner') &&
                         el.tagName !== 'NAV' && !el.dataset.swSafe &&
+                        el.id !== 'stickyPlayer' && el.id !== 'mobileFullPlayer' &&
+                        !el.closest('#stickyPlayer') && !el.closest('#mobileFullPlayer') &&
                         el.offsetHeight > 0 && el.offsetHeight < 200) {
                         el.remove();
                     }

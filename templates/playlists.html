@@ -2467,7 +2467,7 @@
             '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:24px 32px;gap:28px;overflow:hidden;">',
             '<div id="mfpCoverContainer" style="display:flex;justify-content:center;width:100%;position:relative;">',
             '    <canvas id="mfpVisualizer" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:0;"></canvas>',
-            '    <img id="mfpCoverImg" src="" style="width:75vw;max-width:320px;aspect-ratio:1/1;border-radius:12px;box-shadow:0 15px 45px rgba(0,0,0,0.5);object-fit:cover;display:none;position:relative;z-index:1;" />',
+            '    <img id="mfpCoverImg" crossorigin="anonymous" src="" style="width:75vw;max-width:320px;aspect-ratio:1/1;border-radius:12px;box-shadow:0 15px 45px rgba(0,0,0,0.5);object-fit:cover;display:none;position:relative;z-index:1;" />',
             '    <div id="mfpCoverFallback" style="width:75vw;max-width:320px;aspect-ratio:1/1;border-radius:12px;background:linear-gradient(135deg,#2a2a4a 0%,#3a3a6a 50%,#2a2a4a 100%);display:flex;align-items:center;justify-content:center;font-size:5rem;color:rgba(255,255,255,0.2);box-shadow:0 15px 45px rgba(0,0,0,0.5);position:relative;z-index:1;">',
             '        <i class="fas fa-music"></i>',
             '    </div>',
@@ -2535,6 +2535,39 @@
     var _vizRAF = null;
     var _vizIntensity = 0;  // Smoothly lerps toward target
     var _vizBars = [];      // Smoothed bar values for organic movement
+    
+    // Dynamic Colors
+    var _vizColor = {r: 99, g: 102, b: 241};
+    var _vizColor2 = {r: 6, g: 182, b: 212};
+
+    function extractCoverColor(imgEl) {
+        if (!imgEl || !imgEl.complete || imgEl.naturalWidth === 0) return;
+        try {
+            var cvs = document.createElement('canvas');
+            cvs.width = imgEl.naturalWidth;
+            cvs.height = imgEl.naturalHeight;
+            var ctx = cvs.getContext('2d');
+            ctx.drawImage(imgEl, 0, 0);
+            var data = ctx.getImageData(0, 0, cvs.width, cvs.height).data;
+            var r=0, g=0, b=0, count=0;
+            var step = Math.max(1, Math.ceil((cvs.width * cvs.height) / 1000));
+            for (var i = 0; i < data.length; i += step * 4) {
+                if (data[i+3] < 128) continue; 
+                var luma = 0.2126 * data[i] + 0.7152 * data[i+1] + 0.0722 * data[i+2];
+                if (luma > 20 && luma < 240) {
+                    r += data[i]; g += data[i+1]; b += data[i+2]; count++;
+                }
+            }
+            if (count > 0) {
+                _vizColor = {r: Math.round(r/count), g: Math.round(g/count), b: Math.round(b/count)};
+                _vizColor2 = {r: Math.min(255, _vizColor.g + 50), g: Math.min(255, _vizColor.b + 50), b: Math.min(255, _vizColor.r + 50)};
+            }
+        } catch(e) {
+            console.warn('Could not extract cover color (CORS)', e);
+            _vizColor = {r: 99, g: 102, b: 241};
+            _vizColor2 = {r: 6, g: 182, b: 212};
+        }
+    }
 
     function startVisualizer() {
         sizeVisualizerCanvas();
@@ -2608,6 +2641,9 @@
             var raw = vizFreq(i, now, barCount) * _vizIntensity;
             _vizBars[i] += (raw - _vizBars[i]) * 0.15; // Smooth lerp
         }
+        
+        var c1 = _vizColor.r + ',' + _vizColor.g + ',' + _vizColor.b;
+        var c2 = _vizColor2.r + ',' + _vizColor2.g + ',' + _vizColor2.b;
 
         // --- Bass glow aura ---
         var bass = 0;
@@ -2617,10 +2653,10 @@
             var glowR = innerR + 8;
             var pulseR = glowR + maxBar * bass * 1.2;
             var grad = ctx.createRadialGradient(cx, cy, innerR * 0.8, cx, cy, pulseR);
-            grad.addColorStop(0, 'rgba(99,102,241,' + (bass * 0.3) + ')');
-            grad.addColorStop(0.45, 'rgba(56,189,248,' + (bass * 0.18) + ')');
-            grad.addColorStop(0.7, 'rgba(6,182,212,' + (bass * 0.1) + ')');
-            grad.addColorStop(1, 'rgba(6,182,212,0)');
+            grad.addColorStop(0, 'rgba(' + c1 + ',' + (bass * 0.3) + ')');
+            grad.addColorStop(0.45, 'rgba(' + c2 + ',' + (bass * 0.18) + ')');
+            grad.addColorStop(0.7, 'rgba(' + c2 + ',' + (bass * 0.1) + ')');
+            grad.addColorStop(1, 'rgba(' + c2 + ',0)');
             ctx.beginPath();
             ctx.arc(cx, cy, pulseR, 0, Math.PI * 2);
             ctx.fillStyle = grad;
@@ -2640,18 +2676,22 @@
             var x2 = cx + cos * (innerR + 4 + barH);
             var y2 = cy + sin * (innerR + 4 + barH);
 
-            // Purple→blue→cyan gradient around the circle
-            var hue = 260 - (j / barCount) * 80;
+            var mix = j / barCount;
+            var mixR = Math.round(_vizColor.r * (1-mix) + _vizColor2.r * mix);
+            var mixG = Math.round(_vizColor.g * (1-mix) + _vizColor2.g * mix);
+            var mixB = Math.round(_vizColor.b * (1-mix) + _vizColor2.b * mix);
+            var barColor = mixR + ',' + mixG + ',' + mixB;
+            
             var alpha = 0.3 + val * 0.7;
 
             ctx.beginPath();
             ctx.moveTo(x1, y1);
             ctx.lineTo(x2, y2);
-            ctx.strokeStyle = 'hsla(' + hue + ',80%,65%,' + alpha + ')';
+            ctx.strokeStyle = 'rgba(' + barColor + ',' + alpha + ')';
             ctx.lineWidth = 2.5;
             if (val > 0.45) {
                 ctx.shadowBlur = 12;
-                ctx.shadowColor = 'hsla(' + hue + ',90%,55%,0.55)';
+                ctx.shadowColor = 'rgba(' + barColor + ',0.55)';
             } else {
                 ctx.shadowBlur = 0;
             }
@@ -2663,7 +2703,7 @@
         var ringAngle = now * 0.6;
         ctx.beginPath();
         ctx.arc(cx, cy, innerR + 2, ringAngle, ringAngle + Math.PI * 0.8);
-        ctx.strokeStyle = 'rgba(99,102,241,' + (0.15 + _vizIntensity * 0.15) + ')';
+        ctx.strokeStyle = 'rgba(' + c1 + ',' + (0.15 + _vizIntensity * 0.15) + ')';
         ctx.lineWidth = 1.2;
         ctx.stroke();
 
@@ -2671,7 +2711,7 @@
         var ringAngle2 = -now * 0.4;
         ctx.beginPath();
         ctx.arc(cx, cy, innerR + 2, ringAngle2, ringAngle2 + Math.PI * 0.5);
-        ctx.strokeStyle = 'rgba(6,182,212,' + (0.1 + _vizIntensity * 0.12) + ')';
+        ctx.strokeStyle = 'rgba(' + c2 + ',' + (0.1 + _vizIntensity * 0.12) + ')';
         ctx.lineWidth = 0.8;
         ctx.stroke();
     }
@@ -2694,7 +2734,10 @@
         var dstFallback = document.getElementById('mfpCoverFallback');
         if (srcCover && dstCover) {
             if (srcCover.src && !srcCover.classList.contains('d-none')) {
-                dstCover.src = srcCover.src;
+                if (dstCover.src !== srcCover.src) {
+                    dstCover.src = srcCover.src;
+                    dstCover.onload = function() { extractCoverColor(dstCover); };
+                }
                 dstCover.style.display = 'block';
                 if (dstFallback) dstFallback.style.display = 'none';
             } else {
@@ -3307,23 +3350,25 @@
         console.log('[SaveWave] Auto-caching track:', track.title);
         
         try {
-            // Fetch directly from the URL that's already playing (proxy_url or direct_url)
-            // This avoids making the server download the song a second time
-            const response = await fetch(track.cached_url);
+            // Use the download-proxy endpoint to get a cacheable response
+            // This avoids CORS issues that block fetching direct YouTube URLs
+            const response = await fetch('/api/download-proxy', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: 'url=' + encodeURIComponent(track.url)
+            });
             
             if (!response.ok) throw new Error('HTTP ' + response.status);
             
-            const blob = await response.blob();
-            if (blob.size < 1000) throw new Error('Audio too small, skipping cache');
-            
-            const cacheResponse = new Response(blob, {
+            // Clone the response and cache it
+            const cacheResponse = new Response(await response.blob(), {
                 headers: {
                     'Content-Type': response.headers.get('Content-Type') || 'audio/mpeg'
                 }
             });
             
             await offlineCache.put(cacheKey, cacheResponse);
-            console.log('[SaveWave] Track auto-cached:', track.title, '(' + Math.round(blob.size/1024) + 'KB)');
+            console.log('[SaveWave] Track auto-cached:', track.title);
             
             // Show a subtle toast
             if (typeof showToast === 'function') {

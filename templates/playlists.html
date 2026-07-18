@@ -1893,7 +1893,9 @@
 
     function setupMediaSession(track) {
         if ('mediaSession' in navigator) {
-            const playlistTitle = document.getElementById('playlistName').textContent;
+            const plNameEl = document.getElementById('playlistName');
+            const playlistTitle = plNameEl ? plNameEl.textContent : 'SaveWave';
+            
             navigator.mediaSession.metadata = new MediaMetadata({
                 title: track.title,
                 artist: track.platform === 'audio_local' ? 'Archivo local' : track.platform,
@@ -1993,24 +1995,34 @@
 
 
         const platformLabel = track.platform === 'audio_local' ? 'Archivo local' : track.platform === 'video_local' ? 'Video local' : track.platform;
-        document.getElementById('playerArtist').textContent = platformLabel;
+        
+        const artistEl = document.getElementById('playerArtist');
+        if (artistEl) artistEl.textContent = platformLabel;
+        
         const coverEl = document.getElementById('playerCover');
-        if (track.thumbnail) {
-            coverEl.src = track.thumbnail;
-            coverEl.classList.remove('d-none');
-        } else {
-            coverEl.classList.add('d-none');
+        if (coverEl) {
+            if (track.thumbnail) {
+                coverEl.src = track.thumbnail;
+                coverEl.classList.remove('d-none');
+            } else {
+                coverEl.classList.add('d-none');
+            }
         }
         highlightCurrentTrack();
         setupMediaSession(track);
 
         isPlaying = false;
         updatePlayPauseUI();
-        statusEl.innerHTML = '⏳ Paso 1: Preparando...';
+        if (statusEl) statusEl.innerHTML = '⏳ Paso 1: Preparando...';
 
-        document.getElementById('progressBar').style.width = '0%';
-        document.getElementById('timeCurrent').textContent = '0:00';
-        document.getElementById('timeTotal').textContent = '0:00';
+        const progBar = document.getElementById('progressBar');
+        if (progBar) progBar.style.width = '0%';
+        
+        const tc = document.getElementById('timeCurrent');
+        if (tc) tc.textContent = '0:00';
+        
+        const tt = document.getElementById('timeTotal');
+        if (tt) tt.textContent = '0:00';
 
         try {
             if ('caches' in window) {

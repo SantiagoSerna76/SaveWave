@@ -1179,21 +1179,21 @@
 
         /* ========== FULLSCREEN EXPANDED STATE (Spotify Style) ========== */
         .sticky-player.expanded {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            height: 100dvh;
-            border-radius: 0;
-            flex-direction: column;
-            justify-content: flex-start;
-            align-items: stretch;
-            padding: 0;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            height: 100dvh !important;
+            border-radius: 0 !important;
+            flex-direction: column !important;
+            justify-content: flex-start !important;
+            align-items: stretch !important;
+            padding: 0 !important;
             cursor: default;
-            background: linear-gradient(180deg, #30323e 0%, #121216 100%);
-            overflow-y: auto;
-            z-index: 9999;
+            background: linear-gradient(180deg, #30323e 0%, #121216 100%) !important;
+            overflow-y: auto !important;
+            z-index: 99999 !important;
         }
 
         /* Background blur effect overlay */
@@ -2146,7 +2146,7 @@
                 stickyPlayer.style.display = 'flex';
                 stickyPlayer.style.opacity = '1';
                 stickyPlayer.style.visibility = 'visible';
-                stickyPlayer.style.zIndex = '999999';
+                // Don't set inline zIndex - let CSS classes handle it
             }
 
             // Unlock audio context synchronously for mobile auto-play policy
@@ -2156,6 +2156,7 @@
             
             // Auto-expand the Spotify-like full player on mobile
             if (window.innerWidth <= 768) {
+                console.log('[SaveWave] Auto-expanding player on mobile');
                 expandPlayer();
             }
 
@@ -2402,8 +2403,13 @@
     function expandPlayer() {
         const player = document.getElementById('stickyPlayer');
         if (player) {
+            // Clear any inline styles that could conflict with .expanded CSS
+            player.style.height = '';
+            player.style.padding = '';
+            player.style.flexDirection = '';
             player.classList.add('expanded');
             document.body.style.overflow = 'hidden';
+            console.log('[SaveWave] Player expanded, class list:', player.className);
         }
         const adBanner = document.getElementById('stickyAdBanner');
         if (adBanner) {

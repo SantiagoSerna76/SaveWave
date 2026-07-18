@@ -1948,6 +1948,14 @@
     }
 
     async function playTrack(index) {
+        // Unlock audio context synchronously for mobile auto-play policy
+        audioPlayer.play().catch(e => {});
+        
+        // Auto-expand the Spotify-like full player on mobile
+        if (window.innerWidth <= 768) {
+            expandPlayer();
+        }
+
         const statusEl = document.getElementById('playerTitle');
         
         if (index < 0 || index >= currentPlaylistItems.length) {

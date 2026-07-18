@@ -1948,35 +1948,49 @@
     }
 
     async function playTrack(index) {
-        // Unlock audio context synchronously for mobile auto-play policy
-        audioPlayer.play().catch(e => {});
-        
-        // Auto-expand the Spotify-like full player on mobile
-        if (window.innerWidth <= 768) {
-            expandPlayer();
-        }
+        try {
+            // Force player to be visible
+            const stickyPlayer = document.getElementById('stickyPlayer');
+            if (stickyPlayer) {
+                stickyPlayer.style.display = 'flex';
+                stickyPlayer.style.opacity = '1';
+                stickyPlayer.style.visibility = 'visible';
+                stickyPlayer.style.zIndex = '999999';
+            }
 
-        const statusEl = document.getElementById('playerTitle');
-        
-        if (index < 0 || index >= currentPlaylistItems.length) {
-            statusEl.textContent = '⚠ Índice de pista inválido';
-            return;
-        }
+            // Unlock audio context synchronously for mobile auto-play policy
+            if (audioPlayer) {
+                audioPlayer.play().catch(e => { console.warn("Unlock play rejected:", e); });
+            }
+            
+            // Auto-expand the Spotify-like full player on mobile
+            if (window.innerWidth <= 768) {
+                expandPlayer();
+            }
 
-        if (currentTrackIndex === index && audioPlayer.src && !audioPlayer.paused) {
-            audioPlayer.pause();
-            isPlaying = false;
-            updatePlayPauseUI();
-            return;
-        }
+            const statusEl = document.getElementById('playerTitle');
+            
+            if (index < 0 || index >= currentPlaylistItems.length) {
+                if (statusEl) statusEl.textContent = '⚠ Índice de pista inválido';
+                alert("Error: Índice de pista inválido (" + index + ")");
+                return;
+            }
 
-        if (currentFetchController) {
-            currentFetchController.abort();
-            currentFetchController = null;
-        }
+            if (currentTrackIndex === index && audioPlayer.src && !audioPlayer.paused) {
+                audioPlayer.pause();
+                isPlaying = false;
+                updatePlayPauseUI();
+                return;
+            }
 
-        currentTrackIndex = index;
-        const track = currentPlaylistItems[index];
+            if (currentFetchController) {
+                currentFetchController.abort();
+                currentFetchController = null;
+            }
+
+            currentTrackIndex = index;
+            const track = currentPlaylistItems[index];
+
 
         const platformLabel = track.platform === 'audio_local' ? 'Archivo local' : track.platform === 'video_local' ? 'Video local' : track.platform;
         document.getElementById('playerArtist').textContent = platformLabel;
@@ -2137,6 +2151,11 @@
         
         if (currentTrackIndex === index) {
             updatePlayPauseUI();
+        }
+
+        } catch (fatalErr) {
+            console.error("FATAL ERROR IN playTrack:", fatalErr);
+            alert("Error fatal en el reproductor: " + fatalErr.message);
         }
     }
 

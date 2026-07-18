@@ -2182,9 +2182,6 @@
             const stickyPlayer = document.getElementById('stickyPlayer');
             if (stickyPlayer) {
                 stickyPlayer.style.display = 'flex';
-                stickyPlayer.style.opacity = '1';
-                stickyPlayer.style.visibility = 'visible';
-                // Don't set inline zIndex - let CSS classes handle it
             }
 
             // Unlock audio context synchronously for mobile auto-play policy
@@ -2194,7 +2191,6 @@
             
             // Auto-expand the Spotify-like full player on mobile
             if (window.innerWidth <= 768) {
-                console.log('[SaveWave] Auto-expanding player on mobile');
                 expandPlayer();
             }
 
@@ -2444,24 +2440,22 @@
 
     // ========== MOBILE FULLSCREEN PLAYER ==========
     function expandPlayer() {
-        setTimeout(() => {
-            // Close any open bottom sheet first
-            if (typeof closeTrackSheet === 'function') closeTrackSheet();
-            
-            const player = document.getElementById('stickyPlayer');
-            if (player) {
-                // Clear any inline styles that could conflict with .expanded CSS
-                player.style.cssText = '';
-                // Ensure display is explicitly flex just in case
-                player.style.display = 'flex';
-                player.classList.add('expanded');
-                document.body.style.overflow = 'hidden';
-            }
-            const adBanner = document.getElementById('stickyAdBanner');
-            if (adBanner) {
-                adBanner.classList.add('expanded-mode');
-            }
-        }, 10);
+        // Close any open bottom sheet first
+        try { closeTrackSheet(); } catch(e) {}
+        
+        const player = document.getElementById('stickyPlayer');
+        if (!player) return;
+        
+        // Remove ALL inline styles to let the CSS .expanded class take full control
+        player.removeAttribute('style');
+        // Add the expanded class - CSS handles everything from here
+        player.classList.add('expanded');
+        document.body.style.overflow = 'hidden';
+        
+        const adBanner = document.getElementById('stickyAdBanner');
+        if (adBanner) {
+            adBanner.classList.add('expanded-mode');
+        }
     }
 
     function collapsePlayer() {

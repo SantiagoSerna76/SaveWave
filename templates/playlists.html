@@ -2584,8 +2584,11 @@
                 nb = Math.max(0, Math.min(255, nb));
 
                 _vizColor = {r: Math.round(nr), g: Math.round(ng), b: Math.round(nb)};
-                // Secondary color: shift hue by swapping channels
-                _vizColor2 = {r: Math.round(ng), g: Math.round(nb), b: Math.round(nr)};
+                // Secondary color: Analogous color (stays in the same family)
+                var secR = nr * 0.7 + nb * 0.3; // Shift slightly towards adjacent color
+                var secG = ng * 0.7 + nr * 0.3;
+                var secB = nb * 0.7 + ng * 0.3;
+                _vizColor2 = {r: Math.round(secR), g: Math.round(secG), b: Math.round(secB)};
             }
         } catch(e) {
             console.warn('Could not extract cover color (CORS)', e);
@@ -2648,7 +2651,9 @@
 
         var S = canvas._logicalSize || 350;
         var ctx = canvas.getContext('2d');
+        ctx.globalCompositeOperation = 'source-over'; // Reset to clear properly
         ctx.clearRect(0, 0, S, S);
+        ctx.globalCompositeOperation = 'lighter'; // True glowing neon effect
 
         // Smooth intensity transition
         var target = isPlaying ? 1.0 : 0.0;

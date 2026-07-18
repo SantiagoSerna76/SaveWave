@@ -121,6 +121,7 @@ class Playlist(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.String(255), nullable=True)
+    cover_url = db.Column(db.String(500), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # Relaciones
@@ -157,4 +158,17 @@ def init_db(app):
     db.init_app(app)
     with app.app_context():
         db.create_all()
+        
+        # Auto-migración simple para SQLite (añadir columnas nuevas)
+        try:
+            inspector = db.inspect(db.engine)
+            columns = [col['name'] for col in inspector.get_columns('playlists')]
+            if 'cover_url' not in columns:
+                with db.engine.connect() as conn:
+                    conn.execute(db.text("ALTER TABLE playlists ADD COLUMN cover_url VARCHAR(500)"))
+                    conn.commit()
+                print("[OK] Migración: 'cover_url' añadido a 'playlists'")
+        except Exception as e:
+            print(f"[WARN] No se pudo auto-migrar la BD: {e}")
+            
         print("[OK] Base de datos inicializada correctamente.")

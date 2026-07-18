@@ -1539,6 +1539,7 @@ def api_playlist_get(playlist_id):
             "id": playlist.id,
             "name": playlist.name,
             "description": playlist.description,
+            "cover_url": playlist.cover_url,
             "items": [{
                 "id": i.id,
                 "title": i.title,
@@ -1651,6 +1652,58 @@ def api_playlist_upload():
             "platform": new_item.platform,
         }
     })
+
+@app.route("/api/playlists/<int:playlist_id>/cover", methods=["POST"])
+@login_required
+def api_playlist_cover(playlist_id):
+    """Sube y cambia la portada de una playlist."""
+    playlist = Playlist.query.filter_by(id=playlist_id, user_id=current_user.id).first()
+    if not playlist: return jsonify({"success": False, "error": "Playlist no encontrada."}), 404
+    file = request.files.get("cover")
+    if not file or file.filename == "": return jsonify({"success": False, "error": "No se seleccionó archivo."}), 400
+    
+    ALLOWED_EXT = {"jpg", "jpeg", "png", "webp", "gif"}
+    ext = file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else ""
+    if ext not in ALLOWED_EXT: return jsonify({"success": False, "error": "Formato inválido. Usa JPG, PNG o WEBP."}), 400
+    
+    file.seek(0, 2)
+    if file.tell() > 2 * 1024 * 1024: return jsonify({"success": False, "error": "La imagen no puede superar los 2MB."}), 413
+    file.seek(0)
+    
+    covers_dir = os.path.join(app.root_path, "static", "uploads", "covers")
+    os.makedirs(covers_dir, exist_ok=True)
+    filename = f"playlist_{playlist.id}_{int(time.time())}.{ext}"
+    file.save(os.path.join(covers_dir, filename))
+    
+    playlist.cover_url = f"/static/uploads/covers/{filename}"
+    db.session.commit()
+    return jsonify({"success": True, "cover_url": playlist.cover_url})
+
+@app.route("/api/tracks/<int:item_id>/cover", methods=["POST"])
+@login_required
+def api_track_cover(item_id):
+    """Sube y cambia la portada de una canción específica."""
+    item = PlaylistItem.query.join(Playlist).filter(PlaylistItem.id == item_id, Playlist.user_id == current_user.id).first()
+    if not item: return jsonify({"success": False, "error": "Canción no encontrada."}), 404
+    file = request.files.get("cover")
+    if not file or file.filename == "": return jsonify({"success": False, "error": "No se seleccionó archivo."}), 400
+    
+    ALLOWED_EXT = {"jpg", "jpeg", "png", "webp", "gif"}
+    ext = file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else ""
+    if ext not in ALLOWED_EXT: return jsonify({"success": False, "error": "Formato inválido. Usa JPG, PNG o WEBP."}), 400
+    
+    file.seek(0, 2)
+    if file.tell() > 2 * 1024 * 1024: return jsonify({"success": False, "error": "La imagen no puede superar los 2MB."}), 413
+    file.seek(0)
+    
+    covers_dir = os.path.join(app.root_path, "static", "uploads", "covers")
+    os.makedirs(covers_dir, exist_ok=True)
+    filename = f"track_{item.id}_{int(time.time())}.{ext}"
+    file.save(os.path.join(covers_dir, filename))
+    
+    item.thumbnail = f"/static/uploads/covers/{filename}"
+    db.session.commit()
+    return jsonify({"success": True, "cover_url": item.thumbnail})
 
 @app.route("/ads.txt")
 def ads_txt():

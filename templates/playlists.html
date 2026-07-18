@@ -1802,6 +1802,9 @@
         <button class="track-bs-btn" id="bsBtnAddToPlaylist">
             <i class="fas fa-plus-circle" style="color:#a6e3a1;"></i> Agregar a otra playlist
         </button>
+        <button class="track-bs-btn" id="bsBtnChangeCover">
+            <i class="fas fa-camera" style="color:#fbcfe8;"></i> Cambiar portada
+        </button>
         <button class="track-bs-btn danger" id="bsBtnDelete">
             <i class="fas fa-trash"></i> Eliminar de playlist
         </button>
@@ -1945,9 +1948,20 @@
     // ========== RENDER PLAYLIST ==========
     function renderPlaylist(playlist) {
         const main = document.getElementById('playlistMain');
-        const coverContent = playlist.items.length > 0 && playlist.items[0].thumbnail
-            ? `<img src="${playlist.items[0].thumbnail}" alt="Cover">`
-            : `<i class="fas fa-music"></i>`;
+        const coverImg = playlist.cover_url
+            ? `<img src="${playlist.cover_url}" alt="Cover" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">`
+            : (playlist.items.length > 0 && playlist.items[0].thumbnail
+                ? `<img src="${playlist.items[0].thumbnail}" alt="Cover" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">`
+                : `<i class="fas fa-music"></i>`);
+        
+        const coverContent = `
+            <div style="position:relative; width:100%; height:100%; cursor:pointer;" onclick="document.getElementById('uploadPlaylistCoverInput').click()" onmouseenter="this.querySelector('.cover-overlay').style.opacity='1'" onmouseleave="this.querySelector('.cover-overlay').style.opacity='0'" title="Cambiar portada">
+                ${coverImg}
+                <div class="cover-overlay" style="position:absolute; inset:0; background:rgba(0,0,0,0.6); display:flex; align-items:center; justify-content:center; opacity:0; transition:0.2s; border-radius:inherit;">
+                    <i class="fas fa-camera fa-2x" style="color:#fff;"></i>
+                </div>
+            </div>
+        `;
 
         let rows = '';
         if (playlist.items.length === 0) {
@@ -2022,6 +2036,8 @@
                     <i class="fas fa-trash"></i> <span class="d-none d-sm-inline">Eliminar</span>
                 </button>
                 <input type="file" id="uploadFileInput" class="d-none" accept=".mp3,.mp4,.wav,.m4a,.aac,.ogg,.webm" onchange="uploadLocalFile(${playlist.id})">
+                <input type="file" id="uploadPlaylistCoverInput" class="d-none" accept="image/jpeg,image/png,image/webp,image/gif" onchange="uploadPlaylistCover(${playlist.id})">
+                <input type="file" id="uploadTrackCoverInput" class="d-none" accept="image/jpeg,image/png,image/webp,image/gif" onchange="uploadTrackCover()">
             </div>
 
             {% if ads_enabled %}
@@ -2099,6 +2115,60 @@
             showToast('Error de conexión. Inténtalo de nuevo.');
             btn.disabled = false;
             btn.textContent = 'Crear Playlist';
+        }
+    }
+
+    async function uploadPlaylistCover(playlistId) {
+        const input = document.getElementById('uploadPlaylistCoverInput');
+        if (!input.files || input.files.length === 0) return;
+        const file = input.files[0];
+        
+        const fd = new FormData();
+        fd.append('cover', file);
+        
+        showLoadingModal('Subiendo portada...');
+        try {
+            const res = await fetch(`/api/playlists/${playlistId}/cover`, { method: 'POST', body: fd });
+            const data = await res.json();
+            if (data.success) {
+                await loadPlaylist(playlistId);
+                loadPlaylistsSidebar();
+            } else {
+                showOfflineMessage(data.error || 'Error al subir portada');
+            }
+        } catch(e) {
+            showOfflineMessage('Error de red al subir la imagen');
+        } finally {
+            closeLoadingModal();
+            input.value = '';
+        }
+    }
+
+    let currentTrackToEditCover = null;
+    async function uploadTrackCover() {
+        const input = document.getElementById('uploadTrackCoverInput');
+        if (!input.files || input.files.length === 0) return;
+        const file = input.files[0];
+        if (!currentTrackToEditCover) return;
+        
+        const fd = new FormData();
+        fd.append('cover', file);
+        
+        showLoadingModal('Actualizando canción...');
+        try {
+            const res = await fetch(`/api/tracks/${currentTrackToEditCover.itemId}/cover`, { method: 'POST', body: fd });
+            const data = await res.json();
+            if (data.success) {
+                await loadPlaylist(currentTrackToEditCover.playlistId);
+            } else {
+                showOfflineMessage(data.error || 'Error al subir portada');
+            }
+        } catch(e) {
+            showOfflineMessage('Error de red al subir la imagen');
+        } finally {
+            closeLoadingModal();
+            input.value = '';
+            currentTrackToEditCover = null;
         }
     }
 
@@ -3273,11 +3343,17 @@
         const btnPlay = document.getElementById('bsBtnPlay');
         const btnDl = document.getElementById('bsBtnDownload');
         const btnAdd = document.getElementById('bsBtnAddToPlaylist');
+        const btnChangeCover = document.getElementById('bsBtnChangeCover');
         const btnDel = document.getElementById('bsBtnDelete');
         
         btnPlay.onclick = () => { closeTrackSheet(); playTrack(index); };
         btnDl.onclick = () => { closeTrackSheet(); downloadTrack(url); };
         btnAdd.onclick = () => { closeTrackSheet(); openAddToPlaylistModal(index); };
+        btnChangeCover.onclick = () => { 
+            closeTrackSheet(); 
+            currentTrackToEditCover = { playlistId, itemId }; 
+            document.getElementById('uploadTrackCoverInput').click(); 
+        };
         btnDel.onclick = () => { closeTrackSheet(); removeTrack(playlistId, itemId, safeUrl); };
     }
 

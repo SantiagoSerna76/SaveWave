@@ -2764,8 +2764,11 @@
         var dstFallback = document.getElementById('mfpCoverFallback');
         if (srcCover && dstCover) {
             if (srcCover.src && !srcCover.classList.contains('d-none')) {
-                if (dstCover.src !== srcCover.src) {
-                    dstCover.src = srcCover.src;
+                if (dstCover.dataset.currentSrc !== srcCover.src) {
+                    dstCover.dataset.currentSrc = srcCover.src;
+                    var joinChar = srcCover.src.includes('?') ? '&' : '?';
+                    // Append cache buster to force browser to fetch with CORS headers
+                    dstCover.src = srcCover.src + joinChar + 'cors_bypass=' + Date.now();
                     dstCover.onload = function() { extractCoverColor(dstCover); };
                 }
                 dstCover.style.display = 'block';

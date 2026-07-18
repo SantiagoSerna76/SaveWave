@@ -2178,21 +2178,20 @@
         const safeHtml = (el, html) => { if (el) el.innerHTML = html; };
 
         try {
-            // Force player to be visible
-            const stickyPlayer = document.getElementById('stickyPlayer');
-            if (stickyPlayer) {
-                stickyPlayer.style.display = 'flex';
-            }
-
-            // Unlock audio context synchronously for mobile auto-play policy
-            if (audioPlayer) {
-                audioPlayer.play().catch(e => { console.warn("Unlock play rejected:", e); });
-            }
-            
-            // Auto-expand the Spotify-like full player on mobile
+            // Auto-expand the Spotify-like full player on mobile FIRST
+            // (before any audio operations that might interfere)
             if (window.innerWidth <= 768) {
                 expandPlayer();
+            } else {
+                // Desktop: just make sure the player bar is visible
+                const stickyPlayer = document.getElementById('stickyPlayer');
+                if (stickyPlayer) stickyPlayer.style.display = 'flex';
             }
+
+            // Unlock audio context for mobile auto-play policy
+            try {
+                if (audioPlayer) audioPlayer.play().catch(function(){});
+            } catch(unlockErr) { /* ignore unlock errors */ }
 
             const statusEl = document.getElementById('playerTitle');
             
@@ -2446,10 +2445,50 @@
         const player = document.getElementById('stickyPlayer');
         if (!player) return;
         
-        // Remove ALL inline styles to let the CSS .expanded class take full control
-        player.removeAttribute('style');
-        // Add the expanded class - CSS handles everything from here
+        // Add the CSS class
         player.classList.add('expanded');
+        
+        // ALSO apply critical styles directly via JS as a bulletproof fallback
+        // This guarantees the expanded view shows even if CSS has specificity issues
+        player.style.cssText = 'position:fixed!important;top:0!important;left:0!important;width:100vw!important;height:100vh!important;height:100dvh!important;z-index:99999!important;flex-direction:column!important;display:flex!important;background:linear-gradient(180deg,#30323e 0%,#121216 100%)!important;padding:0!important;border-radius:0!important;overflow-y:auto!important;justify-content:flex-start!important;align-items:stretch!important;cursor:default!important;';
+        
+        // Show the top bar and center controls that are hidden in mini mode
+        const topBar = player.querySelector('.expanded-top-bar');
+        if (topBar) topBar.style.cssText = 'display:flex!important;align-items:center;justify-content:space-between;padding:16px 20px 8px;width:100%;';
+        
+        const mainContent = player.querySelector('.expanded-main-content');
+        if (mainContent) mainContent.style.cssText = 'display:flex!important;flex-direction:column!important;align-items:center!important;padding:40px 32px 32px!important;flex:1!important;width:100%!important;';
+        
+        const playerLeft = player.querySelector('.player-left');
+        if (playerLeft) playerLeft.style.cssText = 'width:100%!important;flex-direction:column!important;align-items:center!important;gap:32px!important;';
+        
+        const coverWrapper = player.querySelector('.cover-wrapper');
+        if (coverWrapper) coverWrapper.style.cssText = 'display:flex!important;justify-content:center!important;width:100%!important;';
+        
+        const coverImg = player.querySelector('.player-cover-img');
+        if (coverImg && !coverImg.classList.contains('d-none')) {
+            coverImg.style.cssText = 'width:80vw!important;max-width:340px!important;aspect-ratio:1/1!important;border-radius:12px!important;box-shadow:0 15px 45px rgba(0,0,0,0.4)!important;object-fit:cover!important;';
+        }
+        
+        const coverFallback = player.querySelector('.cover-fallback');
+        if (coverFallback) {
+            const imgVisible = coverImg && !coverImg.classList.contains('d-none');
+            if (imgVisible) {
+                coverFallback.style.display = 'none';
+            } else {
+                coverFallback.style.cssText = 'width:80vw!important;max-width:340px!important;aspect-ratio:1/1!important;border-radius:12px!important;background:linear-gradient(135deg,#2a2a4a 0%,#3a3a6a 50%,#2a2a4a 100%)!important;display:flex!important;align-items:center!important;justify-content:center!important;font-size:5rem!important;color:rgba(255,255,255,0.25)!important;box-shadow:0 15px 45px rgba(0,0,0,0.4)!important;';
+            }
+        }
+        
+        const playerCenter = player.querySelector('.player-center');
+        if (playerCenter) playerCenter.style.cssText = 'display:flex!important;flex-direction:column!important;width:100%!important;';
+        
+        const playerRight = player.querySelector('.player-right');
+        if (playerRight) playerRight.style.cssText = 'display:none!important;';
+        
+        const mobileBtn = player.querySelector('.mobile-expand-btn');
+        if (mobileBtn) mobileBtn.style.cssText = 'display:none!important;';
+        
         document.body.style.overflow = 'hidden';
         
         const adBanner = document.getElementById('stickyAdBanner');
@@ -2460,14 +2499,25 @@
 
     function collapsePlayer() {
         const player = document.getElementById('stickyPlayer');
-        if (player) {
-            player.classList.remove('expanded');
-            document.body.style.overflow = '';
-        }
+        if (!player) return;
+        
+        player.classList.remove('expanded');
+        // Remove ALL inline styles set by expandPlayer
+        player.removeAttribute('style');
+        
+        // Clean up child element inline styles too
+        const els = player.querySelectorAll('.expanded-top-bar,.expanded-main-content,.player-left,.cover-wrapper,.player-cover-img,.cover-fallback,.player-center,.player-right,.mobile-expand-btn');
+        els.forEach(function(el) { el.removeAttribute('style'); });
+        
+        // Re-apply the ad banner bottom offset if needed
         const adBanner = document.getElementById('stickyAdBanner');
         if (adBanner) {
             adBanner.classList.remove('expanded-mode');
+            const adH = adBanner.offsetHeight || 60;
+            player.style.bottom = adH + 'px';
         }
+        
+        document.body.style.overflow = '';
     }
 
     document.getElementById('stickyPlayer').addEventListener('click', function(e) {

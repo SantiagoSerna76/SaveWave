@@ -2510,6 +2510,13 @@
     }
 
     function showMobilePlayer() {
+        // DEBUG: show a red banner at the top of the screen to prove this function runs
+        var debugBanner = document.createElement('div');
+        debugBanner.style.cssText = 'position:fixed;top:0;left:0;width:100vw;background:red;color:white;z-index:999999;padding:20px;text-align:center;font-weight:bold;';
+        debugBanner.textContent = 'DEBUG: showMobilePlayer EJECUTADO v14';
+        document.body.appendChild(debugBanner);
+        setTimeout(function() { if(debugBanner.parentNode) debugBanner.parentNode.removeChild(debugBanner); }, 3000);
+
         try { closeTrackSheet(); } catch(e) {}
         var el = buildMobilePlayer();
         el.style.display = 'flex';

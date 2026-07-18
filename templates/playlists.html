@@ -2444,20 +2444,24 @@
 
     // ========== MOBILE FULLSCREEN PLAYER ==========
     function expandPlayer() {
-        // Close any open bottom sheet first
-        if (typeof closeTrackSheet === 'function') closeTrackSheet();
-        
-        const player = document.getElementById('stickyPlayer');
-        if (player) {
-            // Clear any inline styles that could conflict with .expanded CSS
-            player.style.cssText = '';
-            player.classList.add('expanded');
-            document.body.style.overflow = 'hidden';
-        }
-        const adBanner = document.getElementById('stickyAdBanner');
-        if (adBanner) {
-            adBanner.classList.add('expanded-mode');
-        }
+        setTimeout(() => {
+            // Close any open bottom sheet first
+            if (typeof closeTrackSheet === 'function') closeTrackSheet();
+            
+            const player = document.getElementById('stickyPlayer');
+            if (player) {
+                // Clear any inline styles that could conflict with .expanded CSS
+                player.style.cssText = '';
+                // Ensure display is explicitly flex just in case
+                player.style.display = 'flex';
+                player.classList.add('expanded');
+                document.body.style.overflow = 'hidden';
+            }
+            const adBanner = document.getElementById('stickyAdBanner');
+            if (adBanner) {
+                adBanner.classList.add('expanded-mode');
+            }
+        }, 10);
     }
 
     function collapsePlayer() {

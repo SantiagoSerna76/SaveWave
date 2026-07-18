@@ -1,4 +1,4 @@
-const CACHE_NAME = 'savewave-v12';
+const CACHE_NAME = 'savewave-v13';
 const OFFLINE_AUDIO_CACHE = 'savewave-offline';
 const ASSETS_TO_CACHE = [
     '/',

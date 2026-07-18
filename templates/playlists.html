@@ -2178,14 +2178,13 @@
         const safeHtml = (el, html) => { if (el) el.innerHTML = html; };
 
         try {
-            // Auto-expand the Spotify-like full player on mobile FIRST
-            // (before any audio operations that might interfere)
+            // Make sure the mini player bar is visible
+            var stickyPlayer = document.getElementById('stickyPlayer');
+            if (stickyPlayer) stickyPlayer.style.display = 'flex';
+
+            // On mobile, show the fullscreen Spotify-style player overlay
             if (window.innerWidth <= 768) {
-                expandPlayer();
-            } else {
-                // Desktop: just make sure the player bar is visible
-                const stickyPlayer = document.getElementById('stickyPlayer');
-                if (stickyPlayer) stickyPlayer.style.display = 'flex';
+                showMobilePlayer();
             }
 
             // Unlock audio context for mobile auto-play policy
@@ -2244,6 +2243,9 @@
             
             const tt = document.getElementById('timeTotal');
             safeText(tt, '0:00');
+
+            // Sync the initial metadata to the mobile full player immediately
+            if (typeof syncMobilePlayerUI === 'function') syncMobilePlayerUI();
 
             try {
                 if ('caches' in window) {
@@ -2429,102 +2431,163 @@
                 ? '<i class="fas fa-pause"></i>'
                 : '<i class="fas fa-play" style="margin-left:2px;"></i>';
         }
-        const mobileBtn = document.getElementById('mobilePlayBtn');
+        var mobileBtn = document.getElementById('mobilePlayBtn');
         if (mobileBtn) {
             mobileBtn.innerHTML = isPlaying
                 ? '<i class="fas fa-pause"></i>'
                 : '<i class="fas fa-play"></i>';
         }
+        // Sync fullscreen mobile player play/pause
+        var mfpBtn = document.getElementById('mfpPlayPause');
+        if (mfpBtn) {
+            mfpBtn.innerHTML = isPlaying
+                ? '<i class="fas fa-pause"></i>'
+                : '<i class="fas fa-play"></i>';
+        }
     }
 
-    // ========== MOBILE FULLSCREEN PLAYER ==========
-    function expandPlayer() {
-        // Close any open bottom sheet first
+    // ========== MOBILE FULLSCREEN PLAYER (Independent Overlay - Spotify Style) ==========
+    // This is a completely separate DOM element from the sticky mini bar.
+    // Created 100% in JavaScript with inline styles to avoid ANY CSS conflicts.
+
+    function buildMobilePlayer() {
+        if (document.getElementById('mobileFullPlayer')) return document.getElementById('mobileFullPlayer');
+
+        var overlay = document.createElement('div');
+        overlay.id = 'mobileFullPlayer';
+        overlay.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;height:100dvh;z-index:100000;display:none;flex-direction:column;background:linear-gradient(180deg,#30323e 0%,#121216 100%);color:#fff;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;overflow:hidden;';
+
+        overlay.innerHTML = '\
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px 8px;width:100%;flex-shrink:0;">\
+            <button id="mfpClose" style="background:none;border:none;color:#fff;font-size:1.4rem;padding:8px;cursor:pointer;"><i class="fas fa-chevron-down"></i></button>\
+            <span style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.15em;font-weight:700;color:rgba(255,255,255,0.7);">Reproduciendo desde playlist</span>\
+            <button style="background:none;border:none;color:#fff;font-size:1.4rem;padding:8px;"><i class="fas fa-ellipsis-v"></i></button>\
+        </div>\
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:24px 32px;gap:28px;overflow:hidden;">\
+            <div style="display:flex;justify-content:center;width:100%;">\
+                <img id="mfpCoverImg" src="" style="width:75vw;max-width:320px;aspect-ratio:1/1;border-radius:12px;box-shadow:0 15px 45px rgba(0,0,0,0.5);object-fit:cover;display:none;" />\
+                <div id="mfpCoverFallback" style="width:75vw;max-width:320px;aspect-ratio:1/1;border-radius:12px;background:linear-gradient(135deg,#2a2a4a 0%,#3a3a6a 50%,#2a2a4a 100%);display:flex;align-items:center;justify-content:center;font-size:5rem;color:rgba(255,255,255,0.2);box-shadow:0 15px 45px rgba(0,0,0,0.5);">\
+                    <i class="fas fa-music"></i>\
+                </div>\
+            </div>\
+            <div style="width:100%;">\
+                <div id="mfpTitle" style="font-size:1.35rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px;">Cargando...</div>\
+                <div id="mfpArtist" style="font-size:0.95rem;color:rgba(255,255,255,0.6);">SaveWave</div>\
+            </div>\
+            <div style="width:100%;position:relative;padding-bottom:22px;">\
+                <div id="mfpProgressBar" style="height:4px;background:rgba(255,255,255,0.2);border-radius:2px;width:100%;cursor:pointer;">\
+                    <div id="mfpProgressFill" style="height:100%;background:#fff;border-radius:2px;width:0%;transition:width 0.15s linear;"></div>\
+                </div>\
+                <span id="mfpTimeCurrent" style="position:absolute;left:0;bottom:0;font-size:0.75rem;color:rgba(255,255,255,0.55);">0:00</span>\
+                <span id="mfpTimeTotal" style="position:absolute;right:0;bottom:0;font-size:0.75rem;color:rgba(255,255,255,0.55);">0:00</span>\
+            </div>\
+            <div style="display:flex;justify-content:space-between;align-items:center;width:100%;max-width:340px;margin:0 auto;">\
+                <button id="mfpShuffle" style="background:none;border:none;color:rgba(255,255,255,0.55);font-size:1.15rem;padding:10px;cursor:pointer;"><i class="fas fa-random"></i></button>\
+                <button id="mfpPrev" style="background:none;border:none;color:#fff;font-size:1.8rem;padding:10px;cursor:pointer;"><i class="fas fa-step-backward"></i></button>\
+                <button id="mfpPlayPause" style="width:64px;height:64px;border-radius:50%;background:#fff;border:none;color:#000;font-size:1.6rem;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,0.35);flex-shrink:0;"><i class="fas fa-play"></i></button>\
+                <button id="mfpNext" style="background:none;border:none;color:#fff;font-size:1.8rem;padding:10px;cursor:pointer;"><i class="fas fa-step-forward"></i></button>\
+                <button id="mfpRepeat" style="background:none;border:none;color:rgba(255,255,255,0.55);font-size:1.15rem;padding:10px;cursor:pointer;"><i class="fas fa-redo"></i></button>\
+            </div>\
+        </div>';
+
+        document.body.appendChild(overlay);
+
+        // --- Event Handlers ---
+        overlay.querySelector('#mfpClose').addEventListener('click', function() { hideMobilePlayer(); });
+        overlay.querySelector('#mfpPlayPause').addEventListener('click', function() { togglePlay(); });
+        overlay.querySelector('#mfpPrev').addEventListener('click', function() { playPrev(); });
+        overlay.querySelector('#mfpNext').addEventListener('click', function() { playNext(); });
+        overlay.querySelector('#mfpShuffle').addEventListener('click', function() { toggleShuffle(); syncMobileShuffleRepeat(); });
+        overlay.querySelector('#mfpRepeat').addEventListener('click', function() { toggleRepeat(); syncMobileShuffleRepeat(); });
+        overlay.querySelector('#mfpProgressBar').addEventListener('click', function(e) {
+            if (!audioPlayer.duration || isNaN(audioPlayer.duration)) return;
+            var rect = this.getBoundingClientRect();
+            var pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+            audioPlayer.currentTime = pct * audioPlayer.duration;
+        });
+
+        return overlay;
+    }
+
+    function showMobilePlayer() {
         try { closeTrackSheet(); } catch(e) {}
-        
-        const player = document.getElementById('stickyPlayer');
-        if (!player) return;
-        
-        // Add the CSS class
-        player.classList.add('expanded');
-        
-        // ALSO apply critical styles directly via JS as a bulletproof fallback
-        // This guarantees the expanded view shows even if CSS has specificity issues
-        player.style.cssText = 'position:fixed!important;top:0!important;left:0!important;width:100vw!important;height:100vh!important;height:100dvh!important;z-index:99999!important;flex-direction:column!important;display:flex!important;background:linear-gradient(180deg,#30323e 0%,#121216 100%)!important;padding:0!important;border-radius:0!important;overflow-y:auto!important;justify-content:flex-start!important;align-items:stretch!important;cursor:default!important;';
-        
-        // Show the top bar and center controls that are hidden in mini mode
-        const topBar = player.querySelector('.expanded-top-bar');
-        if (topBar) topBar.style.cssText = 'display:flex!important;align-items:center;justify-content:space-between;padding:16px 20px 8px;width:100%;';
-        
-        const mainContent = player.querySelector('.expanded-main-content');
-        if (mainContent) mainContent.style.cssText = 'display:flex!important;flex-direction:column!important;align-items:center!important;padding:40px 32px 32px!important;flex:1!important;width:100%!important;';
-        
-        const playerLeft = player.querySelector('.player-left');
-        if (playerLeft) playerLeft.style.cssText = 'width:100%!important;flex-direction:column!important;align-items:center!important;gap:32px!important;';
-        
-        const coverWrapper = player.querySelector('.cover-wrapper');
-        if (coverWrapper) coverWrapper.style.cssText = 'display:flex!important;justify-content:center!important;width:100%!important;';
-        
-        const coverImg = player.querySelector('.player-cover-img');
-        if (coverImg && !coverImg.classList.contains('d-none')) {
-            coverImg.style.cssText = 'width:80vw!important;max-width:340px!important;aspect-ratio:1/1!important;border-radius:12px!important;box-shadow:0 15px 45px rgba(0,0,0,0.4)!important;object-fit:cover!important;';
-        }
-        
-        const coverFallback = player.querySelector('.cover-fallback');
-        if (coverFallback) {
-            const imgVisible = coverImg && !coverImg.classList.contains('d-none');
-            if (imgVisible) {
-                coverFallback.style.display = 'none';
-            } else {
-                coverFallback.style.cssText = 'width:80vw!important;max-width:340px!important;aspect-ratio:1/1!important;border-radius:12px!important;background:linear-gradient(135deg,#2a2a4a 0%,#3a3a6a 50%,#2a2a4a 100%)!important;display:flex!important;align-items:center!important;justify-content:center!important;font-size:5rem!important;color:rgba(255,255,255,0.25)!important;box-shadow:0 15px 45px rgba(0,0,0,0.4)!important;';
-            }
-        }
-        
-        const playerCenter = player.querySelector('.player-center');
-        if (playerCenter) playerCenter.style.cssText = 'display:flex!important;flex-direction:column!important;width:100%!important;';
-        
-        const playerRight = player.querySelector('.player-right');
-        if (playerRight) playerRight.style.cssText = 'display:none!important;';
-        
-        const mobileBtn = player.querySelector('.mobile-expand-btn');
-        if (mobileBtn) mobileBtn.style.cssText = 'display:none!important;';
-        
+        var el = buildMobilePlayer();
+        el.style.display = 'flex';
         document.body.style.overflow = 'hidden';
-        
-        const adBanner = document.getElementById('stickyAdBanner');
-        if (adBanner) {
-            adBanner.classList.add('expanded-mode');
-        }
+        syncMobilePlayerUI();
+        syncMobileShuffleRepeat();
     }
 
-    function collapsePlayer() {
-        const player = document.getElementById('stickyPlayer');
-        if (!player) return;
-        
-        player.classList.remove('expanded');
-        // Remove ALL inline styles set by expandPlayer
-        player.removeAttribute('style');
-        
-        // Clean up child element inline styles too
-        const els = player.querySelectorAll('.expanded-top-bar,.expanded-main-content,.player-left,.cover-wrapper,.player-cover-img,.cover-fallback,.player-center,.player-right,.mobile-expand-btn');
-        els.forEach(function(el) { el.removeAttribute('style'); });
-        
-        // Re-apply the ad banner bottom offset if needed
-        const adBanner = document.getElementById('stickyAdBanner');
-        if (adBanner) {
-            adBanner.classList.remove('expanded-mode');
-            const adH = adBanner.offsetHeight || 60;
-            player.style.bottom = adH + 'px';
-        }
-        
+    function hideMobilePlayer() {
+        var el = document.getElementById('mobileFullPlayer');
+        if (el) el.style.display = 'none';
         document.body.style.overflow = '';
     }
 
+    function syncMobilePlayerUI() {
+        var el = document.getElementById('mobileFullPlayer');
+        if (!el || el.style.display === 'none') return;
+
+        // Sync title & artist from the mini player
+        var srcTitle = document.getElementById('playerTitle');
+        var srcArtist = document.getElementById('playerArtist');
+        var dstTitle = document.getElementById('mfpTitle');
+        var dstArtist = document.getElementById('mfpArtist');
+        if (srcTitle && dstTitle) dstTitle.textContent = srcTitle.textContent;
+        if (srcArtist && dstArtist) dstArtist.textContent = srcArtist.textContent;
+
+        // Sync cover image
+        var srcCover = document.getElementById('playerCover');
+        var dstCover = document.getElementById('mfpCoverImg');
+        var dstFallback = document.getElementById('mfpCoverFallback');
+        if (srcCover && dstCover) {
+            if (srcCover.src && !srcCover.classList.contains('d-none')) {
+                dstCover.src = srcCover.src;
+                dstCover.style.display = 'block';
+                if (dstFallback) dstFallback.style.display = 'none';
+            } else {
+                dstCover.style.display = 'none';
+                if (dstFallback) dstFallback.style.display = 'flex';
+            }
+        }
+
+        // Sync progress bar
+        if (audioPlayer.duration && !isNaN(audioPlayer.duration)) {
+            var pct = (audioPlayer.currentTime / audioPlayer.duration) * 100;
+            var fill = document.getElementById('mfpProgressFill');
+            if (fill) fill.style.width = pct + '%';
+            var tc = document.getElementById('mfpTimeCurrent');
+            if (tc) tc.textContent = formatTime(audioPlayer.currentTime);
+            var tt = document.getElementById('mfpTimeTotal');
+            if (tt) tt.textContent = formatTime(audioPlayer.duration);
+        }
+
+        // Sync play/pause button
+        var ppBtn = document.getElementById('mfpPlayPause');
+        if (ppBtn) {
+            ppBtn.innerHTML = isPlaying ? '<i class="fas fa-pause"></i>' : '<i class="fas fa-play"></i>';
+        }
+    }
+
+    function syncMobileShuffleRepeat() {
+        var shuffleBtn = document.getElementById('mfpShuffle');
+        if (shuffleBtn) shuffleBtn.style.color = isShuffled ? '#6366f1' : 'rgba(255,255,255,0.55)';
+        var repeatBtn = document.getElementById('mfpRepeat');
+        if (repeatBtn) {
+            repeatBtn.style.color = repeatMode > 0 ? '#6366f1' : 'rgba(255,255,255,0.55)';
+            if (repeatMode === 2) {
+                repeatBtn.innerHTML = '<i class="fas fa-redo"></i><span style="font-size:0.5em;font-weight:900;position:absolute;margin-left:-12px;margin-top:8px;">1</span>';
+            } else {
+                repeatBtn.innerHTML = '<i class="fas fa-redo"></i>';
+            }
+        }
+    }
+
+    // Tap on mini player bar opens the fullscreen mobile player
     document.getElementById('stickyPlayer').addEventListener('click', function(e) {
         if (window.innerWidth > 768) return;
-        if (this.classList.contains('expanded')) return;
         if (e.target.closest('button') || e.target.closest('input')) return;
-        expandPlayer();
+        showMobilePlayer();
     });
 
     // ========== NEXT / PREV ==========
@@ -2681,13 +2744,15 @@
     // ========== PROGRESS UPDATES ==========
     audioPlayer.addEventListener('timeupdate', function() {
         if (!audioPlayer.duration || isNaN(audioPlayer.duration)) return;
-        const pct = (audioPlayer.currentTime / audioPlayer.duration) * 100;
-        const pb = document.getElementById('progressBar');
+        var pct = (audioPlayer.currentTime / audioPlayer.duration) * 100;
+        var pb = document.getElementById('progressBar');
         if (pb) pb.style.width = pct + '%';
-        const tcEl = document.getElementById('timeCurrent');
+        var tcEl = document.getElementById('timeCurrent');
         if (tcEl) tcEl.textContent = formatTime(audioPlayer.currentTime);
-        const ttEl = document.getElementById('timeTotal');
+        var ttEl = document.getElementById('timeTotal');
         if (ttEl) ttEl.textContent = formatTime(audioPlayer.duration);
+        // Sync the mobile fullscreen player overlay
+        syncMobilePlayerUI();
     });
 
     audioPlayer.addEventListener('error', function(e) {

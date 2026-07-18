@@ -105,7 +105,7 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = "login"
 login_manager.login_message = "Por favor inicia sesion para acceder a esta funcion."
-login_manager.session_protection = "strong"  # Protege contra session hijacking
+login_manager.session_protection = "basic"  # Permite cambios de IP (común en móviles) sin cerrar la sesión
 
 
 @login_manager.user_loader

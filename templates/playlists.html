@@ -2920,99 +2920,106 @@
             ctx.stroke();
 
         } else if (window.vizStyle === 'pulse') {
-            // ═══ Pulse: Horizontal continuous soundwave behind cover ═══
-            var pulseCount = 100; // More points for a smoother, cleaner wave
-            var coverR = w * 0.5175;
-            var maxPulseH = w * 0.28; // Thinner waveform (was 0.65)
-            var extent = S / 2; // Extend all the way to the edge of the canvas
+            // ═══ Pulse: Multiple Overlapping Neon Sine Waves (Vector Art Style) ═══
+            var pulseCount = 120; // High resolution for smooth curves
+            var coverR = w * 0.52;
+            var maxPulseH = w * 0.22; // Height of the waves
+            var extent = S / 2; // Full width
             ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
 
-            // Draw mirrored horizontal waves on left and right
+            // We will draw 4 overlapping waves per side with different phases/frequencies
+            // to create that "layered vector wave" look from the image.
+            var layers = [
+                { alpha: 1.0,  freq: 1.0, phase: _vizRotation * 2.0,  amp: 1.0,  width: 2.5, color: _vizColor },   // Main bright wave
+                { alpha: 0.6,  freq: 1.5, phase: -_vizRotation * 1.5, amp: 0.7,  width: 1.5, color: _vizColor2 },  // Secondary overlapping
+                { alpha: 0.35, freq: 0.8, phase: _vizRotation * 3.0,  amp: 0.45, width: 1.0, color: {r:255,g:255,b:255} }, // Bright sharp core
+                { alpha: 0.2,  freq: 2.2, phase: -_vizRotation * 2.5, amp: 0.3,  width: 3.0, color: _vizColor }    // Background wide glow
+            ];
+
             for (var side = -1; side <= 1; side += 2) {
-                var ptsTop = [];
-                var ptsBot = [];
-                
-                for (var j = 0; j < pulseCount; j++) {
-                    var t = j / (pulseCount - 1);
-                    var barIdx = Math.floor(t * (barCount * 0.5));
-                    var val = _vizBars[barIdx];
+                for (var l = 0; l < layers.length; l++) {
+                    var layer = layers[l];
+                    var pts = [];
                     
-                    var xPos = coverR * 0.8 + t * (extent - coverR * 0.8);
-                    // Power function for edge fade so it stays thicker longer and tapers sharply at the very end
-                    var edgeFade = Math.sin(t * Math.PI);
-                    
-                    // Thinner base height, cleaner response
-                    var h = 0.5 + val * maxPulseH * edgeFade * (0.5 + audioEnergy * 0.5);
-                    var px = cx + side * xPos;
-                    
-                    ptsTop.push({ x: px, y: cy - h });
-                    ptsBot.unshift({ x: px, y: cy + h });
-                }
-                
-                // Outer glowing envelope
-                ctx.beginPath();
-                ctx.moveTo(ptsTop[0].x, ptsTop[0].y);
-                for(var i=1; i<ptsTop.length; i++) ctx.lineTo(ptsTop[i].x, ptsTop[i].y);
-                for(var i=0; i<ptsBot.length; i++) ctx.lineTo(ptsBot[i].x, ptsBot[i].y);
-                ctx.closePath();
-                
-                var pulseGrad = ctx.createLinearGradient(cx + side * coverR, cy, cx + side * extent, cy);
-                pulseGrad.addColorStop(0, 'rgba(' + c1 + ',' + (0.9 * _vizIntensity) + ')');
-                pulseGrad.addColorStop(0.6, 'rgba(' + c1 + ',' + (0.4 * _vizIntensity) + ')');
-                pulseGrad.addColorStop(1, 'rgba(' + c2 + ',0)');
-                
-                ctx.fillStyle = pulseGrad;
-                ctx.shadowBlur = 20 * audioEnergy; // cleaner shadow
-                ctx.shadowColor = 'rgba(' + c1 + ', 0.8)';
-                ctx.fill();
-                ctx.shadowBlur = 0;
-                
-                // Inner bright core (white/cyan mix) - thinner and sharper
-                ctx.beginPath();
-                ctx.moveTo(ptsTop[0].x, cy);
-                for(var i=1; i<ptsTop.length; i++) {
-                    var h = (ptsTop[i].y - cy);
-                    ctx.lineTo(ptsTop[i].x, cy + h * 0.15); // Sharper core
-                }
-                for(var i=0; i<ptsBot.length; i++) {
-                    var h = (ptsBot[i].y - cy);
-                    ctx.lineTo(ptsBot[i].x, cy + h * 0.15);
-                }
-                ctx.closePath();
-                ctx.fillStyle = 'rgba(255,255,255,' + (0.6 * _vizIntensity) + ')';
-                ctx.shadowBlur = 8;
-                ctx.shadowColor = 'rgba(' + c1 + ', 1)';
-                ctx.fill();
-                ctx.shadowBlur = 0;
-                
-                // Central razor sharp line
-                ctx.beginPath();
-                ctx.moveTo(cx + side * coverR * 0.8, cy);
-                ctx.lineTo(cx + side * extent * 0.9, cy);
-                ctx.strokeStyle = 'rgba(255,255,255,' + (0.4 * _vizIntensity) + ')';
-                ctx.lineWidth = 1;
-                ctx.stroke();
-            }
+                    for (var j = 0; j < pulseCount; j++) {
+                        var t = j / (pulseCount - 1);
+                        
+                        // Map 't' to a specific bar index to get audio data
+                        // We use a slight offset per layer to desync them visually
+                        var audioT = Math.abs(t - (l * 0.05));
+                        if(audioT > 1) audioT = 1;
+                        var barIdx = Math.floor(audioT * (barCount * 0.4)); 
+                        var val = _vizBars[barIdx] || 0;
+                        
+                        var xPos = coverR * 0.8 + t * (extent - coverR * 0.8);
+                        var px = cx + side * xPos;
 
-            // Clean Neon ring around cover
-            var ringR = innerR + 1;
+                        // Create a tapering envelope so it starts at 0 at the cover and tapers to 0 at the edge
+                        var envelope = Math.sin(t * Math.PI); 
+                        // Add an extra pinch at the start to emerge smoothly from behind the cover
+                        envelope *= Math.min(1.0, t * 5.0);
+
+                        // The core "wave" mathematical shape: audio * sine wave
+                        // The sine wave gives it the "up and down" rippling look
+                        var waveRipples = Math.sin(t * Math.PI * 8.0 * layer.freq + layer.phase);
+                        
+                        // Combine audio amplitude with mathematical ripples
+                        var h = waveRipples * (val * maxPulseH * layer.amp * envelope * (0.6 + audioEnergy * 0.6));
+                        
+                        // Base height to ensure it always draws a flat line even when quiet
+                        if (val < 0.02) h = waveRipples * (2.0 * layer.amp * envelope);
+
+                        pts.push({ x: px, y: cy - h });
+                    }
+                    
+                    // Draw this layer's continuous smooth wave
+                    ctx.beginPath();
+                    ctx.moveTo(pts[0].x, pts[0].y);
+                    
+                    // Use bezier curves to smooth the points
+                    for(var i = 1; i < pts.length - 1; i++) {
+                        var xc = (pts[i].x + pts[i + 1].x) / 2;
+                        var yc = (pts[i].y + pts[i + 1].y) / 2;
+                        ctx.quadraticCurveTo(pts[i].x, pts[i].y, xc, yc);
+                    }
+                    ctx.lineTo(pts[pts.length - 1].x, pts[pts.length - 1].y);
+                    
+                    // Apply neon colors
+                    var colStr = layer.color.r + ',' + layer.color.g + ',' + layer.color.b;
+                    ctx.strokeStyle = 'rgba(' + colStr + ',' + (layer.alpha * _vizIntensity) + ')';
+                    ctx.lineWidth = layer.width;
+                    
+                    // Glowing shadow
+                    if (l === 0 || l === 1) {
+                        ctx.shadowBlur = 15 * audioEnergy;
+                        ctx.shadowColor = 'rgba(' + colStr + ', 0.8)';
+                    } else {
+                        ctx.shadowBlur = 0;
+                    }
+                    
+                    ctx.stroke();
+                }
+            }
+            ctx.shadowBlur = 0;
+
+            // Thin, sleek Neon ring around cover to match the refined aesthetic
+            var ringR = innerR + 2;
             ctx.beginPath();
             ctx.arc(cx, cy, ringR, 0, Math.PI * 2);
-            ctx.strokeStyle = 'rgba(' + c1 + ',' + Math.min(1.0, 0.5 + bass * 0.5) * _vizIntensity + ')';
-            ctx.lineWidth = 3 + bass * 4; // thinner ring
-            ctx.shadowBlur = 20;
-            ctx.shadowColor = 'rgba(' + c1 + ', 1)';
+            ctx.strokeStyle = 'rgba(' + c1 + ',' + Math.min(1.0, 0.6 + bass * 0.4) * _vizIntensity + ')';
+            ctx.lineWidth = 1.5 + bass * 2;
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = 'rgba(' + c1 + ', 0.8)';
             ctx.stroke();
             
-            // Bright white/cyan core for the ring
+            // Bright white inner core for the ring
             ctx.beginPath();
             ctx.arc(cx, cy, ringR, 0, Math.PI * 2);
-            ctx.strokeStyle = 'rgba(255, 255, 255, ' + (0.8 * _vizIntensity) + ')';
-            ctx.lineWidth = 1.5;
-            ctx.shadowBlur = 5;
-            ctx.shadowColor = '#fff';
-            ctx.stroke();
+            ctx.strokeStyle = 'rgba(255, 255, 255, ' + (0.5 * _vizIntensity) + ')';
+            ctx.lineWidth = 0.5;
             ctx.shadowBlur = 0;
+            ctx.stroke();
 
         } else {
             // ═══ Circular frequency bars (mirror symmetry + rotation + dot caps) ═══

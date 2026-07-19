@@ -891,7 +891,7 @@ def api_download_proxy():
     try:
         # Reutilizar _get_ydl_opts() para heredar cookies, ffmpeg, etc.
         opts = _get_ydl_opts({
-            'format': 'worstaudio[ext=m4a]/worstaudio/best',
+            'format': 'bestaudio[ext=m4a]/bestaudio/best',
             'outtmpl': temp_base + '.%(ext)s',
             'quiet': True,
             'no_warnings': True,
@@ -899,15 +899,16 @@ def api_download_proxy():
         }, url)
 
         with yt_dlp.YoutubeDL(opts) as ydl:
-            ydl.download([url])
+            info = ydl.extract_info(url, download=True)
+            actual_file = ydl.prepare_filename(info)
 
-        # Buscar el archivo que yt-dlp realmente escribió (audio.m4a, audio.webm, etc.)
-        downloaded_files = glob.glob(os.path.join(temp_dir, "audio.*"))
-        if not downloaded_files:
-            print(f"[download-proxy] ✗ No se encontró archivo en {temp_dir}")
-            return jsonify({"success": False, "error": "yt-dlp no generó archivo de audio"}), 502
-
-        actual_file = downloaded_files[0]
+        if not actual_file or not os.path.exists(actual_file):
+            print(f"[download-proxy] ✗ Archivo no encontrado tras descarga: {actual_file}")
+            # Fallback a glob por si acaso
+            downloaded_files = glob.glob(os.path.join(temp_dir, "audio*"))
+            if not downloaded_files:
+                return jsonify({"success": False, "error": "yt-dlp no generó archivo de audio"}), 502
+            actual_file = downloaded_files[0]
         file_size = os.path.getsize(actual_file)
 
         if file_size == 0:

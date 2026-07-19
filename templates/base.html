@@ -332,6 +332,33 @@
         {% block content %}{% endblock %}
     </main>
 
+    {% if ads_enabled %}
+    <!-- Interstitial Ad Modal (Social Bar wrapper) -->
+    <div class="modal fade" id="adInterstitialModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; background: #1e1e2e; color: #fff; overflow: hidden;">
+                <div class="modal-header border-0 pb-0 justify-content-center position-relative">
+                    <h5 class="modal-title fw-bold text-center w-100 mt-2"><i class="fas fa-heart text-danger me-2"></i>Apoya a SaveWave</h5>
+                    <button type="button" class="btn-close btn-close-white position-absolute end-0 top-0 m-3" data-bs-dismiss="modal" id="closeAdModalBtn" style="display: none;"></button>
+                </div>
+                <div class="modal-body text-center p-4">
+                    <p class="text-muted mb-4 small">Para mantener esta app 100% gratuita, por favor interactúa con el anuncio o espera unos segundos para ir a tus Playlists.</p>
+                    
+                    <!-- Adsterra Container -->
+                    <div class="ad-container d-flex justify-content-center align-items-center mx-auto mb-4" style="min-height: 250px; background: rgba(0,0,0,0.3); border-radius: 12px; border: 1px dashed rgba(255,255,255,0.1); width: 100%; position: relative; overflow: hidden;">
+                        <script type="text/javascript" src="//pl30368511.effectivecpmnetwork.com/84/9b/9c/849b9cef5f3fe0f116666e5ee94431d7.js"></script>
+                    </div>
+
+                    <div id="adTimer" class="text-muted small fw-bold">Continuando en <span id="adSeconds">5</span>...</div>
+                    <a href="#" id="continueToPlaylistBtn" class="btn btn-primary w-100 fw-bold py-2 shadow-sm" style="border-radius: 10px; display: none; background: linear-gradient(135deg, #6366f1, #8b5cf6); border: none;">
+                        Cerrar anuncio e ir a Playlists <i class="fas fa-arrow-right ms-2"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Footer -->
     <footer class="py-4 mt-5" style="background:#0f0f1a; border-top:1px solid rgba(255,255,255,0.06);">
         <div class="container">
@@ -522,54 +549,47 @@
         });
     }
 
-    // === KILLER GLOBAL: Destruir Social Bar de Adsterra en MOVIL y PWA ===
-    (function() {
-        const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        const isInstalledApp = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    // === INTERSTICIAL: Social Bar Modal ===
+    document.addEventListener("DOMContentLoaded", function() {
+        var playlistBtns = document.querySelectorAll('a[href="{{ url_for(\'playlists_view\') }}"]');
+        var adModalEl = document.getElementById('adInterstitialModal');
+        if (!adModalEl) return;
+        var adModal = new bootstrap.Modal(adModalEl);
         
-        if (isMobileDevice || isInstalledApp) {
-            // Observador agresivo: mata cualquier elemento fixed/sticky que Adsterra inyecte
-            var adKiller = new MutationObserver(function(mutations) {
-                mutations.forEach(function(m) {
-                    m.addedNodes.forEach(function(node) {
-                        if (node.nodeType !== 1) return;
-                        var style = window.getComputedStyle ? window.getComputedStyle(node) : node.style;
-                        var pos = style ? style.position : '';
-                        if ((pos === 'fixed' || pos === 'sticky') &&
-                            !node.classList.contains('navbar') &&
-                            !node.closest('.navbar') &&
-                            !node.closest('.alert') &&
-                            node.id !== 'pwaInstallBanner' &&
-                            !node.closest('#pwaInstallBanner') &&
-                            node.id !== 'stickyPlayer' &&
-                            node.id !== 'mobileFullPlayer' &&
-                            !node.closest('#stickyPlayer') &&
-                            !node.closest('#mobileFullPlayer') &&
-                            !node.dataset.swSafe) {
-                            node.remove();
+        playlistBtns.forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                if (window.location.pathname !== "{{ url_for('playlists_view') }}") {
+                    e.preventDefault();
+                    var destUrl = this.href;
+                    adModal.show();
+                    
+                    var seconds = 5;
+                    var timerSpan = document.getElementById('adSeconds');
+                    var timerDiv = document.getElementById('adTimer');
+                    var continueBtn = document.getElementById('continueToPlaylistBtn');
+                    var closeBtn = document.getElementById('closeAdModalBtn');
+                    
+                    continueBtn.href = destUrl;
+                    timerDiv.style.display = 'block';
+                    continueBtn.style.display = 'none';
+                    closeBtn.style.display = 'none';
+                    timerSpan.textContent = seconds;
+                    
+                    var interval = setInterval(function() {
+                        seconds--;
+                        if (seconds > 0) {
+                            timerSpan.textContent = seconds;
+                        } else {
+                            clearInterval(interval);
+                            timerDiv.style.display = 'none';
+                            continueBtn.style.display = 'block';
+                            closeBtn.style.display = 'block';
                         }
-                    });
-                });
+                    }, 1000);
+                }
             });
-            adKiller.observe(document.documentElement, { childList: true, subtree: true });
-            
-            // Barrido periodico cada 2 seg por si se cuela algo
-            setInterval(function() {
-                document.querySelectorAll('*').forEach(function(el) {
-                    var style = window.getComputedStyle(el);
-                    if ((style.position === 'fixed' || style.position === 'sticky') &&
-                        !el.classList.contains('navbar') && !el.closest('.navbar') &&
-                        !el.closest('.alert') && !el.closest('#pwaInstallBanner') &&
-                        el.tagName !== 'NAV' && !el.dataset.swSafe &&
-                        el.id !== 'stickyPlayer' && el.id !== 'mobileFullPlayer' &&
-                        !el.closest('#stickyPlayer') && !el.closest('#mobileFullPlayer') &&
-                        el.offsetHeight > 0 && el.offsetHeight < 200) {
-                        el.remove();
-                    }
-                });
-            }, 2000);
-        }
-    })();
+        });
+    });
     </script>
     {% block extra_scripts %}{% endblock %}
 </body>

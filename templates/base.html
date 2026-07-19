@@ -625,7 +625,8 @@
         
         var msgEl = document.getElementById('adModalMessage');
         if (msgEl) {
-            msgEl.textContent = customMessage || "Para mantener esta app 100% gratuita, haz clic en el botón de abajo para ver un breve mensaje de nuestro patrocinador y continuar.";
+            let boldText = customMessage || "Apoya a SaveWave";
+            msgEl.innerHTML = `<strong>${boldText}</strong><br><br>Para mantener esta app 100% gratuita, haz clic en el botón de abajo para ver un breve mensaje de nuestro patrocinador y continuar. ¡Gracias por tu apoyo!`;
         }
         
         window._adPendingCallback = onContinueCallback;

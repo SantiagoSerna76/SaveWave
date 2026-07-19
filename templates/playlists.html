@@ -2921,10 +2921,10 @@
 
         } else if (window.vizStyle === 'pulse') {
             // ═══ Pulse: Horizontal continuous soundwave behind cover ═══
-            var pulseCount = 80;
-            var coverR = w * 0.5175; // Matches innerR roughly
-            var maxPulseH = w * 0.65;
-            var extent = (S / 2) - 5;
+            var pulseCount = 100; // More points for a smoother, cleaner wave
+            var coverR = w * 0.5175;
+            var maxPulseH = w * 0.28; // Thinner waveform (was 0.65)
+            var extent = S / 2; // Extend all the way to the edge of the canvas
             ctx.lineJoin = 'round';
 
             // Draw mirrored horizontal waves on left and right
@@ -2937,11 +2937,12 @@
                     var barIdx = Math.floor(t * (barCount * 0.5));
                     var val = _vizBars[barIdx];
                     
-                    var xPos = coverR * 0.85 + t * (extent - coverR * 0.85);
-                    // Sine function creates a smooth taper at both ends
+                    var xPos = coverR * 0.8 + t * (extent - coverR * 0.8);
+                    // Power function for edge fade so it stays thicker longer and tapers sharply at the very end
                     var edgeFade = Math.sin(t * Math.PI);
                     
-                    var h = 1.5 + val * maxPulseH * edgeFade * audioEnergy;
+                    // Thinner base height, cleaner response
+                    var h = 0.5 + val * maxPulseH * edgeFade * (0.5 + audioEnergy * 0.5);
                     var px = cx + side * xPos;
                     
                     ptsTop.push({ x: px, y: cy - h });
@@ -2956,51 +2957,59 @@
                 ctx.closePath();
                 
                 var pulseGrad = ctx.createLinearGradient(cx + side * coverR, cy, cx + side * extent, cy);
-                pulseGrad.addColorStop(0, 'rgba(' + c1 + ',' + (0.95 * _vizIntensity) + ')');
-                pulseGrad.addColorStop(0.4, 'rgba(' + c1 + ',' + (0.5 * _vizIntensity) + ')');
+                pulseGrad.addColorStop(0, 'rgba(' + c1 + ',' + (0.9 * _vizIntensity) + ')');
+                pulseGrad.addColorStop(0.6, 'rgba(' + c1 + ',' + (0.4 * _vizIntensity) + ')');
                 pulseGrad.addColorStop(1, 'rgba(' + c2 + ',0)');
                 
                 ctx.fillStyle = pulseGrad;
-                ctx.shadowBlur = 35 * audioEnergy;
-                ctx.shadowColor = 'rgba(' + c1 + ', 1)';
+                ctx.shadowBlur = 20 * audioEnergy; // cleaner shadow
+                ctx.shadowColor = 'rgba(' + c1 + ', 0.8)';
                 ctx.fill();
                 ctx.shadowBlur = 0;
                 
-                // Inner bright core (white/cyan mix) to simulate intense light
+                // Inner bright core (white/cyan mix) - thinner and sharper
                 ctx.beginPath();
                 ctx.moveTo(ptsTop[0].x, cy);
                 for(var i=1; i<ptsTop.length; i++) {
                     var h = (ptsTop[i].y - cy);
-                    ctx.lineTo(ptsTop[i].x, cy + h * 0.25);
+                    ctx.lineTo(ptsTop[i].x, cy + h * 0.15); // Sharper core
                 }
                 for(var i=0; i<ptsBot.length; i++) {
                     var h = (ptsBot[i].y - cy);
-                    ctx.lineTo(ptsBot[i].x, cy + h * 0.25);
+                    ctx.lineTo(ptsBot[i].x, cy + h * 0.15);
                 }
                 ctx.closePath();
-                ctx.fillStyle = 'rgba(255,255,255,' + (0.5 * _vizIntensity) + ')';
-                ctx.shadowBlur = 15;
+                ctx.fillStyle = 'rgba(255,255,255,' + (0.6 * _vizIntensity) + ')';
+                ctx.shadowBlur = 8;
                 ctx.shadowColor = 'rgba(' + c1 + ', 1)';
                 ctx.fill();
                 ctx.shadowBlur = 0;
+                
+                // Central razor sharp line
+                ctx.beginPath();
+                ctx.moveTo(cx + side * coverR * 0.8, cy);
+                ctx.lineTo(cx + side * extent * 0.9, cy);
+                ctx.strokeStyle = 'rgba(255,255,255,' + (0.4 * _vizIntensity) + ')';
+                ctx.lineWidth = 1;
+                ctx.stroke();
             }
 
-            // Thick Neon ring around cover
+            // Clean Neon ring around cover
             var ringR = innerR + 1;
             ctx.beginPath();
             ctx.arc(cx, cy, ringR, 0, Math.PI * 2);
-            ctx.strokeStyle = 'rgba(' + c1 + ',' + Math.min(1.0, 0.4 + bass * 0.8) * _vizIntensity + ')';
-            ctx.lineWidth = 6 + bass * 12;
-            ctx.shadowBlur = 30;
+            ctx.strokeStyle = 'rgba(' + c1 + ',' + Math.min(1.0, 0.5 + bass * 0.5) * _vizIntensity + ')';
+            ctx.lineWidth = 3 + bass * 4; // thinner ring
+            ctx.shadowBlur = 20;
             ctx.shadowColor = 'rgba(' + c1 + ', 1)';
             ctx.stroke();
             
             // Bright white/cyan core for the ring
             ctx.beginPath();
             ctx.arc(cx, cy, ringR, 0, Math.PI * 2);
-            ctx.strokeStyle = 'rgba(255, 255, 255, ' + (0.7 * _vizIntensity) + ')';
-            ctx.lineWidth = 2.5;
-            ctx.shadowBlur = 8;
+            ctx.strokeStyle = 'rgba(255, 255, 255, ' + (0.8 * _vizIntensity) + ')';
+            ctx.lineWidth = 1.5;
+            ctx.shadowBlur = 5;
             ctx.shadowColor = '#fff';
             ctx.stroke();
             ctx.shadowBlur = 0;

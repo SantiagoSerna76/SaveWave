@@ -3156,13 +3156,41 @@
             if (srcCover.src && !srcCover.classList.contains('d-none')) {
                 if (dstCover.dataset.currentSrc !== srcCover.src) {
                     dstCover.dataset.currentSrc = srcCover.src;
+                    
+                    // Hide while loading
+                    dstCover.style.display = 'none';
+                    if (dstFallback) dstFallback.style.display = 'flex';
+
                     var joinChar = srcCover.src.includes('?') ? '&' : '?';
+                    
+                    dstCover.onload = function() {
+                        extractCoverColor(dstCover);
+                        dstCover.style.display = 'block';
+                        if (dstFallback) dstFallback.style.display = 'none';
+                    };
+                    
+                    dstCover.onerror = function() {
+                        console.warn("Cover load failed with CORS. Retrying without CORS...");
+                        dstCover.removeAttribute('crossorigin');
+                        dstCover.onerror = function() {
+                            // If it still fails, leave fallback visible
+                            console.warn("Cover load failed completely.");
+                        };
+                        dstCover.onload = function() {
+                            dstCover.style.display = 'block';
+                            if (dstFallback) dstFallback.style.display = 'none';
+                        };
+                        dstCover.src = srcCover.src; // Try again without cachebuster and without CORS
+                    };
+
+                    dstCover.setAttribute('crossorigin', 'anonymous');
                     // Append cache buster to force browser to fetch with CORS headers
                     dstCover.src = srcCover.src + joinChar + 'cors_bypass=' + Date.now();
-                    dstCover.onload = function() { extractCoverColor(dstCover); };
+                } else if (dstCover.complete && dstCover.naturalWidth > 0) {
+                    // Already loaded successfully
+                    dstCover.style.display = 'block';
+                    if (dstFallback) dstFallback.style.display = 'none';
                 }
-                dstCover.style.display = 'block';
-                if (dstFallback) dstFallback.style.display = 'none';
             } else {
                 dstCover.style.display = 'none';
                 if (dstFallback) dstFallback.style.display = 'flex';

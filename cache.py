@@ -9,8 +9,8 @@ TRES NIVELES:
   3. Memoria local — último recurso si no se puede escribir archivo
 
 Estrategia:
-  - get_video_info: cache por 15 minutos (TTL=900)
-  - Archivos descargados: cache por 1 hora (TTL=3600)
+  - get_video_info: cache por 24 horas (TTL=86400)
+  - Archivos descargados: cache por 7 dias (TTL=604800)
   - Si no hay Redis, usa archivo compartido en disco (funciona con --workers 4)
 """
 
@@ -193,7 +193,7 @@ def get_cached_video_info(url: str) -> dict:
     return None
 
 
-def set_cached_video_info(url: str, data: dict, ttl: int = 900):
+def set_cached_video_info(url: str, data: dict, ttl: int = 86400):
     """
     Guarda metadatos de video en cache.
     Guarda en: Redis + Archivo disco + Memoria local
@@ -201,7 +201,7 @@ def set_cached_video_info(url: str, data: dict, ttl: int = 900):
     Args:
         url: URL del video.
         data: Datos a cachear.
-        ttl: Tiempo de vida en segundos (default 15 minutos).
+        ttl: Tiempo de vida en segundos (default 24 horas).
     """
     cache_key = _get_cache_key(url, "info")
     expires_at = time.time() + ttl
@@ -276,7 +276,7 @@ def get_cached_download(url: str, quality: str) -> dict:
     return None
 
 
-def set_cached_download(url: str, quality: str, data: dict, ttl: int = 3600):
+def set_cached_download(url: str, quality: str, data: dict, ttl: int = 604800):
     """
     Guarda informacion de descarga cacheadas.
 
@@ -284,7 +284,7 @@ def set_cached_download(url: str, quality: str, data: dict, ttl: int = 3600):
         url: URL del video.
         quality: Calidad descargada.
         data: Datos a cachear.
-        ttl: Tiempo de vida en segundos (default 1 hora).
+        ttl: Tiempo de vida en segundos (default 7 dias).
     """
     combined = f"{url}|{quality}"
     cache_key = _get_cache_key(combined, "download")

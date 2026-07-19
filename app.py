@@ -1313,9 +1313,8 @@ def api_auth_google():
         db.session.add(sub)
         db.session.commit()
         
-    # Loguear al usuario en la web
-    from flask_login import login_user
-    login_user(user, remember=True)
+    # Loguear al usuario en la web (sesion persistente de 30 dias)
+    login_user_web(user)
     return jsonify({"success": True, "message": "Inicio de sesion con Google exitoso"})
 
 
@@ -1376,8 +1375,7 @@ def api_auth_firebase():
                 db.session.add(sub)
                 db.session.commit()
                 
-            from flask_login import login_user
-            login_user(user, remember=True)
+            login_user_web(user)
             return jsonify({"success": True, "message": "Inicio de sesion con Google exitoso"})
         
         # ---- FLUJO TELEFONO (SMS OTP) ----
@@ -1397,8 +1395,7 @@ def api_auth_firebase():
         elif action == "login":
             if not user:
                 return jsonify({"success": False, "error": "No hay ninguna cuenta vinculada a este numero. Crea una cuenta primero."}), 404
-            from flask_login import login_user
-            login_user(user, remember=True)
+            login_user_web(user)
             return jsonify({"success": True, "message": "Inicio de sesion por SMS exitoso"})
             
         return jsonify({"success": False, "error": "Accion no soportada"}), 400

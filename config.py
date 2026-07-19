@@ -100,7 +100,7 @@ class Config:
     # -------------------- CARPETA DE DESCARGAS TEMPORALES --------------------
     DOWNLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "downloads")
     # Tiempo máximo que un archivo descargado se guarda antes de eliminarse (en segundos)
-    DOWNLOAD_EXPIRY_SECONDS = 3600  # 1 hora
+    DOWNLOAD_EXPIRY_SECONDS = 7 * 24 * 3600  # 7 dias
 
     # Tamaño máximo de upload de archivos (200 MB)
     MAX_CONTENT_LENGTH = 200 * 1024 * 1024  # 200 MB

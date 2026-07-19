@@ -2721,8 +2721,7 @@
         var ref = (cover && cover.style.display !== 'none') ? cover : fallback;
         var w = ref ? ref.offsetWidth : Math.min(window.innerWidth * 0.75, 450);
         
-        // Increase canvas size significantly to prevent clipping of the glow/bars
-        var size = Math.round(w * 2.8);
+        var size = Math.round(w * 1.5);
         var dpr = window.devicePixelRatio || 1;
         canvas.width = size * dpr;
         canvas.height = size * dpr;
@@ -2730,7 +2729,22 @@
         canvas.style.height = size + 'px';
         canvas.getContext('2d').scale(dpr, dpr);
         canvas._logicalSize = size;
-        canvas._coverSize = w;
+    }
+
+    // Original symmetric sine-wave pattern generator
+    function vizFreq(index, time, count) {
+        var x = index / count;
+        var v = 0;
+        v += Math.sin(time * 3.1 + x * 9.0) * 0.28;
+        v += Math.sin(time * 1.7 + x * 14.0 + 1.5) * 0.24;
+        v += Math.sin(time * 5.3 + x * 5.0 + 0.7) * 0.18;
+        v += Math.sin(time * 2.1 + x * 22.0 + 3.2) * 0.14;
+        v += Math.sin(time * 0.9 + x * 7.0 + 2.1) * 0.10;
+        v += Math.sin(time * 7.7 + x * 3.0) * 0.06;
+        v = (v + 1) / 2;
+        var bassBoost = 1.0 - x * 0.35;
+        v *= bassBoost;
+        return Math.max(0, Math.min(1, v));
     }
 
     function drawVisualizer() {
@@ -2739,7 +2753,6 @@
         if (!canvas) return;
 
         var S = canvas._logicalSize || 350;
-        var w = canvas._coverSize || (S / 2.8);
         var ctx = canvas.getContext('2d');
         ctx.clearRect(0, 0, S, S);
 
@@ -2749,36 +2762,27 @@
         if (_vizIntensity < 0.005 && !isPlaying) { _vizIntensity = 0; return; }
 
         var cx = S / 2, cy = S / 2;
-        var innerR = w * 0.5175; // Identical to the old circle size
-        var maxBar = w * 0.255;  // Identical to old max bar length
+        var innerR = S * 0.345;
+        var maxBar = S * 0.17;
         var barCount = 72;
-        
-        // Get actual frequency data if available
-        var hasRealAudio = false;
+
+        // Compute audio energy as a single global multiplier
+        var audioEnergy = 0.7; // Default when no real audio
         if (analyser && isPlaying) {
             analyser.getByteFrequencyData(freqData);
-            hasRealAudio = true;
+            var sum = 0;
+            for (var f = 0; f < freqData.length; f++) sum += freqData[f];
+            var avg = sum / freqData.length / 255.0;
+            audioEnergy = 0.35 + avg * 2.0;
+            audioEnergy = Math.min(1.2, audioEnergy);
         }
 
         var now = Date.now() / 1000;
 
-        // Generate and smooth bar values
+        // Generate symmetric bar values modulated by audio energy
         for (var i = 0; i < barCount; i++) {
-            var raw = 0;
-            if (hasRealAudio) {
-                var binIndex = Math.floor(i * (90 / barCount));
-                var val = freqData[binIndex] / 255.0; 
-                // Moderate exponential curve to keep it punchy but neat
-                raw = val * val * 1.5 * _vizIntensity;
-            } else {
-                // Fallback / Suspended animation
-                var x = i / barCount;
-                var v = Math.sin(now * 3.1 + x * 9.0) * 0.28 + Math.sin(now * 1.7 + x * 14.0 + 1.5) * 0.24 + Math.sin(now * 5.3 + x * 5.0 + 0.7) * 0.18;
-                v = (v + 1) / 2;
-                raw = Math.max(0, Math.min(1, v * (1.0 - x * 0.35))) * _vizIntensity;
-            }
-            // Normal lerp speed
-            _vizBars[i] += (raw - _vizBars[i]) * 0.15; 
+            var raw = vizFreq(i, now, barCount) * _vizIntensity * audioEnergy;
+            _vizBars[i] += (raw - _vizBars[i]) * 0.15;
         }
         
         var c1 = _vizColor.r + ',' + _vizColor.g + ',' + _vizColor.b;
@@ -2788,9 +2792,9 @@
         var bass = 0;
         for (var b = 0; b < 12; b++) bass += _vizBars[b];
         bass = bass / 12;
-        if (bass > 0.04) {
-            var glowBaseR = innerR + 8;
-            var pulseR = glowBaseR + maxBar * bass * 1.2;
+        if (bass > 0.06) {
+            var glowR = innerR + 8;
+            var pulseR = glowR + maxBar * bass * 1.2;
             var grad = ctx.createRadialGradient(cx, cy, innerR * 0.8, cx, cy, pulseR);
             grad.addColorStop(0, 'rgba(' + c1 + ',' + (bass * 0.3) + ')');
             grad.addColorStop(0.45, 'rgba(' + c2 + ',' + (bass * 0.18) + ')');
@@ -2809,15 +2813,11 @@
             var barH = Math.max(1.5, val * maxBar);
             var angle = (j / barCount) * Math.PI * 2 - Math.PI / 2;
             var cos = Math.cos(angle), sin = Math.sin(angle);
-            
-            var r0 = innerR + 4; 
-            var r1 = innerR + 4 + barH;
 
-            var x1 = cx + cos * r0;
-            var y1 = cy + sin * r0;
-            var x2 = cx + cos * r1;
-            var y2 = cy + cy * 0; // Fix, see next line
-            y2 = cy + sin * r1;
+            var x1 = cx + cos * (innerR + 4);
+            var y1 = cy + sin * (innerR + 4);
+            var x2 = cx + cos * (innerR + 4 + barH);
+            var y2 = cy + sin * (innerR + 4 + barH);
 
             var mix = j / barCount;
             var mixR = Math.round(_vizColor.r * (1-mix) + _vizColor2.r * mix);

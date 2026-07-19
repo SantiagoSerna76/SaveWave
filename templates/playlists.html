@@ -2564,7 +2564,7 @@
             '    <button style="background:none;border:none;color:#fff;font-size:1.4rem;padding:8px;"><i class="fas fa-ellipsis-v"></i></button>',
             '</div>',
             '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:24px 32px;gap:28px;overflow:hidden;">',
-            '<div id="mfpCoverContainer" style="display:flex;justify-content:center;width:100%;position:relative;">',
+            '<div id="mfpCoverContainer" style="display:flex;justify-content:center;width:100%;position:relative;cursor:pointer;" onclick="toggleVisualizerStyle()" title="Haz clic para cambiar el efecto visual">',
             '    <canvas id="mfpVisualizer" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:0;"></canvas>',
             '    <img id="mfpCoverImg" crossorigin="anonymous" src="" style="width:75vw;max-width:450px;aspect-ratio:1/1;border-radius:12px;box-shadow:0 15px 45px rgba(0,0,0,0.5);object-fit:cover;display:none;position:relative;z-index:1;" />',
             '    <div id="mfpCoverFallback" style="width:75vw;max-width:450px;aspect-ratio:1/1;border-radius:12px;background:linear-gradient(135deg,#2a2a4a 0%,#3a3a6a 50%,#2a2a4a 100%);display:flex;align-items:center;justify-content:center;font-size:5rem;color:rgba(255,255,255,0.2);box-shadow:0 15px 45px rgba(0,0,0,0.5);position:relative;z-index:1;">',
@@ -2769,6 +2769,12 @@
         return Math.max(0, Math.min(1, v));
     }
 
+    window.vizStyle = localStorage.getItem('savewave_viz_style') || 'bars';
+    window.toggleVisualizerStyle = function() {
+        window.vizStyle = window.vizStyle === 'bars' ? 'waves' : 'bars';
+        localStorage.setItem('savewave_viz_style', window.vizStyle);
+    };
+
     var _vizRotation = 0; // smooth rotation accumulator
 
     function drawVisualizer() {
@@ -2858,47 +2864,92 @@
         ctx.lineWidth = 1.5;
         ctx.stroke();
 
-        // --- Circular frequency bars (with rotation + mirror symmetry + dot caps) ---
-        ctx.lineCap = 'round';
-        for (var j = 0; j < barCount; j++) {
-            var val = _vizBars[j];
-            if (val < 0.01) continue;
-            var barH = Math.max(1.5, val * maxBar);
-            var angle = (j / barCount) * Math.PI * 2 - Math.PI / 2 + _vizRotation;
-            var cos = Math.cos(angle), sin = Math.sin(angle);
-
-            var r0 = innerR + 5;
-            var r1 = r0 + barH;
-            var x1 = cx + cos * r0;
-            var y1 = cy + sin * r0;
-            var x2 = cx + cos * r1;
-            var y2 = cy + sin * r1;
-
-            // Color: smooth gradient around the circle
-            var mix = j / barCount;
-            var mixR = Math.round(_vizColor.r * (1-mix) + _vizColor2.r * mix);
-            var mixG = Math.round(_vizColor.g * (1-mix) + _vizColor2.g * mix);
-            var mixB = Math.round(_vizColor.b * (1-mix) + _vizColor2.b * mix);
-            var barColor = mixR + ',' + mixG + ',' + mixB;
-            
-            var alpha = 0.35 + val * 0.65;
-
-            // Bar line
+        if (window.vizStyle === 'waves') {
+            // --- Continuous Waves Style ---
+            ctx.lineJoin = 'round';
             ctx.beginPath();
-            ctx.moveTo(x1, y1);
-            ctx.lineTo(x2, y2);
-            ctx.strokeStyle = 'rgba(' + barColor + ',' + alpha + ')';
-            ctx.lineWidth = 2.2;
-            ctx.shadowBlur = val > 0.35 ? 8 : 0;
-            ctx.shadowColor = 'rgba(' + barColor + ',0.4)';
+            for (var j = 0; j <= barCount; j++) {
+                var index = j % barCount;
+                var val = _vizBars[index];
+                var waveH = Math.max(2, val * maxBar * 1.1);
+                var angle = (index / barCount) * Math.PI * 2 - Math.PI / 2 + _vizRotation;
+                var cos = Math.cos(angle), sin = Math.sin(angle);
+                var r = innerR + 5 + waveH;
+                if (j === 0) ctx.moveTo(cx + cos * r, cy + sin * r);
+                else ctx.lineTo(cx + cos * r, cy + sin * r);
+            }
+            ctx.closePath();
+            
+            var waveGrad = ctx.createLinearGradient(cx - innerR, cy - innerR, cx + innerR, cy + innerR);
+            waveGrad.addColorStop(0, 'rgba(' + c1 + ', ' + Math.min(0.9, 0.4 + audioEnergy * 0.4) + ')');
+            waveGrad.addColorStop(1, 'rgba(' + c2 + ', ' + Math.min(0.9, 0.4 + audioEnergy * 0.4) + ')');
+            ctx.strokeStyle = waveGrad;
+            ctx.lineWidth = 3.5;
+            ctx.shadowBlur = 12 * audioEnergy;
+            ctx.shadowColor = 'rgba(' + c1 + ', 0.6)';
             ctx.stroke();
 
-            // Glowing dot cap at the tip of each bar
-            if (val > 0.08) {
+            // Inner subtle counter-rotating wave
+            ctx.beginPath();
+            for (var j = 0; j <= barCount; j++) {
+                var index = j % barCount;
+                var val = _vizBars[index];
+                var waveH = Math.max(1, val * maxBar * 0.45);
+                var angle = (index / barCount) * Math.PI * 2 - Math.PI / 2 - _vizRotation * 0.6;
+                var cos = Math.cos(angle), sin = Math.sin(angle);
+                var r = innerR + 2 + waveH;
+                if (j === 0) ctx.moveTo(cx + cos * r, cy + sin * r);
+                else ctx.lineTo(cx + cos * r, cy + sin * r);
+            }
+            ctx.closePath();
+            ctx.strokeStyle = 'rgba(' + c2 + ', ' + Math.min(0.6, 0.2 + audioEnergy * 0.3) + ')';
+            ctx.lineWidth = 2.0;
+            ctx.shadowBlur = 0;
+            ctx.stroke();
+
+        } else {
+            // --- Circular frequency bars (with rotation + mirror symmetry + dot caps) ---
+            ctx.lineCap = 'round';
+            for (var j = 0; j < barCount; j++) {
+                var val = _vizBars[j];
+                if (val < 0.01) continue;
+                var barH = Math.max(1.5, val * maxBar);
+                var angle = (j / barCount) * Math.PI * 2 - Math.PI / 2 + _vizRotation;
+                var cos = Math.cos(angle), sin = Math.sin(angle);
+
+                var r0 = innerR + 5;
+                var r1 = r0 + barH;
+                var x1 = cx + cos * r0;
+                var y1 = cy + sin * r0;
+                var x2 = cx + cos * r1;
+                var y2 = cy + sin * r1;
+
+                // Color: smooth gradient around the circle
+                var mix = j / barCount;
+                var mixR = Math.round(_vizColor.r * (1-mix) + _vizColor2.r * mix);
+                var mixG = Math.round(_vizColor.g * (1-mix) + _vizColor2.g * mix);
+                var mixB = Math.round(_vizColor.b * (1-mix) + _vizColor2.b * mix);
+                var barColor = mixR + ',' + mixG + ',' + mixB;
+                
+                var alpha = 0.35 + val * 0.65;
+
+                // Bar line
                 ctx.beginPath();
-                ctx.arc(x2, y2, 1.5 + val * 2.0, 0, Math.PI * 2);
-                ctx.fillStyle = 'rgba(' + barColor + ',' + Math.min(0.9, alpha * 1.2) + ')';
-                ctx.fill();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.strokeStyle = 'rgba(' + barColor + ',' + alpha + ')';
+                ctx.lineWidth = 2.2;
+                ctx.shadowBlur = val > 0.35 ? 8 : 0;
+                ctx.shadowColor = 'rgba(' + barColor + ',0.4)';
+                ctx.stroke();
+
+                // Glowing dot cap at the tip of each bar
+                if (val > 0.08) {
+                    ctx.beginPath();
+                    ctx.arc(x2, y2, 1.5 + val * 2.0, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(' + barColor + ',' + Math.min(0.9, alpha * 1.2) + ')';
+                    ctx.fill();
+                }
             }
         }
         ctx.shadowBlur = 0;

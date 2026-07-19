@@ -2720,7 +2720,9 @@
         var fallback = document.getElementById('mfpCoverFallback');
         var ref = (cover && cover.style.display !== 'none') ? cover : fallback;
         var w = ref ? ref.offsetWidth : Math.min(window.innerWidth * 0.75, 450);
-        var size = Math.round(w * 1.5);
+        
+        // Increase canvas size significantly to prevent clipping of the glow/bars
+        var size = Math.round(w * 2.8);
         var dpr = window.devicePixelRatio || 1;
         canvas.width = size * dpr;
         canvas.height = size * dpr;
@@ -2728,6 +2730,7 @@
         canvas.style.height = size + 'px';
         canvas.getContext('2d').scale(dpr, dpr);
         canvas._logicalSize = size;
+        canvas._coverSize = w;
     }
 
     function drawVisualizer() {
@@ -2736,6 +2739,7 @@
         if (!canvas) return;
 
         var S = canvas._logicalSize || 350;
+        var w = canvas._coverSize || (S / 2.8);
         var ctx = canvas.getContext('2d');
         ctx.clearRect(0, 0, S, S);
 
@@ -2745,8 +2749,8 @@
         if (_vizIntensity < 0.005 && !isPlaying) { _vizIntensity = 0; return; }
 
         var cx = S / 2, cy = S / 2;
-        var innerR = S * 0.345;
-        var maxBar = S * 0.17;
+        var innerR = w * 0.53; // Start just outside the cover image
+        var maxBar = w * 0.35; // Allow bars to grow up to 35% of cover width
         var barCount = 72;
         
         // Get actual frequency data if available
@@ -2766,7 +2770,7 @@
                 var binIndex = Math.floor(i * (90 / barCount));
                 var val = freqData[binIndex] / 255.0; // 0..1
                 // Apply a slight exponential curve to make peaks pop
-                raw = val * val * 1.5 * _vizIntensity;
+                raw = val * val * 2.0 * _vizIntensity;
             } else {
                 // Fallback / Suspended animation
                 var x = i / barCount;
@@ -2784,9 +2788,9 @@
         var bass = 0;
         for (var b = 0; b < 12; b++) bass += _vizBars[b];
         bass = bass / 12;
-        if (bass > 0.06) {
-            var glowR = innerR + 8;
-            var pulseR = glowR + maxBar * bass * 1.2;
+        if (bass > 0.04) {
+            var glowR = innerR + 10;
+            var pulseR = glowR + maxBar * bass * 1.4;
             var grad = ctx.createRadialGradient(cx, cy, innerR * 0.8, cx, cy, pulseR);
             grad.addColorStop(0, 'rgba(' + c1 + ',' + (bass * 0.3) + ')');
             grad.addColorStop(0.45, 'rgba(' + c2 + ',' + (bass * 0.18) + ')');

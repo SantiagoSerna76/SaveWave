@@ -2566,8 +2566,8 @@
             '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:24px 32px;gap:28px;overflow:hidden;">',
             '<div id="mfpCoverContainer" style="display:flex;justify-content:center;width:100%;position:relative;cursor:pointer;" onclick="toggleVisualizerStyle()" title="Haz clic para cambiar el efecto visual">',
             '    <canvas id="mfpVisualizer" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:0;"></canvas>',
-            '    <img id="mfpCoverImg" crossorigin="anonymous" src="" style="width:75vw;max-width:450px;aspect-ratio:1/1;border-radius:12px;box-shadow:0 15px 45px rgba(0,0,0,0.5);object-fit:cover;display:none;position:relative;z-index:1;" />',
-            '    <div id="mfpCoverFallback" style="width:75vw;max-width:450px;aspect-ratio:1/1;border-radius:12px;background:linear-gradient(135deg,#2a2a4a 0%,#3a3a6a 50%,#2a2a4a 100%);display:flex;align-items:center;justify-content:center;font-size:5rem;color:rgba(255,255,255,0.2);box-shadow:0 15px 45px rgba(0,0,0,0.5);position:relative;z-index:1;">',
+            '    <img id="mfpCoverImg" crossorigin="anonymous" src="" style="width:55vw;max-width:320px;aspect-ratio:1/1;border-radius:12px;box-shadow:0 15px 45px rgba(0,0,0,0.5);object-fit:cover;display:none;position:relative;z-index:1;" />',
+            '    <div id="mfpCoverFallback" style="width:55vw;max-width:320px;aspect-ratio:1/1;border-radius:12px;background:linear-gradient(135deg,#2a2a4a 0%,#3a3a6a 50%,#2a2a4a 100%);display:flex;align-items:center;justify-content:center;font-size:4rem;color:rgba(255,255,255,0.2);box-shadow:0 15px 45px rgba(0,0,0,0.5);position:relative;z-index:1;">',
             '        <i class="fas fa-music"></i>',
             '    </div>',
             '</div>',
@@ -2743,17 +2743,21 @@
         var cover = document.getElementById('mfpCoverImg');
         var fallback = document.getElementById('mfpCoverFallback');
         var ref = (cover && cover.style.display !== 'none') ? cover : fallback;
-        var w = ref ? ref.offsetWidth : Math.min(window.innerWidth * 0.75, 450);
-        // Canvas bigger than visualizer so glow never clips at edges
-        var size = Math.round(w * 2.2);
+        var w = ref ? ref.offsetWidth : Math.min(window.innerWidth * 0.55, 320);
+        
+        // Make canvas large enough to hold the effects
+        var size = Math.round(w * 2.8);
         var dpr = window.devicePixelRatio || 1;
-        canvas.width = size * dpr;
-        canvas.height = size * dpr;
-        canvas.style.width = size + 'px';
-        canvas.style.height = size + 'px';
-        canvas.getContext('2d').scale(dpr, dpr);
-        canvas._logicalSize = size;
-        canvas._coverW = w;
+        
+        if (canvas._logicalSize !== size) {
+            canvas.width = size * dpr;
+            canvas.height = size * dpr;
+            canvas.style.width = size + 'px';
+            canvas.style.height = size + 'px';
+            canvas.getContext('2d').scale(dpr, dpr);
+            canvas._logicalSize = size;
+            canvas._coverW = w;
+        }
     }
 
     // Symmetric sine-wave pattern (generates half, mirrors for perfect symmetry)

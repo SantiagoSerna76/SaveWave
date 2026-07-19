@@ -33,6 +33,7 @@ class Config:
     # La sesion no expira al cerrar el navegador (persiste 30 dias)
     SESSION_PERMANENT = True
     PERMANENT_SESSION_LIFETIME = 30 * 24 * 60 * 60  # 30 dias en segundos
+    REMEMBER_COOKIE_DURATION = 30 * 24 * 60 * 60 # 30 dias en segundos para Flask-Login
 
     # -------------------- RATE LIMITING (Límites de peticiones) --------------------
     # Limita las peticiones a las APIs para prevenir abusos

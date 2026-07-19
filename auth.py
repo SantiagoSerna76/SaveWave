@@ -139,7 +139,9 @@ def login_user_web(user: User) -> bool:
     Inicia sesion web usando Flask-Login.
     Configura la sesion como permanente para que no expire al cerrar el navegador.
     """
-    return flask_login_user(user, remember=True, duration=timedelta(days=7))
+    from flask import session
+    session.permanent = True
+    return flask_login_user(user, remember=True, duration=timedelta(days=30))
 
 
 def create_jwt_token(user: User) -> str:

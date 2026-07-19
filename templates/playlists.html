@@ -2755,21 +2755,21 @@
         canvas._coverW = w;
     }
 
-    // Original symmetric sine-wave pattern generator
-    function vizFreq(index, time, count) {
-        var x = index / count;
+    // Symmetric sine-wave pattern (generates half, mirrors for perfect symmetry)
+    function vizFreq(index, time, halfCount) {
+        var x = index / halfCount;
         var v = 0;
-        v += Math.sin(time * 3.1 + x * 9.0) * 0.28;
-        v += Math.sin(time * 1.7 + x * 14.0 + 1.5) * 0.24;
-        v += Math.sin(time * 5.3 + x * 5.0 + 0.7) * 0.18;
-        v += Math.sin(time * 2.1 + x * 22.0 + 3.2) * 0.14;
-        v += Math.sin(time * 0.9 + x * 7.0 + 2.1) * 0.10;
-        v += Math.sin(time * 7.7 + x * 3.0) * 0.06;
+        v += Math.sin(time * 2.4 + x * 12.0) * 0.30;
+        v += Math.sin(time * 1.3 + x * 8.0 + 1.5) * 0.25;
+        v += Math.sin(time * 3.8 + x * 18.0 + 0.7) * 0.18;
+        v += Math.sin(time * 0.7 + x * 6.0 + 2.1) * 0.15;
+        v += Math.sin(time * 5.1 + x * 4.0) * 0.08;
         v = (v + 1) / 2;
-        var bassBoost = 1.0 - x * 0.35;
-        v *= bassBoost;
+        v *= (1.0 - x * 0.25); // gentle taper toward middle
         return Math.max(0, Math.min(1, v));
     }
+
+    var _vizRotation = 0; // smooth rotation accumulator
 
     function drawVisualizer() {
         _vizRAF = requestAnimationFrame(drawVisualizer);
@@ -2787,13 +2787,13 @@
         if (_vizIntensity < 0.005 && !isPlaying) { _vizIntensity = 0; return; }
 
         var cx = S / 2, cy = S / 2;
-        // Anchored to cover size w, not canvas S — same visual size regardless of canvas
         var innerR = w * 0.5175;
         var maxBar = w * 0.255;
         var barCount = 72;
+        var halfBars = barCount / 2;
 
         // Compute audio energy as a single global multiplier
-        var audioEnergy = 0.7; // Default when no real audio
+        var audioEnergy = 0.7;
         if (analyser && isPlaying) {
             analyser.getByteFrequencyData(freqData);
             var sum = 0;
@@ -2805,10 +2805,14 @@
 
         var now = Date.now() / 1000;
 
-        // Generate symmetric bar values modulated by audio energy
-        for (var i = 0; i < barCount; i++) {
-            var raw = vizFreq(i, now, barCount) * _vizIntensity * audioEnergy;
-            _vizBars[i] += (raw - _vizBars[i]) * 0.15;
+        // Slow rotation (speed scales slightly with energy)
+        _vizRotation += (0.003 + audioEnergy * 0.002) * _vizIntensity;
+
+        // Generate mirrored bar values: first half → mirror to second half
+        for (var i = 0; i < halfBars; i++) {
+            var raw = vizFreq(i, now, halfBars) * _vizIntensity * audioEnergy;
+            _vizBars[i] += (raw - _vizBars[i]) * 0.13;
+            _vizBars[barCount - 1 - i] = _vizBars[i]; // perfect mirror
         }
         
         var c1 = _vizColor.r + ',' + _vizColor.g + ',' + _vizColor.b;
@@ -2835,9 +2839,9 @@
             var glowR = innerR + 8;
             var pulseR = glowR + maxBar * bass * 1.2;
             var grad = ctx.createRadialGradient(cx, cy, innerR * 0.8, cx, cy, pulseR);
-            grad.addColorStop(0, 'rgba(' + c1 + ',' + (bass * 0.3) + ')');
-            grad.addColorStop(0.45, 'rgba(' + c2 + ',' + (bass * 0.18) + ')');
-            grad.addColorStop(0.7, 'rgba(' + c2 + ',' + (bass * 0.1) + ')');
+            grad.addColorStop(0, 'rgba(' + c1 + ',' + (bass * 0.25) + ')');
+            grad.addColorStop(0.45, 'rgba(' + c2 + ',' + (bass * 0.15) + ')');
+            grad.addColorStop(0.75, 'rgba(' + c2 + ',' + (bass * 0.06) + ')');
             grad.addColorStop(1, 'rgba(' + c2 + ',0)');
             ctx.beginPath();
             ctx.arc(cx, cy, pulseR, 0, Math.PI * 2);
@@ -2845,57 +2849,60 @@
             ctx.fill();
         }
 
-        // --- Circular frequency bars ---
+        // --- Inner pulsing ring (breathes with the bass) ---
+        var ringPulse = 1.0 + bass * 0.08;
+        var ringR = (innerR + 2) * ringPulse;
+        ctx.beginPath();
+        ctx.arc(cx, cy, ringR, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(' + c1 + ',' + (0.15 + bass * 0.35) * _vizIntensity + ')';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // --- Circular frequency bars (with rotation + mirror symmetry + dot caps) ---
+        ctx.lineCap = 'round';
         for (var j = 0; j < barCount; j++) {
             var val = _vizBars[j];
             if (val < 0.01) continue;
             var barH = Math.max(1.5, val * maxBar);
-            var angle = (j / barCount) * Math.PI * 2 - Math.PI / 2;
+            var angle = (j / barCount) * Math.PI * 2 - Math.PI / 2 + _vizRotation;
             var cos = Math.cos(angle), sin = Math.sin(angle);
 
-            var x1 = cx + cos * (innerR + 4);
-            var y1 = cy + sin * (innerR + 4);
-            var x2 = cx + cos * (innerR + 4 + barH);
-            var y2 = cy + sin * (innerR + 4 + barH);
+            var r0 = innerR + 5;
+            var r1 = r0 + barH;
+            var x1 = cx + cos * r0;
+            var y1 = cy + sin * r0;
+            var x2 = cx + cos * r1;
+            var y2 = cy + sin * r1;
 
+            // Color: smooth gradient around the circle
             var mix = j / barCount;
             var mixR = Math.round(_vizColor.r * (1-mix) + _vizColor2.r * mix);
             var mixG = Math.round(_vizColor.g * (1-mix) + _vizColor2.g * mix);
             var mixB = Math.round(_vizColor.b * (1-mix) + _vizColor2.b * mix);
             var barColor = mixR + ',' + mixG + ',' + mixB;
             
-            var alpha = 0.3 + val * 0.7;
+            var alpha = 0.35 + val * 0.65;
 
+            // Bar line
             ctx.beginPath();
             ctx.moveTo(x1, y1);
             ctx.lineTo(x2, y2);
             ctx.strokeStyle = 'rgba(' + barColor + ',' + alpha + ')';
-            ctx.lineWidth = 2.5;
-            if (val > 0.45) {
-                ctx.shadowBlur = 12;
-                ctx.shadowColor = 'rgba(' + barColor + ',0.55)';
-            } else {
-                ctx.shadowBlur = 0;
-            }
+            ctx.lineWidth = 2.2;
+            ctx.shadowBlur = val > 0.35 ? 8 : 0;
+            ctx.shadowColor = 'rgba(' + barColor + ',0.4)';
             ctx.stroke();
+
+            // Glowing dot cap at the tip of each bar
+            if (val > 0.08) {
+                ctx.beginPath();
+                ctx.arc(x2, y2, 1.5 + val * 2.0, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(' + barColor + ',' + Math.min(0.9, alpha * 1.2) + ')';
+                ctx.fill();
+            }
         }
         ctx.shadowBlur = 0;
-
-        // --- Rotating accent ring ---
-        var ringAngle = now * 0.6;
-        ctx.beginPath();
-        ctx.arc(cx, cy, innerR + 2, ringAngle, ringAngle + Math.PI * 0.8);
-        ctx.strokeStyle = 'rgba(' + c1 + ',' + (0.15 + _vizIntensity * 0.15) + ')';
-        ctx.lineWidth = 1.2;
-        ctx.stroke();
-
-        // --- Second ring (opposite side, different speed) ---
-        var ringAngle2 = -now * 0.4;
-        ctx.beginPath();
-        ctx.arc(cx, cy, innerR + 2, ringAngle2, ringAngle2 + Math.PI * 0.5);
-        ctx.strokeStyle = 'rgba(' + c2 + ',' + (0.1 + _vizIntensity * 0.12) + ')';
-        ctx.lineWidth = 0.8;
-        ctx.stroke();
+        ctx.lineCap = 'butt';
     }
 
     function syncMobilePlayerUI() {

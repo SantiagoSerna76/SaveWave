@@ -1065,6 +1065,8 @@
         /* On mobile: hide play/download inline buttons, use three-dots bottom sheet instead */
         .track-actions .btn-play-track,
         .track-actions .btn-download-track,
+        .track-actions .btn-add-track,
+        .track-actions .btn-cover-track,
         .track-actions .btn-delete-track { display: none; }
         .btn-three-dots { display: inline-flex !important; }
         
@@ -2000,7 +2002,7 @@
                                 <button class="track-action-btn btn-play-track" title="Reproducir" onclick="playTrack(${index})"><i class="fas fa-play"></i></button>
                                 <button class="track-action-btn btn-download-track" title="Descargar MP3" onclick="downloadTrack(decodeURIComponent('${safeUrl}'))"><i class="fas fa-download"></i></button>
                                 <button class="track-action-btn btn-add-track" title="Agregar a otra playlist" onclick="openAddToPlaylistModal(${index})"><i class="fas fa-plus-circle"></i></button>
-                                <button class="track-action-btn" title="Cambiar portada" onclick="event.stopPropagation(); currentTrackToEditCover = { playlistId: ${playlist.id}, itemId: ${item.id} }; document.getElementById('uploadTrackCoverInput').click();"><i class="fas fa-camera"></i></button>
+                                <button class="track-action-btn btn-cover-track" title="Cambiar portada" onclick="event.stopPropagation(); window.currentTrackToEditCover = { playlistId: ${playlist.id}, itemId: ${item.id} }; document.getElementById('uploadTrackCoverInput').click();"><i class="fas fa-camera"></i></button>
                                 <button class="track-action-btn btn-delete-track" style="color:rgba(239,68,68,0.7);" title="Eliminar" onclick="removeTrack(${playlist.id}, ${item.id}, '${safeUrl}')"><i class="fas fa-trash"></i></button>
                             </div>
                             <button class="btn-three-dots" style="display:none;" title="Opciones"
@@ -2146,25 +2148,25 @@
         }
     }
 
-    let currentTrackToEditCover = null;
+    window.currentTrackToEditCover = null;
     async function uploadTrackCover() {
         const input = document.getElementById('uploadTrackCoverInput');
         if (!input.files || input.files.length === 0) return;
         const file = input.files[0];
-        if (!currentTrackToEditCover) return;
+        if (!window.currentTrackToEditCover) return;
         
         const fd = new FormData();
         fd.append('cover', file);
         
         showLoadingModal('Actualizando portada...');
         try {
-            const res = await fetch(`/api/tracks/${currentTrackToEditCover.itemId}/cover`, { method: 'POST', body: fd });
+            const res = await fetch(`/api/tracks/${window.currentTrackToEditCover.itemId}/cover`, { method: 'POST', body: fd });
             const data = await res.json();
             if (data.success) {
                 // Update the currently playing track's cover if it matches
                 if (currentPlaylistItems && currentTrackIndex >= 0) {
                     var playingItem = currentPlaylistItems[currentTrackIndex];
-                    if (playingItem && playingItem.id === currentTrackToEditCover.itemId) {
+                    if (playingItem && playingItem.id === window.currentTrackToEditCover.itemId) {
                         playingItem.thumbnail = data.cover_url;
                         var coverEl = document.getElementById('playerCover');
                         if (coverEl) {
@@ -2179,7 +2181,7 @@
                         if (typeof syncMobilePlayerUI === 'function') syncMobilePlayerUI();
                     }
                 }
-                await loadPlaylist(currentTrackToEditCover.playlistId, null, true);
+                await loadPlaylist(window.currentTrackToEditCover.playlistId, null, true);
                 showOfflineMessage('¡Portada actualizada!');
             } else {
                 showOfflineMessage(data.error || 'Error al subir portada');
@@ -2189,7 +2191,7 @@
         } finally {
             closeLoadingModal();
             input.value = '';
-            currentTrackToEditCover = null;
+            window.currentTrackToEditCover = null;
         }
     }
 
@@ -3416,7 +3418,7 @@
         btnAdd.onclick = () => { closeTrackSheet(); openAddToPlaylistModal(index); };
         btnChangeCover.onclick = () => { 
             closeTrackSheet(); 
-            currentTrackToEditCover = { playlistId, itemId }; 
+            window.currentTrackToEditCover = { playlistId, itemId }; 
             document.getElementById('uploadTrackCoverInput').click(); 
         };
         btnDel.onclick = () => { closeTrackSheet(); removeTrack(playlistId, itemId, safeUrl); };

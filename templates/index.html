@@ -417,9 +417,9 @@
                     <i class="fas fa-check-circle fa-3x mb-3"></i>
                     <h4>¡Descarga completada!</h4>
                     <p id="resultInfo" class="mb-3"></p>
-                    <a id="downloadLink" href="#" class="btn btn-light btn-lg" download>
+                    <button id="downloadLink" class="btn btn-light btn-lg fw-bold" style="color: #059669;">
                         <i class="fas fa-save me-2"></i>Guardar video
-                    </a>
+                    </button>
                 </div>
             </div>
         </div>
@@ -973,7 +973,7 @@ $(document).ready(function() {
                             `<strong>${response.title}</strong><br>` +
                             `Tamaño: ${response.file_size} | Formato: ${fileTypeLabel} | Plataforma: ${response.platform}`
                         );
-                        $('#downloadLink').attr('href', response.download_url);
+                        $('#downloadLink').attr('data-url', response.download_url);
                         $('#downloadLink').html(`<i class="fas fa-${isMp3 ? 'music' : 'save'} me-2"></i>Guardar ${fileTypeLabel}`);
                         $downloadResult.show();
                     } else if (response.upgrade_required) {
@@ -998,6 +998,25 @@ $(document).ready(function() {
             window.showAdInterstitial("Apoya a SaveWave para iniciar tu descarga gratuita.", executeDownload);
         } else {
             executeDownload();
+        }
+    });
+
+    // ============================================================
+    // FORZAR DESCARGA SEGURA (Evitar secuestro de Adsterra)
+    // ============================================================
+    $('#downloadLink').on('click', function(e) {
+        e.preventDefault();
+        const dlUrl = $(this).attr('data-url');
+        if (dlUrl) {
+            // Usamos un iframe invisible para forzar la descarga sin que Adsterra intercepte la navegación
+            let dlIframe = document.getElementById('hiddenDownloader');
+            if (!dlIframe) {
+                dlIframe = document.createElement('iframe');
+                dlIframe.id = 'hiddenDownloader';
+                dlIframe.style.display = 'none';
+                document.body.appendChild(dlIframe);
+            }
+            dlIframe.src = dlUrl;
         }
     });
 

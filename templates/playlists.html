@@ -2920,49 +2920,88 @@
             ctx.stroke();
 
         } else if (window.vizStyle === 'pulse') {
-            // ═══ Pulse: Horizontal soundwave behind cover ═══
-            var pulseCount = 50;
-            var coverR = w * 0.5;
-            var maxPulseH = w * 0.42;
-            var extent = (S / 2) - 15;
-            ctx.lineCap = 'round';
+            // ═══ Pulse: Horizontal continuous soundwave behind cover ═══
+            var pulseCount = 80;
+            var coverR = w * 0.5175; // Matches innerR roughly
+            var maxPulseH = w * 0.65;
+            var extent = (S / 2) - 5;
+            ctx.lineJoin = 'round';
 
-            // Draw mirrored horizontal bars on each side
+            // Draw mirrored horizontal waves on left and right
             for (var side = -1; side <= 1; side += 2) {
+                var ptsTop = [];
+                var ptsBot = [];
+                
                 for (var j = 0; j < pulseCount; j++) {
-                    var barIdx = Math.floor((j / pulseCount) * barCount);
+                    var t = j / (pulseCount - 1);
+                    var barIdx = Math.floor(t * (barCount * 0.5));
                     var val = _vizBars[barIdx];
-                    var t = j / pulseCount;
+                    
                     var xPos = coverR * 0.85 + t * (extent - coverR * 0.85);
-                    var edgeFade = 1.0 - t * t;
-                    var h = Math.max(1.5, val * maxPulseH * edgeFade);
+                    // Sine function creates a smooth taper at both ends
+                    var edgeFade = Math.sin(t * Math.PI);
+                    
+                    var h = 1.5 + val * maxPulseH * edgeFade * audioEnergy;
                     var px = cx + side * xPos;
-                    var fadeAlpha = (0.75 - t * 0.65) * _vizIntensity;
-                    var mix = t;
-                    var mR = Math.round(_vizColor.r * (1-mix) + _vizColor2.r * mix);
-                    var mG = Math.round(_vizColor.g * (1-mix) + _vizColor2.g * mix);
-                    var mB = Math.round(_vizColor.b * (1-mix) + _vizColor2.b * mix);
-                    var pCol = mR + ',' + mG + ',' + mB;
-
-                    ctx.beginPath();
-                    ctx.moveTo(px, cy - h);
-                    ctx.lineTo(px, cy + h);
-                    ctx.strokeStyle = 'rgba(' + pCol + ',' + fadeAlpha + ')';
-                    ctx.lineWidth = 2.8;
-                    ctx.shadowBlur = 10;
-                    ctx.shadowColor = 'rgba(' + pCol + ',' + fadeAlpha * 0.5 + ')';
-                    ctx.stroke();
+                    
+                    ptsTop.push({ x: px, y: cy - h });
+                    ptsBot.unshift({ x: px, y: cy + h });
                 }
+                
+                // Outer glowing envelope
+                ctx.beginPath();
+                ctx.moveTo(ptsTop[0].x, ptsTop[0].y);
+                for(var i=1; i<ptsTop.length; i++) ctx.lineTo(ptsTop[i].x, ptsTop[i].y);
+                for(var i=0; i<ptsBot.length; i++) ctx.lineTo(ptsBot[i].x, ptsBot[i].y);
+                ctx.closePath();
+                
+                var pulseGrad = ctx.createLinearGradient(cx + side * coverR, cy, cx + side * extent, cy);
+                pulseGrad.addColorStop(0, 'rgba(' + c1 + ',' + (0.95 * _vizIntensity) + ')');
+                pulseGrad.addColorStop(0.4, 'rgba(' + c1 + ',' + (0.5 * _vizIntensity) + ')');
+                pulseGrad.addColorStop(1, 'rgba(' + c2 + ',0)');
+                
+                ctx.fillStyle = pulseGrad;
+                ctx.shadowBlur = 35 * audioEnergy;
+                ctx.shadowColor = 'rgba(' + c1 + ', 1)';
+                ctx.fill();
+                ctx.shadowBlur = 0;
+                
+                // Inner bright core (white/cyan mix) to simulate intense light
+                ctx.beginPath();
+                ctx.moveTo(ptsTop[0].x, cy);
+                for(var i=1; i<ptsTop.length; i++) {
+                    var h = (ptsTop[i].y - cy);
+                    ctx.lineTo(ptsTop[i].x, cy + h * 0.25);
+                }
+                for(var i=0; i<ptsBot.length; i++) {
+                    var h = (ptsBot[i].y - cy);
+                    ctx.lineTo(ptsBot[i].x, cy + h * 0.25);
+                }
+                ctx.closePath();
+                ctx.fillStyle = 'rgba(255,255,255,' + (0.5 * _vizIntensity) + ')';
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = 'rgba(' + c1 + ', 1)';
+                ctx.fill();
+                ctx.shadowBlur = 0;
             }
-            ctx.shadowBlur = 0;
 
-            // Neon ring around cover
+            // Thick Neon ring around cover
+            var ringR = innerR + 1;
             ctx.beginPath();
-            ctx.arc(cx, cy, innerR + 3, 0, Math.PI * 2);
-            ctx.strokeStyle = 'rgba(' + c1 + ',' + (0.25 + bass * 0.45) * _vizIntensity + ')';
-            ctx.lineWidth = 2;
-            ctx.shadowBlur = 12;
-            ctx.shadowColor = 'rgba(' + c1 + ',0.5)';
+            ctx.arc(cx, cy, ringR, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(' + c1 + ',' + Math.min(1.0, 0.4 + bass * 0.8) * _vizIntensity + ')';
+            ctx.lineWidth = 6 + bass * 12;
+            ctx.shadowBlur = 30;
+            ctx.shadowColor = 'rgba(' + c1 + ', 1)';
+            ctx.stroke();
+            
+            // Bright white/cyan core for the ring
+            ctx.beginPath();
+            ctx.arc(cx, cy, ringR, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(255, 255, 255, ' + (0.7 * _vizIntensity) + ')';
+            ctx.lineWidth = 2.5;
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = '#fff';
             ctx.stroke();
             ctx.shadowBlur = 0;
 

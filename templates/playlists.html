@@ -2814,6 +2814,19 @@
         var c1 = _vizColor.r + ',' + _vizColor.g + ',' + _vizColor.b;
         var c2 = _vizColor2.r + ',' + _vizColor2.g + ',' + _vizColor2.b;
 
+        // --- Inner ambient glow (blends cover into visualizer) ---
+        var coverHalf = w * 0.5;
+        var ambientAlpha = 0.12 * _vizIntensity * audioEnergy;
+        var ambGrad = ctx.createRadialGradient(cx, cy, coverHalf * 0.6, cx, cy, innerR + maxBar * 0.5);
+        ambGrad.addColorStop(0, 'rgba(' + c1 + ',' + Math.min(0.25, ambientAlpha * 1.5) + ')');
+        ambGrad.addColorStop(0.5, 'rgba(' + c1 + ',' + Math.min(0.15, ambientAlpha) + ')');
+        ambGrad.addColorStop(0.8, 'rgba(' + c2 + ',' + Math.min(0.08, ambientAlpha * 0.5) + ')');
+        ambGrad.addColorStop(1, 'rgba(' + c2 + ',0)');
+        ctx.beginPath();
+        ctx.arc(cx, cy, innerR + maxBar * 0.5, 0, Math.PI * 2);
+        ctx.fillStyle = ambGrad;
+        ctx.fill();
+
         // --- Bass glow aura ---
         var bass = 0;
         for (var b = 0; b < 12; b++) bass += _vizBars[b];

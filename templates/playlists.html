@@ -1984,7 +1984,7 @@
                         <td class="track-number">${index + 1}</td>
                         <td style="width:100%;">
                             <div style="display:flex; align-items:center; gap:12px; min-width:0;">
-                                <img src="${item.thumbnail || ''}" class="track-thumb" alt="">
+                                <img src="${item.thumbnail || ''}" class="track-thumb" alt="" onerror="this.style.display='none'">
                                 <div style="min-width:0; flex:1;">
                                     <div style="display:flex; align-items:center; gap:6px; min-width:0; width:100%;">
                                         <span class="track-title" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1; min-width:0; color:var(--text-color); font-weight:500; font-size:0.95rem;">${item.title}</span>
@@ -2000,6 +2000,7 @@
                                 <button class="track-action-btn btn-play-track" title="Reproducir" onclick="playTrack(${index})"><i class="fas fa-play"></i></button>
                                 <button class="track-action-btn btn-download-track" title="Descargar MP3" onclick="downloadTrack(decodeURIComponent('${safeUrl}'))"><i class="fas fa-download"></i></button>
                                 <button class="track-action-btn btn-add-track" title="Agregar a otra playlist" onclick="openAddToPlaylistModal(${index})"><i class="fas fa-plus-circle"></i></button>
+                                <button class="track-action-btn" title="Cambiar portada" onclick="event.stopPropagation(); currentTrackToEditCover = { playlistId: ${playlist.id}, itemId: ${item.id} }; document.getElementById('uploadTrackCoverInput').click();"><i class="fas fa-camera"></i></button>
                                 <button class="track-action-btn btn-delete-track" style="color:rgba(239,68,68,0.7);" title="Eliminar" onclick="removeTrack(${playlist.id}, ${item.id}, '${safeUrl}')"><i class="fas fa-trash"></i></button>
                             </div>
                             <button class="btn-three-dots" style="display:none;" title="Opciones"
@@ -2155,12 +2156,31 @@
         const fd = new FormData();
         fd.append('cover', file);
         
-        showLoadingModal('Actualizando canción...');
+        showLoadingModal('Actualizando portada...');
         try {
             const res = await fetch(`/api/tracks/${currentTrackToEditCover.itemId}/cover`, { method: 'POST', body: fd });
             const data = await res.json();
             if (data.success) {
+                // Update the currently playing track's cover if it matches
+                if (currentPlaylistItems && currentTrackIndex >= 0) {
+                    var playingItem = currentPlaylistItems[currentTrackIndex];
+                    if (playingItem && playingItem.id === currentTrackToEditCover.itemId) {
+                        playingItem.thumbnail = data.cover_url;
+                        var coverEl = document.getElementById('playerCover');
+                        if (coverEl) {
+                            coverEl.src = data.cover_url + '?t=' + Date.now();
+                            coverEl.classList.remove('d-none');
+                        }
+                        // Also update the fullscreen player cover
+                        var mfpCover = document.getElementById('mfpCoverImg');
+                        if (mfpCover) {
+                            mfpCover.dataset.currentSrc = '';
+                        }
+                        if (typeof syncMobilePlayerUI === 'function') syncMobilePlayerUI();
+                    }
+                }
                 await loadPlaylist(currentTrackToEditCover.playlistId, null, true);
+                showOfflineMessage('¡Portada actualizada!');
             } else {
                 showOfflineMessage(data.error || 'Error al subir portada');
             }
@@ -2300,6 +2320,7 @@
                 if (track.thumbnail) {
                     coverEl.src = track.thumbnail;
                     coverEl.classList.remove('d-none');
+                    coverEl.onerror = function() { this.classList.add('d-none'); };
                 } else {
                     coverEl.classList.add('d-none');
                 }
@@ -2720,8 +2741,8 @@
         var fallback = document.getElementById('mfpCoverFallback');
         var ref = (cover && cover.style.display !== 'none') ? cover : fallback;
         var w = ref ? ref.offsetWidth : Math.min(window.innerWidth * 0.75, 450);
-        
-        var size = Math.round(w * 1.5);
+        // Canvas bigger than visualizer so glow never clips at edges
+        var size = Math.round(w * 2.2);
         var dpr = window.devicePixelRatio || 1;
         canvas.width = size * dpr;
         canvas.height = size * dpr;
@@ -2729,6 +2750,7 @@
         canvas.style.height = size + 'px';
         canvas.getContext('2d').scale(dpr, dpr);
         canvas._logicalSize = size;
+        canvas._coverW = w;
     }
 
     // Original symmetric sine-wave pattern generator
@@ -2753,6 +2775,7 @@
         if (!canvas) return;
 
         var S = canvas._logicalSize || 350;
+        var w = canvas._coverW || (S / 2.2);
         var ctx = canvas.getContext('2d');
         ctx.clearRect(0, 0, S, S);
 
@@ -2762,8 +2785,9 @@
         if (_vizIntensity < 0.005 && !isPlaying) { _vizIntensity = 0; return; }
 
         var cx = S / 2, cy = S / 2;
-        var innerR = S * 0.345;
-        var maxBar = S * 0.17;
+        // Anchored to cover size w, not canvas S — same visual size regardless of canvas
+        var innerR = w * 0.5175;
+        var maxBar = w * 0.255;
         var barCount = 72;
 
         // Compute audio energy as a single global multiplier

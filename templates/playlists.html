@@ -2749,8 +2749,8 @@
         if (_vizIntensity < 0.005 && !isPlaying) { _vizIntensity = 0; return; }
 
         var cx = S / 2, cy = S / 2;
-        var innerR = w * 0.53; // Start just outside the cover image
-        var maxBar = w * 0.35; // Allow bars to grow up to 35% of cover width
+        var innerR = w * 0.58; // Circular radius slightly larger than half-width
+        var maxBar = w * 0.55; // Allow huge bars for rebel effect
         var barCount = 72;
         
         // Get actual frequency data if available
@@ -2766,11 +2766,11 @@
         for (var i = 0; i < barCount; i++) {
             var raw = 0;
             if (hasRealAudio) {
-                // Map the 72 bars to the first ~90 bins (skip highest frequencies)
-                var binIndex = Math.floor(i * (90 / barCount));
-                var val = freqData[binIndex] / 255.0; // 0..1
-                // Apply a slight exponential curve to make peaks pop
-                raw = val * val * 2.0 * _vizIntensity;
+                // Focus on lower/mid frequencies for better reaction
+                var binIndex = Math.floor(i * (80 / barCount));
+                var val = freqData[binIndex] / 255.0; 
+                // Rebel curve: cube the value so spikes are very sharp, and amplify heavily
+                raw = val * val * val * 3.5 * _vizIntensity;
             } else {
                 // Fallback / Suspended animation
                 var x = i / barCount;
@@ -2778,7 +2778,8 @@
                 v = (v + 1) / 2;
                 raw = Math.max(0, Math.min(1, v * (1.0 - x * 0.35))) * _vizIntensity;
             }
-            _vizBars[i] += (raw - _vizBars[i]) * 0.25; // Smooth lerp
+            // Faster lerp for more reactivity
+            _vizBars[i] += (raw - _vizBars[i]) * 0.30; 
         }
         
         var c1 = _vizColor.r + ',' + _vizColor.g + ',' + _vizColor.b;
@@ -2788,14 +2789,13 @@
         var bass = 0;
         for (var b = 0; b < 12; b++) bass += _vizBars[b];
         bass = bass / 12;
-        if (bass > 0.04) {
-            // Aura is drawn as a circle, but starting slightly outside the square's corners
-            var glowBaseR = w * 0.65;
-            var pulseR = glowBaseR + maxBar * bass * 1.6;
-            var grad = ctx.createRadialGradient(cx, cy, glowBaseR * 0.7, cx, cy, pulseR);
-            grad.addColorStop(0, 'rgba(' + c1 + ',' + (bass * 0.35) + ')');
-            grad.addColorStop(0.45, 'rgba(' + c2 + ',' + (bass * 0.20) + ')');
-            grad.addColorStop(0.7, 'rgba(' + c2 + ',' + (bass * 0.1) + ')');
+        if (bass > 0.02) {
+            var glowBaseR = innerR - 10;
+            var pulseR = glowBaseR + maxBar * bass * 2.2;
+            var grad = ctx.createRadialGradient(cx, cy, glowBaseR * 0.5, cx, cy, pulseR);
+            grad.addColorStop(0, 'rgba(' + c1 + ',' + Math.min(0.8, bass * 0.5 + 0.1) + ')');
+            grad.addColorStop(0.45, 'rgba(' + c2 + ',' + Math.min(0.6, bass * 0.3 + 0.05) + ')');
+            grad.addColorStop(0.7, 'rgba(' + c2 + ',' + Math.min(0.4, bass * 0.15) + ')');
             grad.addColorStop(1, 'rgba(' + c2 + ',0)');
             ctx.beginPath();
             ctx.arc(cx, cy, pulseR, 0, Math.PI * 2);
@@ -2803,20 +2803,16 @@
             ctx.fill();
         }
 
-        // --- Square perimeter frequency bars ---
+        // --- Circular frequency bars ---
         for (var j = 0; j < barCount; j++) {
             var val = _vizBars[j];
             if (val < 0.01) continue;
-            var barH = Math.max(1.5, val * maxBar);
+            var barH = Math.max(2.0, val * maxBar);
             var angle = (j / barCount) * Math.PI * 2 - Math.PI / 2;
             var cos = Math.cos(angle), sin = Math.sin(angle);
             
-            // Calculate distance to the edge of a square to wrap perfectly around the cover
-            var maxCosSin = Math.max(Math.abs(cos), Math.abs(sin));
-            var baseRadius = (w / 2) / maxCosSin;
-
-            var r0 = baseRadius + 14; 
-            var r1 = baseRadius + 14 + barH;
+            var r0 = innerR + 4; 
+            var r1 = innerR + 4 + barH;
 
             var x1 = cx + cos * r0;
             var y1 = cy + sin * r0;

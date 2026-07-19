@@ -333,7 +333,7 @@
     </main>
 
     {% if ads_enabled %}
-    <!-- Interstitial Ad Modal (Direct Link wrapper) -->
+    <!-- Interstitial Ad Modal (Native Banner + Direct Link wrapper) -->
     <div class="modal fade" id="adInterstitialModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; background: #1e1e2e; color: #fff; overflow: hidden;">
@@ -342,10 +342,24 @@
                     <button type="button" class="btn-close btn-close-white position-absolute end-0 top-0 m-3" data-bs-dismiss="modal" id="closeAdModalBtn" style="display: none;"></button>
                 </div>
                 <div class="modal-body text-center p-4">
-                    <p class="text-muted mb-4 small">Para mantener esta app 100% gratuita, haz clic en el botón de abajo para ver un breve mensaje de nuestro patrocinador y continuar a tus Playlists.</p>
+                    <p id="adModalMessage" class="text-muted mb-4 small">Para mantener esta app 100% gratuita, haz clic en el botón de abajo para ver un breve mensaje de nuestro patrocinador y continuar.</p>
                     
-                    <a href="#" id="continueToPlaylistBtn" class="btn btn-primary w-100 fw-bold py-3 shadow-sm mb-2" style="border-radius: 10px; display: none; background: linear-gradient(135deg, #6366f1, #8b5cf6); border: none; font-size: 1.1rem;">
-                        <i class="fas fa-external-link-alt me-2"></i> Ver patrocinador y continuar a Playlists
+                    <!-- Native Banner Container -->
+                    <div class="d-flex justify-content-center align-items-center mx-auto mb-4" style="min-height: 250px; background: rgba(0,0,0,0.3); border-radius: 12px; width: 300px; max-width: 100%; position: relative; overflow: hidden;">
+                        <script type="text/javascript">
+                            atOptions = {
+                                'key' : 'dcbe66e384a88bbb1988efe82ba9ec74',
+                                'format' : 'iframe',
+                                'height' : 250,
+                                'width' : 300,
+                                'params' : {}
+                            };
+                        </script>
+                        <script type="text/javascript" src="//www.highperformanceformat.com/dcbe66e384a88bbb1988efe82ba9ec74/invoke.js"></script>
+                    </div>
+
+                    <a href="#" id="continueToActionBtn" class="btn btn-primary w-100 fw-bold py-3 shadow-sm mb-2" style="border-radius: 10px; background: linear-gradient(135deg, #6366f1, #8b5cf6); border: none; font-size: 1.1rem;">
+                        <i class="fas fa-external-link-alt me-2"></i> Ver patrocinador y continuar
                     </a>
                 </div>
             </div>
@@ -541,36 +555,57 @@
             frame.style.cssText = 'border:none;overflow:hidden;border-radius:6px;width:100%;height:100%;';
             slot.appendChild(frame);
         });
-    // === INTERSTICIAL: Direct Link Modal ===
-    document.addEventListener("DOMContentLoaded", function() {
-        var playlistBtns = document.querySelectorAll('a[href="{{ url_for("playlists_view") }}"]');
+    }
+     // === SISTEMA GLOBAL DE ANUNCIOS Y MODAL ===
+    window._adPendingCallback = null;
+    window._adDirectLink = "https://www.effectivecpmnetwork.com/cnr4dycfd6?key=f3440a0777aee0737176195180ec7507";
+
+    window.showAdInterstitial = function(customMessage, onContinueCallback) {
         var adModalEl = document.getElementById('adInterstitialModal');
-        if (!adModalEl) return;
-        var adModal = new bootstrap.Modal(adModalEl);
+        if (!adModalEl) {
+            // Si no hay anuncios habilitados, continuar normal
+            if (onContinueCallback) onContinueCallback();
+            return;
+        }
         
+        var msgEl = document.getElementById('adModalMessage');
+        if (msgEl) {
+            msgEl.textContent = customMessage || "Para mantener esta app 100% gratuita, haz clic en el botón de abajo para ver un breve mensaje de nuestro patrocinador y continuar.";
+        }
+        
+        window._adPendingCallback = onContinueCallback;
+        var adModal = new bootstrap.Modal(adModalEl);
+        adModal.show();
+    };
+
+    document.addEventListener("DOMContentLoaded", function() {
+        var continueBtn = document.getElementById('continueToActionBtn');
+        if (continueBtn) {
+            continueBtn.addEventListener('click', function(evt) {
+                evt.preventDefault();
+                // Abrir Enlace Directo (Smartlink) en nueva pestaña
+                window.open(window._adDirectLink, '_blank');
+                // Ocultar modal
+                var adModalEl = document.getElementById('adInterstitialModal');
+                var adModal = bootstrap.Modal.getInstance(adModalEl);
+                if (adModal) adModal.hide();
+                // Ejecutar la acción pendiente
+                if (window._adPendingCallback) {
+                    window._adPendingCallback();
+                    window._adPendingCallback = null;
+                }
+            });
+        }
+
+        // Interceptar botones de Playlist globales
+        var playlistBtns = document.querySelectorAll('a[href="{{ url_for("playlists_view") }}"]');
         playlistBtns.forEach(function(btn) {
             btn.addEventListener('click', function(e) {
-                // Solo interceptar si no estamos ya en la página de playlists
                 if (window.location.pathname !== "{{ url_for('playlists_view') }}") {
                     e.preventDefault();
                     var destUrl = this.href;
-                    adModal.show();
-                    
-                    var continueBtn = document.getElementById('continueToPlaylistBtn');
-                    var directLinkUrl = "https://www.effectivecpmnetwork.com/icfzi0gfbt?key=5884887d5ea98ba0e1ad9b0983416255";
-                    
-                    // Asegurarnos de no duplicar listeners
-                    var newBtn = continueBtn.cloneNode(true);
-                    continueBtn.parentNode.replaceChild(newBtn, continueBtn);
-                    
-                    newBtn.style.display = 'block';
-                    newBtn.addEventListener('click', function(evt) {
-                        evt.preventDefault();
-                        // 1. Abrir el anuncio en una pestaña nueva
-                        window.open(directLinkUrl, '_blank');
-                        // 2. Navegar a la playlist en la pestaña actual
+                    window.showAdInterstitial("Apoya a SaveWave para abrir tus Playlists.", function() {
                         window.location.href = destUrl;
-                        adModal.hide();
                     });
                 }
             });

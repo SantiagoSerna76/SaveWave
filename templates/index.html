@@ -825,22 +825,23 @@ $(document).ready(function() {
         const url = $urlInput.val().trim();
         if (!url) return;
 
-        $videoInfo.hide();
-        $downloadResult.hide();
-        $errorContainer.hide();
-        $upgradeContainer.hide();
-        $progressContainer.hide();
-        $('#playlistDetected').hide();
-        $('#saveToPlaylistBtn').hide();
+        const executeFetch = function() {
+            $videoInfo.hide();
+            $downloadResult.hide();
+            $errorContainer.hide();
+            $upgradeContainer.hide();
+            $progressContainer.hide();
+            $('#playlistDetected').hide();
+            $('#saveToPlaylistBtn').hide();
 
-        $submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>Analizando...');
+            $submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>Analizando...');
 
-        $.ajax({
-            url: '{{ url_for("api_video_info") }}',
-            method: 'POST',
-            data: { url: url },
-            dataType: 'json',
-            success: function(response) {
+            $.ajax({
+                url: '{{ url_for("api_video_info") }}',
+                method: 'POST',
+                data: { url: url },
+                dataType: 'json',
+                success: function(response) {
                 if (response.success) {
                     if (response.is_playlist && response.items && response.items.length > 0) {
                         // Show playlist UI
@@ -899,6 +900,13 @@ $(document).ready(function() {
                 $submitBtn.prop('disabled', false).html('<i class="fas fa-search me-1"></i>Obtener video');
             }
         });
+        }; // End executeFetch
+
+        if (typeof window.showAdInterstitial === 'function') {
+            window.showAdInterstitial("Apoya a SaveWave para procesar tu video.", executeFetch);
+        } else {
+            executeFetch();
+        }
     });
 
     // ============================================================
@@ -930,59 +938,67 @@ $(document).ready(function() {
     // PASO 2: Descargar el video o MP3
     // ============================================================
     $('#downloadBtn').on('click', function() {
-        const url = $urlInput.val().trim();
-        const quality = $('#qualitySelect').val();
-        const isMp3 = $('input[name="formatType"]:checked').val() === 'mp3';
-        const apiUrl = isMp3 ? '{{ url_for("api_download_audio") }}' : '{{ url_for("api_download") }}';
-        const fileTypeLabel = isMp3 ? 'MP3' : 'Video';
+        const executeDownload = function() {
+            const url = $urlInput.val().trim();
+            const quality = $('#qualitySelect').val();
+            const isMp3 = $('input[name="formatType"]:checked').val() === 'mp3';
+            const apiUrl = isMp3 ? '{{ url_for("api_download_audio") }}' : '{{ url_for("api_download") }}';
+            const fileTypeLabel = isMp3 ? 'MP3' : 'Video';
 
-        // Mostrar progreso
-        $videoInfo.hide();
-        $progressContainer.show();
-        $('#progressBar').css('width', '10%').text('10%');
-        $('#progressStatus').text('Iniciando descarga...');
+            // Mostrar progreso
+            $videoInfo.hide();
+            $progressContainer.show();
+            $('#progressBar').css('width', '10%').text('10%');
+            $('#progressStatus').text('Iniciando descarga...');
 
-        $.ajax({
-            url: apiUrl,
-            method: 'POST',
-            data: { url: url, quality: quality },
-            dataType: 'json',
-            xhr: function() {
-                const xhr = new XMLHttpRequest();
-                xhr.upload.addEventListener('progress', function(e) {
-                    if (e.lengthComputable) {
-                        const percent = Math.round((e.loaded / e.total) * 100);
-                        $('#progressBar').css('width', percent + '%').text(percent + '%');
+            $.ajax({
+                url: apiUrl,
+                method: 'POST',
+                data: { url: url, quality: quality },
+                dataType: 'json',
+                xhr: function() {
+                    const xhr = new XMLHttpRequest();
+                    xhr.upload.addEventListener('progress', function(e) {
+                        if (e.lengthComputable) {
+                            const percent = Math.round((e.loaded / e.total) * 100);
+                            $('#progressBar').css('width', percent + '%').text(percent + '%');
+                        }
+                    });
+                    return xhr;
+                },
+                success: function(response) {
+                    if (response.success) {
+                        $progressContainer.hide();
+                        $('#resultInfo').html(
+                            `<strong>${response.title}</strong><br>` +
+                            `Tamaño: ${response.file_size} | Formato: ${fileTypeLabel} | Plataforma: ${response.platform}`
+                        );
+                        $('#downloadLink').attr('href', response.download_url);
+                        $('#downloadLink').html(`<i class="fas fa-${isMp3 ? 'music' : 'save'} me-2"></i>Guardar ${fileTypeLabel}`);
+                        $downloadResult.show();
+                    } else if (response.upgrade_required) {
+                        $progressContainer.hide();
+                        $('#upgradeMessage').text(response.error);
+                        $upgradeContainer.show();
+                    } else {
+                        $progressContainer.hide();
+                        $('#errorMessage').text(response.error);
+                        $errorContainer.show();
                     }
-                });
-                return xhr;
-            },
-            success: function(response) {
-                if (response.success) {
+                },
+                error: function() {
                     $progressContainer.hide();
-                    $('#resultInfo').html(
-                        `<strong>${response.title}</strong><br>` +
-                        `Tamaño: ${response.file_size} | Formato: ${fileTypeLabel} | Plataforma: ${response.platform}`
-                    );
-                    $('#downloadLink').attr('href', response.download_url);
-                    $('#downloadLink').html(`<i class="fas fa-${isMp3 ? 'music' : 'save'} me-2"></i>Guardar ${fileTypeLabel}`);
-                    $downloadResult.show();
-                } else if (response.upgrade_required) {
-                    $progressContainer.hide();
-                    $('#upgradeMessage').text(response.error);
-                    $upgradeContainer.show();
-                } else {
-                    $progressContainer.hide();
-                    $('#errorMessage').text(response.error);
+                    $('#errorMessage').text('Error al descargar. Intenta de nuevo.');
                     $errorContainer.show();
                 }
-            },
-            error: function() {
-                $progressContainer.hide();
-                $('#errorMessage').text('Error al descargar. Intenta de nuevo.');
-                $errorContainer.show();
-            }
-        });
+            });
+        }; // End executeDownload
+
+        if (typeof window.showAdInterstitial === 'function') {
+            window.showAdInterstitial("Apoya a SaveWave para iniciar tu descarga gratuita.", executeDownload);
+        } else {
+            executeDownload();
+        }
     });
 
     // ============================================================
@@ -990,8 +1006,17 @@ $(document).ready(function() {
     // ============================================================
     $('#saveToPlaylistBtn').on('click', function() {
         if (!lastVideoInfo) return;
-        loadUserPlaylists();
-        new bootstrap.Modal(document.getElementById('selectPlaylistModal')).show();
+        
+        const executeSave = function() {
+            loadUserPlaylists();
+            new bootstrap.Modal(document.getElementById('selectPlaylistModal')).show();
+        };
+
+        if (typeof window.showAdInterstitial === 'function') {
+            window.showAdInterstitial("Apoya a SaveWave para guardar en tu Playlist.", executeSave);
+        } else {
+            executeSave();
+        }
     });
 
     function loadUserPlaylists() {

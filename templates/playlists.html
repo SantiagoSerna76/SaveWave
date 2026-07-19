@@ -2771,7 +2771,7 @@
 
     window.vizStyle = localStorage.getItem('savewave_viz_style') || 'bars';
     window.toggleVisualizerStyle = function() {
-        var styles = ['bars', 'waves', 'pulse'];
+        var styles = ['bars', 'waves', 'pulse', 'rings'];
         var idx = styles.indexOf(window.vizStyle);
         window.vizStyle = styles[(idx + 1) % styles.length];
         localStorage.setItem('savewave_viz_style', window.vizStyle);
@@ -3020,6 +3020,65 @@
             ctx.lineWidth = 0.5;
             ctx.shadowBlur = 0;
             ctx.stroke();
+
+        } else if (window.vizStyle === 'rings') {
+            // ═══ Rings: Topographical Concentric Grooves (Vinyl/Mesh Style) ═══
+            var numRings = 45; 
+            var ringSpacing = (w * 0.45) / numRings; 
+            var maxRipple = w * 0.28;
+            ctx.lineJoin = 'round';
+            
+            for (var i = 0; i < numRings; i++) {
+                ctx.beginPath();
+                var baseR = innerR + 2 + i * ringSpacing;
+                
+                var steps = 200; // high resolution for crisp topographical lines
+                for (var j = 0; j <= steps; j++) {
+                    var angle = (j / steps) * Math.PI * 2;
+                    
+                    // Angle offset creates the overlapping interference pattern
+                    var readAngle = angle + i * 0.035 - _vizRotation * 0.3;
+                    while(readAngle < 0) readAngle += Math.PI * 2;
+                    while(readAngle >= Math.PI * 2) readAngle -= Math.PI * 2;
+                    
+                    // Symmetrical mapping to prevent seam at the top (angle 0 / 2PI)
+                    var t = readAngle / (Math.PI * 2); 
+                    var symT = t < 0.5 ? (t * 2) : (2 - t * 2);
+                    var barIdx = Math.floor(symT * (barCount - 1));
+                    
+                    var val = _vizBars[barIdx] || 0;
+                    
+                    // Outer rings deform exponentially more than inner rings
+                    var layerFactor = Math.pow(i / (numRings - 1), 1.6); 
+                    var ripple = val * maxRipple * layerFactor;
+                    
+                    // Subtle organic high-frequency noise 
+                    var noise = Math.sin(angle * 45 + i * 2) * (1.5 * layerFactor * audioEnergy);
+                    
+                    var r = baseR + ripple + noise;
+                    
+                    var px = cx + Math.cos(angle - Math.PI / 2) * r;
+                    var py = cy + Math.sin(angle - Math.PI / 2) * r;
+                    
+                    if (j === 0) ctx.moveTo(px, py);
+                    else ctx.lineTo(px, py);
+                }
+                ctx.closePath();
+                
+                var mix = i / (numRings - 1);
+                
+                // Pure white/silver lines matching the reference art
+                var alpha = 0.05 + (1.0 - mix) * 0.7 * _vizIntensity;
+                ctx.strokeStyle = 'rgba(255, 255, 255, ' + alpha + ')';
+                
+                // Inner rings are slightly thicker for a solid core
+                ctx.lineWidth = i < 3 ? 1.5 : 0.8;
+                
+                ctx.shadowBlur = i === 0 ? (10 * audioEnergy) : 0; 
+                ctx.shadowColor = '#fff';
+                ctx.stroke();
+            }
+            ctx.shadowBlur = 0;
 
         } else {
             // ═══ Circular frequency bars (mirror symmetry + rotation + dot caps) ═══

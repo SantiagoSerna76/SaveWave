@@ -3889,15 +3889,8 @@
 
     function startOfflineWithAd() {
         if (typeof window.showAdInterstitial === 'function') {
-            // Cerrar el modal de opciones de descarga temporalmente
-            const dlModal = bootstrap.Modal.getInstance(document.getElementById('downloadOptionsModal'));
-            if (dlModal) dlModal.hide();
-            
             window.showAdInterstitial("Apoya a SaveWave para guardar tu música offline.", function() {
-                // Re-abrir el modal de descarga y ejecutar
-                const dlModalEl = document.getElementById('downloadOptionsModal');
-                new bootstrap.Modal(dlModalEl).show();
-                setTimeout(() => downloadPlaylistOffline(), 300);
+                downloadPlaylistOffline();
             });
         } else {
             downloadPlaylistOffline();

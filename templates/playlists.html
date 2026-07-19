@@ -2789,11 +2789,12 @@
         for (var b = 0; b < 12; b++) bass += _vizBars[b];
         bass = bass / 12;
         if (bass > 0.04) {
-            var glowR = innerR + 10;
-            var pulseR = glowR + maxBar * bass * 1.4;
-            var grad = ctx.createRadialGradient(cx, cy, innerR * 0.8, cx, cy, pulseR);
-            grad.addColorStop(0, 'rgba(' + c1 + ',' + (bass * 0.3) + ')');
-            grad.addColorStop(0.45, 'rgba(' + c2 + ',' + (bass * 0.18) + ')');
+            // Aura is drawn as a circle, but starting slightly outside the square's corners
+            var glowBaseR = w * 0.65;
+            var pulseR = glowBaseR + maxBar * bass * 1.6;
+            var grad = ctx.createRadialGradient(cx, cy, glowBaseR * 0.7, cx, cy, pulseR);
+            grad.addColorStop(0, 'rgba(' + c1 + ',' + (bass * 0.35) + ')');
+            grad.addColorStop(0.45, 'rgba(' + c2 + ',' + (bass * 0.20) + ')');
             grad.addColorStop(0.7, 'rgba(' + c2 + ',' + (bass * 0.1) + ')');
             grad.addColorStop(1, 'rgba(' + c2 + ',0)');
             ctx.beginPath();
@@ -2802,18 +2803,25 @@
             ctx.fill();
         }
 
-        // --- Radial frequency bars ---
+        // --- Square perimeter frequency bars ---
         for (var j = 0; j < barCount; j++) {
             var val = _vizBars[j];
             if (val < 0.01) continue;
             var barH = Math.max(1.5, val * maxBar);
             var angle = (j / barCount) * Math.PI * 2 - Math.PI / 2;
             var cos = Math.cos(angle), sin = Math.sin(angle);
+            
+            // Calculate distance to the edge of a square to wrap perfectly around the cover
+            var maxCosSin = Math.max(Math.abs(cos), Math.abs(sin));
+            var baseRadius = (w / 2) / maxCosSin;
 
-            var x1 = cx + cos * (innerR + 4);
-            var y1 = cy + sin * (innerR + 4);
-            var x2 = cx + cos * (innerR + 4 + barH);
-            var y2 = cy + sin * (innerR + 4 + barH);
+            var r0 = baseRadius + 14; 
+            var r1 = baseRadius + 14 + barH;
+
+            var x1 = cx + cos * r0;
+            var y1 = cy + sin * r0;
+            var x2 = cx + cos * r1;
+            var y2 = cy + sin * r1;
 
             var mix = j / barCount;
             var mixR = Math.round(_vizColor.r * (1-mix) + _vizColor2.r * mix);

@@ -551,7 +551,7 @@
 
     // === INTERSTICIAL: Social Bar Modal ===
     document.addEventListener("DOMContentLoaded", function() {
-        var playlistBtns = document.querySelectorAll('a[href="{{ url_for(\'playlists_view\') }}"]');
+        var playlistBtns = document.querySelectorAll('a[href="{{ url_for("playlists_view") }}"]');
         var adModalEl = document.getElementById('adInterstitialModal');
         if (!adModalEl) return;
         var adModal = new bootstrap.Modal(adModalEl);

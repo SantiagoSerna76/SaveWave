@@ -3046,12 +3046,9 @@
                 var H = linCanvas.height;
                 lctx.clearRect(0, 0, W, H);
                 
-                var numBars = 60;
-                var barW = (W / numBars) * 0.55;
-                var gap = (W / numBars) * 0.45;
-                var startX = gap / 2;
-                
-                lctx.lineCap = 'round';
+                var numBars = 150; // More bars to make them thinner
+                var barW = Math.ceil(W / numBars); // No gap, overlapping slightly to avoid sub-pixel seams
+                var startX = 0;
                 
                 for (var i = 0; i < numBars; i++) {
                     // Mirrored frequency mapping: bass in the center, treble on the edges
@@ -3062,8 +3059,8 @@
                     
                     // Add a tiny bit of random variation to make it look active even on flat audio
                     var jitter = Math.random() * 0.05 * audioEnergy;
-                    var h = Math.max(3, (val + jitter) * H * 0.85 * audioEnergy * _vizIntensity);
-                    var px = startX + i * (barW + gap) + barW / 2;
+                    var h = Math.max(1, (val + jitter) * H * 0.85 * audioEnergy * _vizIntensity);
+                    var px = startX + i * (W / numBars); // exact floating point position
                     
                     // Colors: center uses c1, edges fade to c2
                     var mix = 1.0 - centerOffset;
@@ -3072,23 +3069,18 @@
                     var mB = Math.round(_vizColor.b * mix + _vizColor2.b * (1-mix));
                     var col = mR + ',' + mG + ',' + mB;
                     
-                    lctx.beginPath();
-                    // Draw upwards from bottom edge
-                    lctx.moveTo(px, H);
-                    lctx.lineTo(px, H - h);
-                    
                     // Vertical gradient matching the reference image (white at bottom, color at top)
                     var grad = lctx.createLinearGradient(0, H, 0, H - h);
                     grad.addColorStop(0, 'rgba(255, 255, 255, ' + (0.9 * _vizIntensity) + ')');
                     grad.addColorStop(0.6, 'rgba(' + col + ', ' + (0.9 * _vizIntensity) + ')');
                     grad.addColorStop(1, 'rgba(' + col + ', ' + (0.3 * _vizIntensity) + ')');
                     
-                    lctx.strokeStyle = grad;
-                    lctx.lineWidth = barW;
-                    
+                    lctx.fillStyle = grad;
                     lctx.shadowBlur = 8 * audioEnergy;
                     lctx.shadowColor = 'rgba(' + col + ', 0.8)';
-                    lctx.stroke();
+                    
+                    // Draw solid square bars with no space between them
+                    lctx.fillRect(px, H - h, barW, h);
                 }
             }
         } else {

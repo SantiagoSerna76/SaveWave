@@ -1674,7 +1674,7 @@
 </div>
 
 <!-- HTML Audio Element (Hidden) -->
-<audio id="audioPlayer" preload="auto" playsinline controlsList="nodownload"></audio>
+<audio id="audioPlayer" crossorigin="anonymous" preload="auto" playsinline controlsList="nodownload"></audio>
 
 <!-- MODAL NEW PLAYLIST -->
 <div class="modal fade" id="newPlaylistModal" tabindex="-1">
@@ -2260,6 +2260,10 @@
 
             // Unlock audio context for mobile auto-play policy
             try {
+                initAudioAnalyzer();
+                if (audioCtx && audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
                 if (audioPlayer) audioPlayer.play().catch(function(){});
             } catch(unlockErr) { /* ignore unlock errors */ }
 
@@ -2601,11 +2605,35 @@
     }
 
     // ========== AUDIO VISUALIZER (Reactive Radial Aura) ==========
-    // Safe: does NOT use createMediaElementSource (which kills audio on mobile).
-    // Uses smooth animated patterns that react to play/pause state.
     var _vizRAF = null;
     var _vizIntensity = 0;  // Smoothly lerps toward target
     var _vizBars = [];      // Smoothed bar values for organic movement
+    
+    // Audio Context variables
+    var audioCtx = null;
+    var analyser = null;
+    var audioSource = null;
+    var freqData = null;
+
+    function initAudioAnalyzer() {
+        if (audioCtx) return;
+        try {
+            var AudioContext = window.AudioContext || window.webkitAudioContext;
+            audioCtx = new AudioContext();
+            analyser = audioCtx.createAnalyser();
+            analyser.fftSize = 256; // 128 bins
+            analyser.smoothingTimeConstant = 0.8;
+            freqData = new Uint8Array(analyser.frequencyBinCount);
+            
+            // audioPlayer is the global <audio> element
+            audioSource = audioCtx.createMediaElementSource(audioPlayer);
+            audioSource.connect(analyser);
+            analyser.connect(audioCtx.destination);
+        } catch(e) {
+            console.warn("AudioContext init failed", e);
+        }
+    }
+
     
     // Dynamic Colors
     var _vizColor = {r: 99, g: 102, b: 241};
@@ -2701,23 +2729,6 @@
         canvas._logicalSize = size;
     }
 
-    function vizFreq(index, time, count) {
-        var x = index / count;
-        // Multiple overlapping waves for organic motion
-        var v = 0;
-        v += Math.sin(time * 3.1 + x * 9.0) * 0.28;
-        v += Math.sin(time * 1.7 + x * 14.0 + 1.5) * 0.24;
-        v += Math.sin(time * 5.3 + x * 5.0 + 0.7) * 0.18;
-        v += Math.sin(time * 2.1 + x * 22.0 + 3.2) * 0.14;
-        v += Math.sin(time * 0.9 + x * 7.0 + 2.1) * 0.10;
-        v += Math.sin(time * 7.7 + x * 3.0) * 0.06;
-        v = (v + 1) / 2; // 0..1
-        // Bass emphasis: lower indices (bass) are bigger
-        var bassBoost = 1.0 - x * 0.35;
-        v *= bassBoost;
-        return Math.max(0, Math.min(1, v));
-    }
-
     function drawVisualizer() {
         _vizRAF = requestAnimationFrame(drawVisualizer);
         var canvas = document.getElementById('mfpVisualizer');
@@ -2736,12 +2747,33 @@
         var innerR = S * 0.345;
         var maxBar = S * 0.17;
         var barCount = 72;
+        
+        // Get actual frequency data if available
+        var hasRealAudio = false;
+        if (analyser && isPlaying) {
+            analyser.getByteFrequencyData(freqData);
+            hasRealAudio = true;
+        }
+
         var now = Date.now() / 1000;
 
         // Generate and smooth bar values
         for (var i = 0; i < barCount; i++) {
-            var raw = vizFreq(i, now, barCount) * _vizIntensity;
-            _vizBars[i] += (raw - _vizBars[i]) * 0.15; // Smooth lerp
+            var raw = 0;
+            if (hasRealAudio) {
+                // Map the 72 bars to the first ~90 bins (skip highest frequencies)
+                var binIndex = Math.floor(i * (90 / barCount));
+                var val = freqData[binIndex] / 255.0; // 0..1
+                // Apply a slight exponential curve to make peaks pop
+                raw = val * val * 1.5 * _vizIntensity;
+            } else {
+                // Fallback / Suspended animation
+                var x = i / barCount;
+                var v = Math.sin(now * 3.1 + x * 9.0) * 0.28 + Math.sin(now * 1.7 + x * 14.0 + 1.5) * 0.24 + Math.sin(now * 5.3 + x * 5.0 + 0.7) * 0.18;
+                v = (v + 1) / 2;
+                raw = Math.max(0, Math.min(1, v * (1.0 - x * 0.35))) * _vizIntensity;
+            }
+            _vizBars[i] += (raw - _vizBars[i]) * 0.25; // Smooth lerp
         }
         
         var c1 = _vizColor.r + ',' + _vizColor.g + ',' + _vizColor.b;

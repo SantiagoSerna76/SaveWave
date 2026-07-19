@@ -2575,8 +2575,9 @@
             '        <div id="mfpTitle" style="font-size:clamp(1.35rem, 2.5vw, 2.2rem);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px;">Cargando...</div>',
             '        <div id="mfpArtist" style="font-size:clamp(0.95rem, 1.2vw, 1.3rem);color:rgba(255,255,255,0.6);">SaveWave</div>',
             '    </div>',
-            '    <div style="width:100%;position:relative;padding-bottom:22px;">',
-            '        <div id="mfpProgressBar" style="height:4px;background:rgba(255,255,255,0.2);border-radius:2px;width:100%;cursor:pointer;">',
+            '    <div style="width:100%;position:relative;padding-bottom:22px;margin-top:15px;">',
+            '        <canvas id="mfpLinearViz" style="position:absolute;bottom:26px;left:0;width:100%;height:50px;pointer-events:none;display:none;"></canvas>',
+            '        <div id="mfpProgressBar" style="height:4px;background:rgba(255,255,255,0.2);border-radius:2px;width:100%;cursor:pointer;position:relative;z-index:2;">',
             '            <div id="mfpProgressFill" style="height:100%;background:#fff;border-radius:2px;width:0%;transition:width 0.15s linear;"></div>',
             '        </div>',
             '        <span id="mfpTimeCurrent" style="position:absolute;left:0;bottom:0;font-size:0.75rem;color:rgba(255,255,255,0.55);">0:00</span>',
@@ -2771,7 +2772,7 @@
 
     window.vizStyle = localStorage.getItem('savewave_viz_style') || 'bars';
     window.toggleVisualizerStyle = function() {
-        var styles = ['bars', 'waves', 'pulse', 'rings'];
+        var styles = ['bars', 'waves', 'pulse', 'linear'];
         var idx = styles.indexOf(window.vizStyle);
         window.vizStyle = styles[(idx + 1) % styles.length];
         localStorage.setItem('savewave_viz_style', window.vizStyle);
@@ -2782,7 +2783,17 @@
     function drawVisualizer() {
         _vizRAF = requestAnimationFrame(drawVisualizer);
         var canvas = document.getElementById('mfpVisualizer');
+        var linCanvas = document.getElementById('mfpLinearViz');
         if (!canvas) return;
+
+        // Manage canvas visibility depending on mode
+        if (window.vizStyle === 'linear') {
+            canvas.style.display = 'none';
+            if (linCanvas) linCanvas.style.display = 'block';
+        } else {
+            canvas.style.display = 'block';
+            if (linCanvas) linCanvas.style.display = 'none';
+        }
 
         var S = canvas._logicalSize || 350;
         var w = canvas._coverW || (S / 2.2);
@@ -3021,65 +3032,65 @@
             ctx.shadowBlur = 0;
             ctx.stroke();
 
-        } else if (window.vizStyle === 'rings') {
-            // ═══ Rings: Topographical Concentric Grooves (Vinyl/Mesh Style) ═══
-            var numRings = 45; 
-            var ringSpacing = (w * 0.45) / numRings; 
-            var maxRipple = w * 0.28;
-            ctx.lineJoin = 'round';
-            
-            for (var i = 0; i < numRings; i++) {
-                ctx.beginPath();
-                var baseR = innerR + 2 + i * ringSpacing;
+        } else if (window.vizStyle === 'linear') {
+            // ═══ Linear Spectrum (Above Progress Bar) ═══
+            if (linCanvas) {
+                // Ensure internal resolution matches CSS display size
+                if (linCanvas.width !== linCanvas.clientWidth) {
+                    linCanvas.width = linCanvas.clientWidth;
+                    linCanvas.height = linCanvas.clientHeight;
+                }
                 
-                var steps = 200; // high resolution for crisp topographical lines
-                for (var j = 0; j <= steps; j++) {
-                    var angle = (j / steps) * Math.PI * 2;
-                    
-                    // Angle offset creates the overlapping interference pattern
-                    var readAngle = angle + i * 0.035 - _vizRotation * 0.3;
-                    while(readAngle < 0) readAngle += Math.PI * 2;
-                    while(readAngle >= Math.PI * 2) readAngle -= Math.PI * 2;
-                    
-                    // Symmetrical mapping to prevent seam at the top (angle 0 / 2PI)
-                    var t = readAngle / (Math.PI * 2); 
-                    var symT = t < 0.5 ? (t * 2) : (2 - t * 2);
-                    var barIdx = Math.floor(symT * (barCount - 1));
+                var lctx = linCanvas.getContext('2d');
+                var W = linCanvas.width;
+                var H = linCanvas.height;
+                lctx.clearRect(0, 0, W, H);
+                
+                var numBars = 60;
+                var barW = (W / numBars) * 0.55;
+                var gap = (W / numBars) * 0.45;
+                var startX = gap / 2;
+                
+                lctx.lineCap = 'round';
+                
+                for (var i = 0; i < numBars; i++) {
+                    // Mirrored frequency mapping: bass in the center, treble on the edges
+                    var centerOffset = Math.abs(i - (numBars - 1) / 2) / ((numBars - 1) / 2);
+                    var barIdx = Math.floor(centerOffset * (barCount - 1));
                     
                     var val = _vizBars[barIdx] || 0;
                     
-                    // Outer rings deform exponentially more than inner rings
-                    var layerFactor = Math.pow(i / (numRings - 1), 1.6); 
-                    var ripple = val * maxRipple * layerFactor;
+                    // Add a tiny bit of random variation to make it look active even on flat audio
+                    var jitter = Math.random() * 0.05 * audioEnergy;
+                    var h = Math.max(3, (val + jitter) * H * 0.85 * audioEnergy * _vizIntensity);
+                    var px = startX + i * (barW + gap) + barW / 2;
                     
-                    // Subtle organic high-frequency noise 
-                    var noise = Math.sin(angle * 45 + i * 2) * (1.5 * layerFactor * audioEnergy);
+                    // Colors: center uses c1, edges fade to c2
+                    var mix = 1.0 - centerOffset;
+                    var mR = Math.round(_vizColor.r * mix + _vizColor2.r * (1-mix));
+                    var mG = Math.round(_vizColor.g * mix + _vizColor2.g * (1-mix));
+                    var mB = Math.round(_vizColor.b * mix + _vizColor2.b * (1-mix));
+                    var col = mR + ',' + mG + ',' + mB;
                     
-                    var r = baseR + ripple + noise;
+                    lctx.beginPath();
+                    // Draw upwards from bottom edge
+                    lctx.moveTo(px, H);
+                    lctx.lineTo(px, H - h);
                     
-                    var px = cx + Math.cos(angle - Math.PI / 2) * r;
-                    var py = cy + Math.sin(angle - Math.PI / 2) * r;
+                    // Vertical gradient matching the reference image (white at bottom, color at top)
+                    var grad = lctx.createLinearGradient(0, H, 0, H - h);
+                    grad.addColorStop(0, 'rgba(255, 255, 255, ' + (0.9 * _vizIntensity) + ')');
+                    grad.addColorStop(0.6, 'rgba(' + col + ', ' + (0.9 * _vizIntensity) + ')');
+                    grad.addColorStop(1, 'rgba(' + col + ', ' + (0.3 * _vizIntensity) + ')');
                     
-                    if (j === 0) ctx.moveTo(px, py);
-                    else ctx.lineTo(px, py);
+                    lctx.strokeStyle = grad;
+                    lctx.lineWidth = barW;
+                    
+                    lctx.shadowBlur = 8 * audioEnergy;
+                    lctx.shadowColor = 'rgba(' + col + ', 0.8)';
+                    lctx.stroke();
                 }
-                ctx.closePath();
-                
-                var mix = i / (numRings - 1);
-                
-                // Pure white/silver lines matching the reference art
-                var alpha = 0.05 + (1.0 - mix) * 0.7 * _vizIntensity;
-                ctx.strokeStyle = 'rgba(255, 255, 255, ' + alpha + ')';
-                
-                // Inner rings are slightly thicker for a solid core
-                ctx.lineWidth = i < 3 ? 1.5 : 0.8;
-                
-                ctx.shadowBlur = i === 0 ? (10 * audioEnergy) : 0; 
-                ctx.shadowColor = '#fff';
-                ctx.stroke();
             }
-            ctx.shadowBlur = 0;
-
         } else {
             // ═══ Circular frequency bars (mirror symmetry + rotation + dot caps) ═══
             ctx.lineCap = 'round';

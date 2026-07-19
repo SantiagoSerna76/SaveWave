@@ -891,7 +891,7 @@ def api_download_proxy():
     try:
         # Reutilizar _get_ydl_opts() para heredar cookies, ffmpeg, etc.
         opts = _get_ydl_opts({
-            'format': 'bestaudio[ext=m4a]/bestaudio/best',
+            'format': 'worstaudio[ext=m4a]/worstaudio/best',
             'outtmpl': temp_base + '.%(ext)s',
             'quiet': True,
             'no_warnings': True,

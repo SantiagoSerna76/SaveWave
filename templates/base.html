@@ -367,6 +367,30 @@
     </div>
     {% endif %}
 
+    <!-- Anti-AdBlock Modal -->
+    <div class="modal fade" id="adBlockModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; background: #1e1e2e; color: #fff; overflow: hidden;">
+                <div class="modal-header border-0 pb-0 justify-content-center position-relative">
+                    <h5 class="modal-title fw-bold text-center w-100 mt-2"><i class="fas fa-sad-tear text-warning me-2"></i>¡Oops! Bloqueador Detectado</h5>
+                </div>
+                <div class="modal-body text-center p-4">
+                    <div class="mb-4">
+                        <i class="fas fa-shield-alt" style="font-size: 3rem; color: #f59e0b;"></i>
+                    </div>
+                    <p class="text-muted mb-4 small" style="font-size: 0.95rem; line-height: 1.6;">
+                        Entendemos que la publicidad puede ser un poco molesta, pero es lo único que nos permite mantener <strong>SaveWave funcionando y 100% gratuito</strong> para ti. <br><br>
+                        Te prometemos que nuestros anuncios son seguros. ¿Nos ayudarías desactivando tu bloqueador o añadiendo nuestra página a tu lista de excepciones? ¡Mil gracias por tu apoyo! ❤️
+                    </p>
+                    
+                    <button type="button" class="btn btn-warning w-100 fw-bold py-3 shadow-sm" onclick="window.location.reload();" style="border-radius: 10px; color: #000; font-size: 1.1rem;">
+                        <i class="fas fa-sync-alt me-2"></i> Ya lo desactivé, recargar página
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Footer -->
     <footer class="py-4 mt-5" style="background:#0f0f1a; border-top:1px solid rgba(255,255,255,0.06);">
         <div class="container">
@@ -556,11 +580,42 @@
             slot.appendChild(frame);
         });
     }
-     // === SISTEMA GLOBAL DE ANUNCIOS Y MODAL ===
+     // === SISTEMA GLOBAL DE ANUNCIOS, MODAL Y ANTI-ADBLOCK ===
     window._adPendingCallback = null;
     window._adDirectLink = "https://www.effectivecpmnetwork.com/cnr4dycfd6?key=f3440a0777aee0737176195180ec7507";
+    window._isAdBlockEnabled = false;
+
+    // Detectar AdBlock silenciosamente al cargar
+    function checkAdBlock() {
+        const testAd = document.createElement('div');
+        testAd.innerHTML = '&nbsp;';
+        testAd.className = 'adsbox'; // Clase que los adblockers bloquean
+        testAd.style.position = 'absolute';
+        testAd.style.top = '-999px';
+        document.body.appendChild(testAd);
+        
+        setTimeout(function() {
+            if (testAd.offsetHeight === 0 || window.getComputedStyle(testAd).display === 'none') {
+                window._isAdBlockEnabled = true;
+            }
+            testAd.remove();
+        }, 300);
+    }
+    
+    // Ejecutar detección
+    document.addEventListener("DOMContentLoaded", checkAdBlock);
 
     window.showAdInterstitial = function(customMessage, onContinueCallback) {
+        if (window._isAdBlockEnabled) {
+            // Mostrar modal amable de AdBlock y BLOQUEAR la acción original
+            var adBlockModalEl = document.getElementById('adBlockModal');
+            if (adBlockModalEl) {
+                var adBlockModal = new bootstrap.Modal(adBlockModalEl);
+                adBlockModal.show();
+            }
+            return;
+        }
+
         var adModalEl = document.getElementById('adInterstitialModal');
         if (!adModalEl) {
             // Si no hay anuncios habilitados, continuar normal

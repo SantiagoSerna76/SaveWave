@@ -2149,7 +2149,7 @@
     }
 
     window.currentTrackToEditCover = null;
-    async function uploadTrackCover() {
+    window.uploadTrackCover = async function() {
         const input = document.getElementById('uploadTrackCoverInput');
         if (!input.files || input.files.length === 0) return;
         const file = input.files[0];

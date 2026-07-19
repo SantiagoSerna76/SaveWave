@@ -2771,7 +2771,9 @@
 
     window.vizStyle = localStorage.getItem('savewave_viz_style') || 'bars';
     window.toggleVisualizerStyle = function() {
-        window.vizStyle = window.vizStyle === 'bars' ? 'waves' : 'bars';
+        var styles = ['bars', 'waves', 'pulse'];
+        var idx = styles.indexOf(window.vizStyle);
+        window.vizStyle = styles[(idx + 1) % styles.length];
         localStorage.setItem('savewave_viz_style', window.vizStyle);
     };
 
@@ -2865,50 +2867,107 @@
         ctx.stroke();
 
         if (window.vizStyle === 'waves') {
-            // --- Continuous Waves Style ---
-            ctx.lineJoin = 'round';
-            ctx.beginPath();
-            for (var j = 0; j <= barCount; j++) {
-                var index = j % barCount;
-                var val = _vizBars[index];
-                var waveH = Math.max(2, val * maxBar * 1.1);
-                var angle = (index / barCount) * Math.PI * 2 - Math.PI / 2 + _vizRotation;
-                var cos = Math.cos(angle), sin = Math.sin(angle);
+            // ═══ Polished Continuous Waves (smooth bezier curves) ═══
+            var pts = [];
+            for (var j = 0; j < barCount; j++) {
+                var val = _vizBars[j];
+                var waveH = Math.max(3, val * maxBar * 1.1);
+                var angle = (j / barCount) * Math.PI * 2 - Math.PI / 2 + _vizRotation;
                 var r = innerR + 5 + waveH;
-                if (j === 0) ctx.moveTo(cx + cos * r, cy + sin * r);
-                else ctx.lineTo(cx + cos * r, cy + sin * r);
+                pts.push({ x: cx + Math.cos(angle) * r, y: cy + Math.sin(angle) * r });
+            }
+
+            // Outer wave — smooth closed bezier
+            ctx.beginPath();
+            ctx.moveTo((pts[0].x + pts[barCount-1].x)/2, (pts[0].y + pts[barCount-1].y)/2);
+            for (var j = 0; j < barCount; j++) {
+                var next = (j + 1) % barCount;
+                ctx.quadraticCurveTo(pts[j].x, pts[j].y, (pts[j].x + pts[next].x)/2, (pts[j].y + pts[next].y)/2);
             }
             ctx.closePath();
-            
+
             var waveGrad = ctx.createLinearGradient(cx - innerR, cy - innerR, cx + innerR, cy + innerR);
-            waveGrad.addColorStop(0, 'rgba(' + c1 + ', ' + Math.min(0.9, 0.4 + audioEnergy * 0.4) + ')');
-            waveGrad.addColorStop(1, 'rgba(' + c2 + ', ' + Math.min(0.9, 0.4 + audioEnergy * 0.4) + ')');
+            waveGrad.addColorStop(0, 'rgba(' + c1 + ',' + Math.min(0.85, 0.45 + audioEnergy * 0.35) + ')');
+            waveGrad.addColorStop(1, 'rgba(' + c2 + ',' + Math.min(0.85, 0.45 + audioEnergy * 0.35) + ')');
             ctx.strokeStyle = waveGrad;
-            ctx.lineWidth = 3.5;
-            ctx.shadowBlur = 12 * audioEnergy;
-            ctx.shadowColor = 'rgba(' + c1 + ', 0.6)';
+            ctx.lineWidth = 3;
+            ctx.shadowBlur = 14 * audioEnergy;
+            ctx.shadowColor = 'rgba(' + c1 + ',0.5)';
+            ctx.stroke();
+            // subtle inner fill
+            ctx.fillStyle = 'rgba(' + c1 + ',0.025)';
+            ctx.fill();
+            ctx.shadowBlur = 0;
+
+            // Inner counter-rotating wave (thinner, more subtle)
+            var pts2 = [];
+            for (var j = 0; j < barCount; j++) {
+                var val = _vizBars[j];
+                var waveH = Math.max(1, val * maxBar * 0.4);
+                var angle = (j / barCount) * Math.PI * 2 - Math.PI / 2 - _vizRotation * 0.5;
+                var r = innerR + 3 + waveH;
+                pts2.push({ x: cx + Math.cos(angle) * r, y: cy + Math.sin(angle) * r });
+            }
+            ctx.beginPath();
+            ctx.moveTo((pts2[0].x + pts2[barCount-1].x)/2, (pts2[0].y + pts2[barCount-1].y)/2);
+            for (var j = 0; j < barCount; j++) {
+                var next = (j + 1) % barCount;
+                ctx.quadraticCurveTo(pts2[j].x, pts2[j].y, (pts2[j].x + pts2[next].x)/2, (pts2[j].y + pts2[next].y)/2);
+            }
+            ctx.closePath();
+            ctx.strokeStyle = 'rgba(' + c2 + ',' + Math.min(0.5, 0.18 + audioEnergy * 0.25) + ')';
+            ctx.lineWidth = 1.8;
             ctx.stroke();
 
-            // Inner subtle counter-rotating wave
-            ctx.beginPath();
-            for (var j = 0; j <= barCount; j++) {
-                var index = j % barCount;
-                var val = _vizBars[index];
-                var waveH = Math.max(1, val * maxBar * 0.45);
-                var angle = (index / barCount) * Math.PI * 2 - Math.PI / 2 - _vizRotation * 0.6;
-                var cos = Math.cos(angle), sin = Math.sin(angle);
-                var r = innerR + 2 + waveH;
-                if (j === 0) ctx.moveTo(cx + cos * r, cy + sin * r);
-                else ctx.lineTo(cx + cos * r, cy + sin * r);
+        } else if (window.vizStyle === 'pulse') {
+            // ═══ Pulse: Horizontal soundwave behind cover ═══
+            var pulseCount = 50;
+            var coverR = w * 0.5;
+            var maxPulseH = w * 0.42;
+            var extent = (S / 2) - 15;
+            ctx.lineCap = 'round';
+
+            // Draw mirrored horizontal bars on each side
+            for (var side = -1; side <= 1; side += 2) {
+                for (var j = 0; j < pulseCount; j++) {
+                    var barIdx = Math.floor((j / pulseCount) * barCount);
+                    var val = _vizBars[barIdx];
+                    var t = j / pulseCount;
+                    var xPos = coverR * 0.85 + t * (extent - coverR * 0.85);
+                    var edgeFade = 1.0 - t * t;
+                    var h = Math.max(1.5, val * maxPulseH * edgeFade);
+                    var px = cx + side * xPos;
+                    var fadeAlpha = (0.75 - t * 0.65) * _vizIntensity;
+                    var mix = t;
+                    var mR = Math.round(_vizColor.r * (1-mix) + _vizColor2.r * mix);
+                    var mG = Math.round(_vizColor.g * (1-mix) + _vizColor2.g * mix);
+                    var mB = Math.round(_vizColor.b * (1-mix) + _vizColor2.b * mix);
+                    var pCol = mR + ',' + mG + ',' + mB;
+
+                    ctx.beginPath();
+                    ctx.moveTo(px, cy - h);
+                    ctx.lineTo(px, cy + h);
+                    ctx.strokeStyle = 'rgba(' + pCol + ',' + fadeAlpha + ')';
+                    ctx.lineWidth = 2.8;
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = 'rgba(' + pCol + ',' + fadeAlpha * 0.5 + ')';
+                    ctx.stroke();
+                }
             }
-            ctx.closePath();
-            ctx.strokeStyle = 'rgba(' + c2 + ', ' + Math.min(0.6, 0.2 + audioEnergy * 0.3) + ')';
-            ctx.lineWidth = 2.0;
             ctx.shadowBlur = 0;
+
+            // Neon ring around cover
+            ctx.beginPath();
+            ctx.arc(cx, cy, innerR + 3, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(' + c1 + ',' + (0.25 + bass * 0.45) * _vizIntensity + ')';
+            ctx.lineWidth = 2;
+            ctx.shadowBlur = 12;
+            ctx.shadowColor = 'rgba(' + c1 + ',0.5)';
             ctx.stroke();
+            ctx.shadowBlur = 0;
 
         } else {
-            // --- Circular frequency bars (with rotation + mirror symmetry + dot caps) ---
+            // ═══ Circular frequency bars (mirror symmetry + rotation + dot caps) ═══
             ctx.lineCap = 'round';
             for (var j = 0; j < barCount; j++) {
                 var val = _vizBars[j];
@@ -2924,16 +2983,13 @@
                 var x2 = cx + cos * r1;
                 var y2 = cy + sin * r1;
 
-                // Color: smooth gradient around the circle
                 var mix = j / barCount;
                 var mixR = Math.round(_vizColor.r * (1-mix) + _vizColor2.r * mix);
                 var mixG = Math.round(_vizColor.g * (1-mix) + _vizColor2.g * mix);
                 var mixB = Math.round(_vizColor.b * (1-mix) + _vizColor2.b * mix);
                 var barColor = mixR + ',' + mixG + ',' + mixB;
-                
                 var alpha = 0.35 + val * 0.65;
 
-                // Bar line
                 ctx.beginPath();
                 ctx.moveTo(x1, y1);
                 ctx.lineTo(x2, y2);
@@ -2943,7 +2999,6 @@
                 ctx.shadowColor = 'rgba(' + barColor + ',0.4)';
                 ctx.stroke();
 
-                // Glowing dot cap at the tip of each bar
                 if (val > 0.08) {
                     ctx.beginPath();
                     ctx.arc(x2, y2, 1.5 + val * 2.0, 0, Math.PI * 2);

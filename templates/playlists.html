@@ -1909,13 +1909,14 @@
     }
 
     // ========== LOAD PLAYLIST ==========
-    async function loadPlaylist(id, evt) {
+    async function loadPlaylist(id, evt, forceReload = false) {
         document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
         if (evt && evt.currentTarget) evt.currentTarget.classList.add('active');
         currentPlaylistId = id;
 
         try {
-            const res = await fetch(`/api/playlists/${id}`);
+            const url = forceReload ? `/api/playlists/${id}?_t=${Date.now()}` : `/api/playlists/${id}`;
+            const res = await fetch(url);
             const data = await res.json();
 
             if (data.success) {
@@ -2131,7 +2132,7 @@
             const res = await fetch(`/api/playlists/${playlistId}/cover`, { method: 'POST', body: fd });
             const data = await res.json();
             if (data.success) {
-                await loadPlaylist(playlistId);
+                await loadPlaylist(playlistId, null, true);
                 loadPlaylistsSidebar();
             } else {
                 showOfflineMessage(data.error || 'Error al subir portada');
@@ -2159,7 +2160,7 @@
             const res = await fetch(`/api/tracks/${currentTrackToEditCover.itemId}/cover`, { method: 'POST', body: fd });
             const data = await res.json();
             if (data.success) {
-                await loadPlaylist(currentTrackToEditCover.playlistId);
+                await loadPlaylist(currentTrackToEditCover.playlistId, null, true);
             } else {
                 showOfflineMessage(data.error || 'Error al subir portada');
             }

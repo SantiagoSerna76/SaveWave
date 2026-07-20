@@ -2691,35 +2691,48 @@
                 var avgG = g/count;
                 var avgB = b/count;
                 
-                // Boost to NEON
                 var maxC = Math.max(avgR, avgG, avgB);
-                if (maxC < 10) { avgR=99; avgG=102; avgB=241; maxC=241; }
-                
-                // 1. Maximize brightness (pull brightest channel to 255)
-                var scale = 255 / maxC;
-                var nr = avgR * scale;
-                var ng = avgG * scale;
-                var nb = avgB * scale;
-                
-                // 2. Maximize saturation (push colors away from grey)
-                var luma = 0.2126 * nr + 0.7152 * ng + 0.0722 * nb;
-                nr = nr + (nr - luma) * 0.8;
-                ng = ng + (ng - luma) * 0.8;
-                nb = nb + (nb - luma) * 0.8;
-                
-                nr = Math.max(0, Math.min(255, nr));
-                ng = Math.max(0, Math.min(255, ng));
-                nb = Math.max(0, Math.min(255, nb));
+                var minC = Math.min(avgR, avgG, avgB);
+                var saturation = (maxC === 0) ? 0 : (maxC - minC) / maxC;
 
-                _vizColor = {r: Math.round(nr), g: Math.round(ng), b: Math.round(nb)};
-                // Secondary color: un degradado sutil hacia un tono más brillante y levemente análogo
-                var secR = Math.min(255, nr + 40);
-                var secG = Math.min(255, ng + 40);
-                var secB = Math.min(255, nb + 40);
-                secR = secR * 0.85 + secG * 0.15;
-                secG = secG * 0.85 + secB * 0.15;
-                secB = secB * 0.85 + secR * 0.15;
-                _vizColor2 = {r: Math.round(secR), g: Math.round(secG), b: Math.round(secB)};
+                if (saturation < 0.15) {
+                    // Mostly grayscale: use sleek silver/white vibes
+                    _vizColor = {r: 230, g: 230, b: 230};
+                    _vizColor2 = {r: 160, g: 160, b: 160};
+                } else {
+                    // Boost to NEON
+                    if (maxC < 10) { avgR=99; avgG=102; avgB=241; maxC=241; }
+                    
+                    // 1. Maximize brightness
+                    var scale = 255 / maxC;
+                    var nr = avgR * scale;
+                    var ng = avgG * scale;
+                    var nb = avgB * scale;
+                    
+                    // 2. Maximize saturation
+                    var luma = 0.2126 * nr + 0.7152 * ng + 0.0722 * nb;
+                    nr = nr + (nr - luma) * 0.8;
+                    ng = ng + (ng - luma) * 0.8;
+                    nb = nb + (nb - luma) * 0.8;
+                    
+                    nr = Math.max(0, Math.min(255, nr));
+                    ng = Math.max(0, Math.min(255, ng));
+                    nb = Math.max(0, Math.min(255, nb));
+
+                    _vizColor = {r: Math.round(nr), g: Math.round(ng), b: Math.round(nb)};
+                    
+                    // Secondary color
+                    var secR = Math.min(255, nr + 40);
+                    var secG = Math.min(255, ng + 40);
+                    var secB = Math.min(255, nb + 40);
+                    secR = secR * 0.85 + secG * 0.15;
+                    secG = secG * 0.85 + secB * 0.15;
+                    secB = secB * 0.85 + secR * 0.15;
+                    _vizColor2 = {r: Math.round(secR), g: Math.round(secG), b: Math.round(secB)};
+                }
+            } else {
+                _vizColor = {r: 230, g: 230, b: 230};
+                _vizColor2 = {r: 160, g: 160, b: 160};
             }
         } catch(e) {
             console.warn('Could not extract cover color (CORS)', e);
@@ -3157,6 +3170,10 @@
                 if (dstCover.dataset.currentSrc !== srcCover.src) {
                     dstCover.dataset.currentSrc = srcCover.src;
                     
+                    // Reset vibes color to prevent leaking from previous track
+                    _vizColor = {r: 230, g: 230, b: 230};
+                    _vizColor2 = {r: 160, g: 160, b: 160};
+
                     // Hide while loading
                     dstCover.style.display = 'none';
                     if (dstFallback) dstFallback.style.display = 'flex';
@@ -3177,6 +3194,7 @@
                             console.warn("Cover load failed completely.");
                         };
                         dstCover.onload = function() {
+                            extractCoverColor(dstCover); // Might throw SecurityError which defaults to Indigo correctly
                             dstCover.style.display = 'block';
                             if (dstFallback) dstFallback.style.display = 'none';
                         };

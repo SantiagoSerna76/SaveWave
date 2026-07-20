@@ -2705,8 +2705,8 @@
                 var cMax = Math.max(r, g, b);
                 var cMin = Math.min(r, g, b);
                 var sat = (cMax === 0) ? 0 : (cMax - cMin) / cMax;
-                // Favor vibrant colors geometrically
-                var weight = sat * sat; 
+                // Use a gentle saturation curve so grayscale pixels aren't completely ignored
+                var weight = 1 + (sat * 2); 
                 
                 buckets[key].r += r;
                 buckets[key].g += g;
@@ -2746,10 +2746,10 @@
                     _vizColor = {r: 230, g: 230, b: 230};
                     _vizColor2 = {r: 160, g: 160, b: 160};
                 } else {
-                    // Blend dominant (80%) with overall average (20%) for a subtle mix
-                    var blendR = domR * 0.8 + avgAllR * 0.2;
-                    var blendG = domG * 0.8 + avgAllG * 0.2;
-                    var blendB = domB * 0.8 + avgAllB * 0.2;
+                    // Blend dominant (70%) with overall average (30%) for a smooth mix with the cover
+                    var blendR = domR * 0.7 + avgAllR * 0.3;
+                    var blendG = domG * 0.7 + avgAllG * 0.3;
+                    var blendB = domB * 0.7 + avgAllB * 0.3;
                     
                     var blendMax = Math.max(blendR, blendG, blendB) || 1;
                     
@@ -2786,8 +2786,9 @@
             }
         } catch(e) {
             console.warn('Could not extract cover color (CORS)', e);
-            _vizColor = {r: 99, g: 102, b: 241};
-            _vizColor2 = {r: 6, g: 182, b: 212};
+            // Default to neutral silver instead of Indigo so it matches all covers safely
+            _vizColor = {r: 230, g: 230, b: 230};
+            _vizColor2 = {r: 160, g: 160, b: 160};
         }
     }
 
@@ -3259,13 +3260,23 @@
                             dstCover.src = srcCover.src;
                         };
                         
-                        dstCover.setAttribute('crossorigin', 'anonymous');
-                        dstCover.src = srcCover.src + joinChar + 'cors_fallback=' + Date.now();
+                        var isBlob = srcCover.src.startsWith('blob:');
+                        if (!isBlob) {
+                            dstCover.setAttribute('crossorigin', 'anonymous');
+                            dstCover.src = srcCover.src + joinChar + 'cors_fallback=' + Date.now();
+                        } else {
+                            dstCover.src = srcCover.src;
+                        }
                     };
-
-                    dstCover.setAttribute('crossorigin', 'anonymous');
-                    // Append cache buster to force browser to fetch with CORS headers
-                    dstCover.src = srcCover.src + (srcCover.src.includes('?') ? '&' : '?') + 'cb=' + Date.now();
+                    
+                    var isBlob = srcCover.src.startsWith('blob:');
+                    if (!isBlob) {
+                        dstCover.setAttribute('crossorigin', 'anonymous');
+                        dstCover.src = srcCover.src + (srcCover.src.includes('?') ? '&' : '?') + 'cb=' + Date.now();
+                    } else {
+                        dstCover.removeAttribute('crossorigin');
+                        dstCover.src = srcCover.src;
+                    }
                 } else if (dstCover.complete && dstCover.naturalWidth > 0) {
                     // Already loaded successfully
                     dstCover.style.display = 'block';

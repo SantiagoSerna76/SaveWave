@@ -2682,88 +2682,79 @@
             var maxBucket = null;
             var maxCount = 0;
             
-            var totalR = 0, totalG = 0, totalB = 0, totalCount = 0;
+            var totalCount = 0;
+            var colorfulCount = 0;
+            var colorR = 0, colorG = 0, colorB = 0;
             
             for (var i = 0; i < data.length; i += step * 4) {
                 if (data[i+3] < 128) continue; 
                 var r = data[i], g = data[i+1], b = data[i+2];
                 var luma = 0.2126 * r + 0.7152 * g + 0.0722 * b;
                 
-                // Ignore pure blacks and whites
-                if (luma < 20 || luma > 240) continue;
+                // Ignore pure blacks and whites to not skew total pixel count
+                if (luma < 15 || luma > 245) continue;
                 
-                totalR += r; totalG += g; totalB += b; totalCount++;
-                
-                // Bucket into 4x4x4 (64 buckets total)
-                var rB = Math.floor(r / 64);
-                var gB = Math.floor(g / 64);
-                var bB = Math.floor(b / 64);
-                var key = rB + ',' + gB + ',' + bB;
-                
-                if (!buckets[key]) buckets[key] = {r:0, g:0, b:0, count:0, rawCount:0};
+                totalCount++;
                 
                 var cMax = Math.max(r, g, b);
                 var cMin = Math.min(r, g, b);
                 var sat = (cMax === 0) ? 0 : (cMax - cMin) / cMax;
-                // Use a gentle saturation curve so grayscale pixels aren't completely ignored
-                var weight = 1 + (sat * 2); 
                 
-                buckets[key].r += r;
-                buckets[key].g += g;
-                buckets[key].b += b;
-                buckets[key].count += weight;
-                buckets[key].rawCount++;
-                
-                if (buckets[key].count > maxCount) {
-                    maxCount = buckets[key].count;
-                    maxBucket = buckets[key];
+                // If the pixel is distinctly colorful
+                if (sat > 0.15) {
+                    colorfulCount++;
+                    colorR += r; colorG += g; colorB += b;
+                    
+                    var rB = Math.floor(r / 64);
+                    var gB = Math.floor(g / 64);
+                    var bB = Math.floor(b / 64);
+                    var key = rB + ',' + gB + ',' + bB;
+                    
+                    if (!buckets[key]) buckets[key] = {r:0, g:0, b:0, count:0};
+                    
+                    buckets[key].r += r;
+                    buckets[key].g += g;
+                    buckets[key].b += b;
+                    buckets[key].count++;
+                    
+                    if (buckets[key].count > maxCount) {
+                        maxCount = buckets[key].count;
+                        maxBucket = buckets[key];
+                    }
                 }
             }
             
-            if (totalCount > 0) {
-                var avgAllR = totalR / totalCount;
-                var avgAllG = totalG / totalCount;
-                var avgAllB = totalB / totalCount;
+            // If less than 4% of the valid pixels are colorful, it's effectively a B&W image
+            if (totalCount === 0 || (colorfulCount / totalCount) < 0.04) {
+                _vizColor = {r: 230, g: 230, b: 230};
+                _vizColor2 = {r: 160, g: 160, b: 160};
+            } else if (maxBucket && maxBucket.count > 0) {
+                var domR = maxBucket.r / maxBucket.count;
+                var domG = maxBucket.g / maxBucket.count;
+                var domB = maxBucket.b / maxBucket.count;
                 
-                var maxAll = Math.max(avgAllR, avgAllG, avgAllB);
-                var minAll = Math.min(avgAllR, avgAllG, avgAllB);
-                var satAll = (maxAll === 0) ? 0 : (maxAll - minAll) / maxAll;
+                var avgColR = colorR / colorfulCount;
+                var avgColG = colorG / colorfulCount;
+                var avgColB = colorB / colorfulCount;
                 
-                var domSat = 0;
-                var domR = avgAllR, domG = avgAllG, domB = avgAllB;
+                // Blend dominant colorful bucket (75%) with average of ALL colorful pixels (25%)
+                var blendR = domR * 0.75 + avgColR * 0.25;
+                var blendG = domG * 0.75 + avgColG * 0.25;
+                var blendB = domB * 0.75 + avgColB * 0.25;
                 
-                if (maxBucket && maxBucket.rawCount > 0) {
-                    domR = maxBucket.r / maxBucket.rawCount;
-                    domG = maxBucket.g / maxBucket.rawCount;
-                    domB = maxBucket.b / maxBucket.rawCount;
-                    var maxDom = Math.max(domR, domG, domB);
-                    var minDom = Math.min(domR, domG, domB);
-                    domSat = (maxDom === 0) ? 0 : (maxDom - minDom) / maxDom;
-                }
-
-                if (domSat < 0.12 && satAll < 0.12) {
-                    // Truly grayscale
-                    _vizColor = {r: 230, g: 230, b: 230};
-                    _vizColor2 = {r: 160, g: 160, b: 160};
-                } else {
-                    // Blend dominant (70%) with overall average (30%) for a smooth mix with the cover
-                    var blendR = domR * 0.7 + avgAllR * 0.3;
-                    var blendG = domG * 0.7 + avgAllG * 0.3;
-                    var blendB = domB * 0.7 + avgAllB * 0.3;
-                    
-                    var blendMax = Math.max(blendR, blendG, blendB) || 1;
-                    
-                    // Normalize brightness
-                    var scale = 255 / blendMax;
-                    var nr = blendR * scale;
-                    var ng = blendG * scale;
-                    var nb = blendB * scale;
-                    
-                    // Boost saturation slightly
-                    var luma2 = 0.2126 * nr + 0.7152 * ng + 0.0722 * nb;
-                    nr = nr + (nr - luma2) * 0.6;
-                    ng = ng + (ng - luma2) * 0.6;
-                    nb = nb + (nb - luma2) * 0.6;
+                var blendMax = Math.max(blendR, blendG, blendB) || 1;
+                
+                // Normalize brightness
+                var scale = 255 / blendMax;
+                var nr = blendR * scale;
+                var ng = blendG * scale;
+                var nb = blendB * scale;
+                
+                // Boost saturation slightly
+                var luma2 = 0.2126 * nr + 0.7152 * ng + 0.0722 * nb;
+                nr = nr + (nr - luma2) * 0.6;
+                ng = ng + (ng - luma2) * 0.6;
+                nb = nb + (nb - luma2) * 0.6;
                     
                     nr = Math.max(0, Math.min(255, nr));
                     ng = Math.max(0, Math.min(255, ng));

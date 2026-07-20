@@ -3215,7 +3215,7 @@
 
                     dstCover.setAttribute('crossorigin', 'anonymous');
                     // Append cache buster to force browser to fetch with CORS headers
-                    dstCover.src = hqUrl + (hqUrl.includes('?') ? '&' : '?') + 'cb=' + Date.now();
+                    dstCover.src = srcCover.src + (srcCover.src.includes('?') ? '&' : '?') + 'cb=' + Date.now();
                 } else if (dstCover.complete && dstCover.naturalWidth > 0) {
                     // Already loaded successfully
                     dstCover.style.display = 'block';

@@ -2677,19 +2677,49 @@
             var ctx = cvs.getContext('2d');
             ctx.drawImage(imgEl, 0, 0);
             var data = ctx.getImageData(0, 0, cvs.width, cvs.height).data;
-            var r=0, g=0, b=0, count=0;
-            var step = Math.max(1, Math.ceil((cvs.width * cvs.height) / 1000));
+            var step = Math.max(1, Math.ceil((cvs.width * cvs.height) / 2000));
+            var buckets = {};
+            var maxBucket = null;
+            var maxCount = 0;
+            
             for (var i = 0; i < data.length; i += step * 4) {
                 if (data[i+3] < 128) continue; 
-                var luma = 0.2126 * data[i] + 0.7152 * data[i+1] + 0.0722 * data[i+2];
-                if (luma > 20 && luma < 240) {
-                    r += data[i]; g += data[i+1]; b += data[i+2]; count++;
+                var r = data[i], g = data[i+1], b = data[i+2];
+                var luma = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+                
+                // Ignore pure blacks and whites
+                if (luma < 20 || luma > 240) continue;
+                
+                // Bucket into 4x4x4 (64 buckets total)
+                var rB = Math.floor(r / 64);
+                var gB = Math.floor(g / 64);
+                var bB = Math.floor(b / 64);
+                var key = rB + ',' + gB + ',' + bB;
+                
+                if (!buckets[key]) buckets[key] = {r:0, g:0, b:0, count:0, rawCount:0};
+                
+                // Favor vibrant colors over dull ones
+                var cMax = Math.max(r, g, b);
+                var cMin = Math.min(r, g, b);
+                var sat = (cMax === 0) ? 0 : (cMax - cMin) / cMax;
+                var weight = 1 + (sat * 3); // Vibrant colors count up to 4x as much
+                
+                buckets[key].r += r;
+                buckets[key].g += g;
+                buckets[key].b += b;
+                buckets[key].count += weight;
+                buckets[key].rawCount++;
+                
+                if (buckets[key].count > maxCount) {
+                    maxCount = buckets[key].count;
+                    maxBucket = buckets[key];
                 }
             }
-            if (count > 0) {
-                var avgR = r/count;
-                var avgG = g/count;
-                var avgB = b/count;
+            
+            if (maxBucket && maxBucket.rawCount > 0) {
+                var avgR = maxBucket.r / maxBucket.rawCount;
+                var avgG = maxBucket.g / maxBucket.rawCount;
+                var avgB = maxBucket.b / maxBucket.rawCount;
                 
                 var maxC = Math.max(avgR, avgG, avgB);
                 var minC = Math.min(avgR, avgG, avgB);
@@ -2700,20 +2730,17 @@
                     _vizColor = {r: 230, g: 230, b: 230};
                     _vizColor2 = {r: 160, g: 160, b: 160};
                 } else {
-                    // Boost to NEON
-                    if (maxC < 10) { avgR=99; avgG=102; avgB=241; maxC=241; }
-                    
-                    // 1. Maximize brightness
-                    var scale = 255 / maxC;
+                    // Normalize brightness
+                    var scale = 255 / (maxC || 1);
                     var nr = avgR * scale;
                     var ng = avgG * scale;
                     var nb = avgB * scale;
                     
-                    // 2. Maximize saturation
-                    var luma = 0.2126 * nr + 0.7152 * ng + 0.0722 * nb;
-                    nr = nr + (nr - luma) * 0.8;
-                    ng = ng + (ng - luma) * 0.8;
-                    nb = nb + (nb - luma) * 0.8;
+                    // Boost saturation slightly
+                    var luma2 = 0.2126 * nr + 0.7152 * ng + 0.0722 * nb;
+                    nr = nr + (nr - luma2) * 0.7;
+                    ng = ng + (ng - luma2) * 0.7;
+                    nb = nb + (nb - luma2) * 0.7;
                     
                     nr = Math.max(0, Math.min(255, nr));
                     ng = Math.max(0, Math.min(255, ng));

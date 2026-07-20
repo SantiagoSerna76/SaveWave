@@ -2683,8 +2683,7 @@
             var maxCount = 0;
             
             var totalCount = 0;
-            var colorfulCount = 0;
-            var colorR = 0, colorG = 0, colorB = 0;
+            var totalR = 0, totalG = 0, totalB = 0;
             
             for (var i = 0; i < data.length; i += step * 4) {
                 if (data[i+3] < 128) continue; 
@@ -2695,85 +2694,60 @@
                 if (luma < 15 || luma > 245) continue;
                 
                 totalCount++;
+                totalR += r; totalG += g; totalB += b;
                 
-                var cMax = Math.max(r, g, b);
-                var cMin = Math.min(r, g, b);
-                var sat = (cMax === 0) ? 0 : (cMax - cMin) / cMax;
+                var rB = Math.floor(r / 64);
+                var gB = Math.floor(g / 64);
+                var bB = Math.floor(b / 64);
+                var key = rB + ',' + gB + ',' + bB;
                 
-                // If the pixel is distinctly colorful
-                if (sat > 0.15) {
-                    colorfulCount++;
-                    colorR += r; colorG += g; colorB += b;
-                    
-                    var rB = Math.floor(r / 64);
-                    var gB = Math.floor(g / 64);
-                    var bB = Math.floor(b / 64);
-                    var key = rB + ',' + gB + ',' + bB;
-                    
-                    if (!buckets[key]) buckets[key] = {r:0, g:0, b:0, count:0};
-                    
-                    buckets[key].r += r;
-                    buckets[key].g += g;
-                    buckets[key].b += b;
-                    buckets[key].count++;
-                    
-                    if (buckets[key].count > maxCount) {
-                        maxCount = buckets[key].count;
-                        maxBucket = buckets[key];
-                    }
+                if (!buckets[key]) buckets[key] = {r:0, g:0, b:0, count:0};
+                
+                buckets[key].r += r;
+                buckets[key].g += g;
+                buckets[key].b += b;
+                buckets[key].count++; 
+                
+                if (buckets[key].count > maxCount) {
+                    maxCount = buckets[key].count;
+                    maxBucket = buckets[key];
                 }
             }
             
-            // If less than 4% of the valid pixels are colorful, it's effectively a B&W image
-            if (totalCount === 0 || (colorfulCount / totalCount) < 0.04) {
+            if (totalCount === 0) {
                 _vizColor = {r: 230, g: 230, b: 230};
                 _vizColor2 = {r: 160, g: 160, b: 160};
-            } else if (maxBucket && maxBucket.count > 0) {
-                var domR = maxBucket.r / maxBucket.count;
-                var domG = maxBucket.g / maxBucket.count;
-                var domB = maxBucket.b / maxBucket.count;
-                
-                var avgColR = colorR / colorfulCount;
-                var avgColG = colorG / colorfulCount;
-                var avgColB = colorB / colorfulCount;
-                
-                // Blend dominant colorful bucket (75%) with average of ALL colorful pixels (25%)
-                var blendR = domR * 0.75 + avgColR * 0.25;
-                var blendG = domG * 0.75 + avgColG * 0.25;
-                var blendB = domB * 0.75 + avgColB * 0.25;
-                
-                var blendMax = Math.max(blendR, blendG, blendB) || 1;
-                
-                // Normalize brightness
-                var scale = 255 / blendMax;
-                var nr = blendR * scale;
-                var ng = blendG * scale;
-                var nb = blendB * scale;
-                
-                // Boost saturation slightly
-                var luma2 = 0.2126 * nr + 0.7152 * ng + 0.0722 * nb;
-                nr = nr + (nr - luma2) * 0.6;
-                ng = ng + (ng - luma2) * 0.6;
-                nb = nb + (nb - luma2) * 0.6;
-                    
-                    nr = Math.max(0, Math.min(255, nr));
-                    ng = Math.max(0, Math.min(255, ng));
-                    nb = Math.max(0, Math.min(255, nb));
-
-                    _vizColor = {r: Math.round(nr), g: Math.round(ng), b: Math.round(nb)};
-                    
-                    // Secondary color
-                    var secR = Math.min(255, nr + 40);
-                    var secG = Math.min(255, ng + 40);
-                    var secB = Math.min(255, nb + 40);
-                    secR = secR * 0.85 + secG * 0.15;
-                    secG = secG * 0.85 + secB * 0.15;
-                    secB = secB * 0.85 + secR * 0.15;
-                    _vizColor2 = {r: Math.round(secR), g: Math.round(secG), b: Math.round(secB)};
-                }
             } else {
-                _vizColor = {r: 230, g: 230, b: 230};
-                _vizColor2 = {r: 160, g: 160, b: 160};
+                var avgR = totalR / totalCount;
+                var avgG = totalG / totalCount;
+                var avgB = totalB / totalCount;
+                
+                var domR = avgR, domG = avgG, domB = avgB;
+                if (maxBucket && maxBucket.count > 0) {
+                    domR = maxBucket.r / maxBucket.count;
+                    domG = maxBucket.g / maxBucket.count;
+                    domB = maxBucket.b / maxBucket.count;
+                }
+                
+                var blendR = domR * 0.5 + avgR * 0.5;
+                var blendG = domG * 0.5 + avgG * 0.5;
+                var blendB = domB * 0.5 + avgB * 0.5;
+                
+                var blendMax = Math.max(blendR, blendG, blendB);
+                if (blendMax < 1) blendMax = 1;
+                
+                var scale = Math.max(1, 230 / blendMax);
+                
+                var finalR = Math.min(255, blendR * scale);
+                var finalG = Math.min(255, blendG * scale);
+                var finalB = Math.min(255, blendB * scale);
+                
+                _vizColor = {r: Math.round(finalR), g: Math.round(finalG), b: Math.round(finalB)};
+                
+                var secR = Math.max(0, finalR - 50);
+                var secG = Math.max(0, finalG - 50);
+                var secB = Math.max(0, finalB - 50);
+                _vizColor2 = {r: Math.round(secR), g: Math.round(secG), b: Math.round(secB)};
             }
         } catch(e) {
             console.warn('Could not extract cover color (CORS)', e);

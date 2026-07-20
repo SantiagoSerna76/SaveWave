@@ -675,5 +675,217 @@
     });
     </script>
     {% block extra_scripts %}{% endblock %}
+
+    <script>
+    // ========== SPA NAVIGATION INTERCEPTOR ==========
+    // When audio is playing on the playlists page, intercept nav links
+    // so we overlay new page content without destroying the audio player.
+    (function() {
+        window._savewave_audio_playing = false;
+        var overlayDiv = null;
+        var playlistsPath = '{{ url_for("playlists_view") }}';
+        var hiddenElements = []; // Elements we hid from the playlists page
+
+        function isInternalLink(a) {
+            if (!a.href) return false;
+            if (a.target === '_blank') return false;
+            if (a.hasAttribute('download')) return false;
+            try {
+                var url = new URL(a.href);
+                if (url.origin !== window.location.origin) return false;
+                var path = url.pathname;
+                if (path.indexOf('/login') === 0 || path.indexOf('/logout') === 0 || 
+                    path.indexOf('/register') === 0 || path.indexOf('/dashboard') === 0 ||
+                    path.indexOf('/auth') === 0 || path.indexOf('/api/') === 0 ||
+                    path.indexOf('/admin') === 0) return false;
+                return true;
+            } catch(e) { return false; }
+        }
+
+        function hidePlaylistContent() {
+            // Hide everything except: navbar, sticky-player, mobile full player, audio element, modals, and our overlay
+            var body = document.body;
+            for (var i = 0; i < body.children.length; i++) {
+                var el = body.children[i];
+                if (!el.tagName) continue;
+                var tag = el.tagName.toLowerCase();
+                // Keep: nav, our overlay, scripts, the sticky player, mobile player, audio, modals
+                if (tag === 'nav') continue;
+                if (tag === 'script') continue;
+                if (el.id === 'spaOverlay') continue;
+                if (el.id === 'stickyPlayer') continue;
+                if (el.id === 'mobileFullPlayer') continue;
+                if (el.id === 'audioPlayer') continue;
+                if (el.classList && el.classList.contains('modal')) continue;
+                if (el.dataset && el.dataset.swSafe === 'true') continue;
+                // Hide this element
+                if (el.style.display !== 'none') {
+                    el._spaOriginalDisplay = el.style.display;
+                    el.style.display = 'none';
+                    hiddenElements.push(el);
+                }
+            }
+        }
+
+        function showPlaylistContent() {
+            // Restore all hidden elements
+            hiddenElements.forEach(function(el) {
+                el.style.display = el._spaOriginalDisplay || '';
+                delete el._spaOriginalDisplay;
+            });
+            hiddenElements = [];
+            // Remove overlay
+            if (overlayDiv) {
+                overlayDiv.remove();
+                overlayDiv = null;
+            }
+        }
+
+        async function spaNavigate(url, pushState) {
+            try {
+                var targetPath = new URL(url, window.location.origin).pathname;
+
+                // If going back to playlists, just restore original content
+                if (targetPath === playlistsPath) {
+                    showPlaylistContent();
+                    if (pushState !== false) {
+                        history.pushState({ spa: true }, 'SaveWave - Mis Playlists', url);
+                    }
+                    document.title = 'SaveWave - Mis Playlists';
+                    window.scrollTo(0, 0);
+                    updateActiveNav(url);
+                    return;
+                }
+
+                var resp = await fetch(url, { headers: { 'X-SPA-Request': '1' } });
+                if (!resp.ok) { window.location.href = url; return; }
+                var html = await resp.text();
+
+                var parser = new DOMParser();
+                var doc = parser.parseFromString(html, 'text/html');
+
+                // Get the content we want to display
+                var newMain = doc.querySelector('main');
+                var newFooter = doc.querySelector('footer');
+                if (!newMain) { window.location.href = url; return; }
+
+                // Also grab any extra styles from the new page
+                var newStyles = doc.querySelectorAll('style');
+
+                // Hide the playlists page content
+                hidePlaylistContent();
+
+                // Create or reuse the overlay div
+                if (!overlayDiv) {
+                    overlayDiv = document.createElement('div');
+                    overlayDiv.id = 'spaOverlay';
+                    overlayDiv.style.cssText = 'min-height: calc(100vh - 60px);';
+                    // Insert after the navbar
+                    var navbar = document.querySelector('nav');
+                    if (navbar && navbar.nextSibling) {
+                        navbar.parentNode.insertBefore(overlayDiv, navbar.nextSibling);
+                    } else {
+                        document.body.appendChild(overlayDiv);
+                    }
+                }
+
+                // Build overlay content: main + footer
+                overlayDiv.innerHTML = '';
+                
+                // Add styles from the new page
+                newStyles.forEach(function(s) {
+                    var clone = document.createElement('style');
+                    clone.textContent = s.textContent;
+                    overlayDiv.appendChild(clone);
+                });
+
+                // Add main content
+                var mainClone = document.createElement('main');
+                mainClone.className = newMain.className || 'container py-4';
+                mainClone.innerHTML = newMain.innerHTML;
+                overlayDiv.appendChild(mainClone);
+
+                // Add footer
+                if (newFooter) {
+                    var footerClone = document.createElement('footer');
+                    footerClone.className = newFooter.className;
+                    footerClone.setAttribute('style', newFooter.getAttribute('style') || '');
+                    footerClone.innerHTML = newFooter.innerHTML;
+                    overlayDiv.appendChild(footerClone);
+                }
+
+                // Update title
+                var newTitle = doc.querySelector('title');
+                if (newTitle) document.title = newTitle.textContent;
+
+                // Push state
+                if (pushState !== false) {
+                    history.pushState({ spa: true }, document.title, url);
+                }
+
+                window.scrollTo(0, 0);
+                updateActiveNav(url);
+
+                // Execute inline scripts
+                var scripts = mainClone.querySelectorAll('script');
+                scripts.forEach(function(oldScript) {
+                    var newScript = document.createElement('script');
+                    if (oldScript.src) {
+                        newScript.src = oldScript.src;
+                    } else {
+                        newScript.textContent = oldScript.textContent;
+                    }
+                    oldScript.parentNode.replaceChild(newScript, oldScript);
+                });
+
+            } catch(e) {
+                console.warn('[SaveWave SPA] Navigation failed:', e);
+                window.location.href = url;
+            }
+        }
+
+        function updateActiveNav(url) {
+            try {
+                var path = new URL(url, window.location.origin).pathname;
+                document.querySelectorAll('.nav-icon-btn').forEach(function(btn) {
+                    btn.style.background = '';
+                    try {
+                        var btnPath = new URL(btn.href, window.location.origin).pathname;
+                        if (btnPath === path) {
+                            btn.style.background = 'rgba(255,255,255,0.1)';
+                        }
+                    } catch(e) {}
+                });
+            } catch(e) {}
+        }
+
+        // Intercept clicks on all internal links
+        document.addEventListener('click', function(e) {
+            if (!window._savewave_audio_playing) return;
+
+            var a = e.target.closest('a');
+            if (!a) return;
+            if (!isInternalLink(a)) return;
+            if (e.ctrlKey || e.metaKey || e.shiftKey) return;
+
+            var targetPath = new URL(a.href, window.location.origin).pathname;
+            // If on the overlay and clicking playlists, restore
+            // If on playlists and clicking another page, overlay
+            // If same path, do nothing
+            var currentPath = window.location.pathname;
+            if (targetPath === currentPath && !overlayDiv) return;
+
+            e.preventDefault();
+            e.stopPropagation();
+            spaNavigate(a.href, true);
+        }, true);
+
+        // Handle back/forward browser buttons
+        window.addEventListener('popstate', function(e) {
+            if (!window._savewave_audio_playing) return;
+            spaNavigate(window.location.href, false);
+        });
+    })();
+    </script>
 </body>
 </html>

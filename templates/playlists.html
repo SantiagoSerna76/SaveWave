@@ -2680,67 +2680,69 @@
             var step = Math.max(1, Math.ceil((cvs.width * cvs.height) / 2000));
             var buckets = {};
             var maxBucket = null;
-            var maxCount = 0;
+            var maxWeight = 0;
             
             var totalCount = 0;
-            var totalR = 0, totalG = 0, totalB = 0;
+            var colorfulCount = 0;
             
             for (var i = 0; i < data.length; i += step * 4) {
                 if (data[i+3] < 128) continue; 
                 var r = data[i], g = data[i+1], b = data[i+2];
                 var luma = 0.2126 * r + 0.7152 * g + 0.0722 * b;
                 
-                // Ignore pure blacks and whites to not skew total pixel count
+                // Ignore pitch black and pure white
                 if (luma < 15 || luma > 245) continue;
                 
                 totalCount++;
-                totalR += r; totalG += g; totalB += b;
                 
-                var rB = Math.floor(r / 64);
-                var gB = Math.floor(g / 64);
-                var bB = Math.floor(b / 64);
-                var key = rB + ',' + gB + ',' + bB;
+                var cMax = Math.max(r, g, b);
+                var cMin = Math.min(r, g, b);
+                var sat = (cMax === 0) ? 0 : (cMax - cMin) / cMax;
                 
-                if (!buckets[key]) buckets[key] = {r:0, g:0, b:0, count:0};
-                
-                buckets[key].r += r;
-                buckets[key].g += g;
-                buckets[key].b += b;
-                buckets[key].count++; 
-                
-                if (buckets[key].count > maxCount) {
-                    maxCount = buckets[key].count;
-                    maxBucket = buckets[key];
+                if (sat > 0.1) {
+                    colorfulCount++;
+                    
+                    var rB = Math.floor(r / 32); // 8x8x8 buckets (512 total) -> distinct colors are perfectly isolated
+                    var gB = Math.floor(g / 32);
+                    var bB = Math.floor(b / 32);
+                    var key = rB + ',' + gB + ',' + bB;
+                    
+                    if (!buckets[key]) buckets[key] = {r:0, g:0, b:0, count:0, weight:0};
+                    
+                    buckets[key].r += r;
+                    buckets[key].g += g;
+                    buckets[key].b += b;
+                    buckets[key].count++;
+                    
+                    // The human eye is drawn to bright, highly saturated colors (Yellow > Purple)
+                    var eyeWeight = sat * luma; 
+                    buckets[key].weight += eyeWeight;
+                    
+                    if (buckets[key].weight > maxWeight) {
+                        maxWeight = buckets[key].weight;
+                        maxBucket = buckets[key];
+                    }
                 }
             }
             
-            if (totalCount === 0) {
+            if (totalCount === 0 || (colorfulCount / totalCount) < 0.05) {
+                // Image is mathematically grayscale or almost purely black/white
                 _vizColor = {r: 230, g: 230, b: 230};
                 _vizColor2 = {r: 160, g: 160, b: 160};
-            } else {
-                var avgR = totalR / totalCount;
-                var avgG = totalG / totalCount;
-                var avgB = totalB / totalCount;
+            } else if (maxBucket) {
+                // We have a clear, isolated, distinct colorful winner!
+                var finalR = maxBucket.r / maxBucket.count;
+                var finalG = maxBucket.g / maxBucket.count;
+                var finalB = maxBucket.b / maxBucket.count;
                 
-                var domR = avgR, domG = avgG, domB = avgB;
-                if (maxBucket && maxBucket.count > 0) {
-                    domR = maxBucket.r / maxBucket.count;
-                    domG = maxBucket.g / maxBucket.count;
-                    domB = maxBucket.b / maxBucket.count;
-                }
-                
-                var blendR = domR * 0.5 + avgR * 0.5;
-                var blendG = domG * 0.5 + avgG * 0.5;
-                var blendB = domB * 0.5 + avgB * 0.5;
-                
-                var blendMax = Math.max(blendR, blendG, blendB);
+                // Scale brightness so it glows beautifully
+                var blendMax = Math.max(finalR, finalG, finalB);
                 if (blendMax < 1) blendMax = 1;
-                
                 var scale = Math.max(1, 230 / blendMax);
                 
-                var finalR = Math.min(255, blendR * scale);
-                var finalG = Math.min(255, blendG * scale);
-                var finalB = Math.min(255, blendB * scale);
+                finalR = Math.min(255, finalR * scale);
+                finalG = Math.min(255, finalG * scale);
+                finalB = Math.min(255, finalB * scale);
                 
                 _vizColor = {r: Math.round(finalR), g: Math.round(finalG), b: Math.round(finalB)};
                 
@@ -3213,16 +3215,26 @@
                         };
                         
                         dstCover.onerror = function() {
-                            // Ultimate fallback: Retry without CORS if even hqdefault fails with CORS
-                            console.warn("Cover load failed completely with CORS. Using no-CORS fallback.");
-                            dstCover.removeAttribute('crossorigin');
+                            console.warn("Cover load failed with browser CORS. Bypassing via /api/cover-proxy...");
                             dstCover.onload = function() {
-                                extractCoverColor(dstCover); // Will likely throw SecurityError and default to Indigo
+                                extractCoverColor(dstCover);
                                 dstCover.style.display = 'block';
                                 if (dstFallback) dstFallback.style.display = 'none';
                             };
-                            dstCover.onerror = null;
-                            dstCover.src = srcCover.src;
+                            dstCover.onerror = function() {
+                                // Ultimate fallback: Retry without CORS just to display it
+                                console.warn("Cover load failed completely. Using no-CORS fallback.");
+                                dstCover.removeAttribute('crossorigin');
+                                dstCover.onload = function() {
+                                    extractCoverColor(dstCover); // Will likely throw SecurityError and default to Silver
+                                    dstCover.style.display = 'block';
+                                    if (dstFallback) dstFallback.style.display = 'none';
+                                };
+                                dstCover.onerror = null;
+                                dstCover.src = srcCover.src;
+                            };
+                            dstCover.setAttribute('crossorigin', 'anonymous');
+                            dstCover.src = '/api/cover-proxy?url=' + encodeURIComponent(srcCover.src);
                         };
                         
                         var isBlob = srcCover.src.startsWith('blob:');
@@ -3230,6 +3242,7 @@
                             dstCover.setAttribute('crossorigin', 'anonymous');
                             dstCover.src = srcCover.src + joinChar + 'cors_fallback=' + Date.now();
                         } else {
+                            dstCover.removeAttribute('crossorigin');
                             dstCover.src = srcCover.src;
                         }
                     };

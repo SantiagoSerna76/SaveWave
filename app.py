@@ -859,6 +859,23 @@ def api_stream_proxy():
     except Exception as e:
         return jsonify({"success": False, "error": f"Error: {str(e)}"}), 500
 
+@app.route("/api/cover-proxy", methods=["GET"])
+def api_cover_proxy():
+    url = request.args.get("url", "").strip()
+    if not url:
+        return "Missing URL", 400
+    try:
+        import requests as http_requests
+        resp = http_requests.get(url, timeout=10)
+        headers = {
+            "Content-Type": resp.headers.get("Content-Type", "image/jpeg"),
+            "Access-Control-Allow-Origin": "*",
+            "Cache-Control": "public, max-age=86400"
+        }
+        return resp.content, 200, headers
+    except Exception as e:
+        return str(e), 500
+
 
 @app.route("/api/download-proxy", methods=["POST"])
 @limiter.limit("300 per minute")

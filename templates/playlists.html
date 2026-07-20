@@ -2682,6 +2682,8 @@
             var maxBucket = null;
             var maxCount = 0;
             
+            var totalR = 0, totalG = 0, totalB = 0, totalCount = 0;
+            
             for (var i = 0; i < data.length; i += step * 4) {
                 if (data[i+3] < 128) continue; 
                 var r = data[i], g = data[i+1], b = data[i+2];
@@ -2689,6 +2691,8 @@
                 
                 // Ignore pure blacks and whites
                 if (luma < 20 || luma > 240) continue;
+                
+                totalR += r; totalG += g; totalB += b; totalCount++;
                 
                 // Bucket into 4x4x4 (64 buckets total)
                 var rB = Math.floor(r / 64);
@@ -2698,11 +2702,11 @@
                 
                 if (!buckets[key]) buckets[key] = {r:0, g:0, b:0, count:0, rawCount:0};
                 
-                // Favor vibrant colors over dull ones
                 var cMax = Math.max(r, g, b);
                 var cMin = Math.min(r, g, b);
                 var sat = (cMax === 0) ? 0 : (cMax - cMin) / cMax;
-                var weight = 1 + (sat * 3); // Vibrant colors count up to 4x as much
+                // Favor vibrant colors geometrically
+                var weight = sat * sat; 
                 
                 buckets[key].r += r;
                 buckets[key].g += g;
@@ -2716,31 +2720,50 @@
                 }
             }
             
-            if (maxBucket && maxBucket.rawCount > 0) {
-                var avgR = maxBucket.r / maxBucket.rawCount;
-                var avgG = maxBucket.g / maxBucket.rawCount;
-                var avgB = maxBucket.b / maxBucket.rawCount;
+            if (totalCount > 0) {
+                var avgAllR = totalR / totalCount;
+                var avgAllG = totalG / totalCount;
+                var avgAllB = totalB / totalCount;
                 
-                var maxC = Math.max(avgR, avgG, avgB);
-                var minC = Math.min(avgR, avgG, avgB);
-                var saturation = (maxC === 0) ? 0 : (maxC - minC) / maxC;
+                var maxAll = Math.max(avgAllR, avgAllG, avgAllB);
+                var minAll = Math.min(avgAllR, avgAllG, avgAllB);
+                var satAll = (maxAll === 0) ? 0 : (maxAll - minAll) / maxAll;
+                
+                var domSat = 0;
+                var domR = avgAllR, domG = avgAllG, domB = avgAllB;
+                
+                if (maxBucket && maxBucket.rawCount > 0) {
+                    domR = maxBucket.r / maxBucket.rawCount;
+                    domG = maxBucket.g / maxBucket.rawCount;
+                    domB = maxBucket.b / maxBucket.rawCount;
+                    var maxDom = Math.max(domR, domG, domB);
+                    var minDom = Math.min(domR, domG, domB);
+                    domSat = (maxDom === 0) ? 0 : (maxDom - minDom) / maxDom;
+                }
 
-                if (saturation < 0.15) {
-                    // Mostly grayscale: use sleek silver/white vibes
+                if (domSat < 0.12 && satAll < 0.12) {
+                    // Truly grayscale
                     _vizColor = {r: 230, g: 230, b: 230};
                     _vizColor2 = {r: 160, g: 160, b: 160};
                 } else {
+                    // Blend dominant (80%) with overall average (20%) for a subtle mix
+                    var blendR = domR * 0.8 + avgAllR * 0.2;
+                    var blendG = domG * 0.8 + avgAllG * 0.2;
+                    var blendB = domB * 0.8 + avgAllB * 0.2;
+                    
+                    var blendMax = Math.max(blendR, blendG, blendB) || 1;
+                    
                     // Normalize brightness
-                    var scale = 255 / (maxC || 1);
-                    var nr = avgR * scale;
-                    var ng = avgG * scale;
-                    var nb = avgB * scale;
+                    var scale = 255 / blendMax;
+                    var nr = blendR * scale;
+                    var ng = blendG * scale;
+                    var nb = blendB * scale;
                     
                     // Boost saturation slightly
                     var luma2 = 0.2126 * nr + 0.7152 * ng + 0.0722 * nb;
-                    nr = nr + (nr - luma2) * 0.7;
-                    ng = ng + (ng - luma2) * 0.7;
-                    nb = nb + (nb - luma2) * 0.7;
+                    nr = nr + (nr - luma2) * 0.6;
+                    ng = ng + (ng - luma2) * 0.6;
+                    nb = nb + (nb - luma2) * 0.6;
                     
                     nr = Math.max(0, Math.min(255, nr));
                     ng = Math.max(0, Math.min(255, ng));

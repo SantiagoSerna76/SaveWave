@@ -3187,23 +3187,35 @@
                     };
                     
                     dstCover.onerror = function() {
-                        console.warn("Cover load failed with CORS. Retrying without CORS...");
-                        dstCover.removeAttribute('crossorigin');
-                        dstCover.onerror = function() {
-                            // If it still fails, leave fallback visible
-                            console.warn("Cover load failed completely.");
-                        };
+                        console.warn("Cover load failed (likely 404 maxresdefault). Retrying with hqdefault...");
+                        
+                        // First fallback: Retry with the original track.cover_url (usually hqdefault) WITH CORS
                         dstCover.onload = function() {
-                            extractCoverColor(dstCover); // Might throw SecurityError which defaults to Indigo correctly
+                            extractCoverColor(dstCover);
                             dstCover.style.display = 'block';
                             if (dstFallback) dstFallback.style.display = 'none';
                         };
-                        dstCover.src = srcCover.src; // Try again without cachebuster and without CORS
+                        
+                        dstCover.onerror = function() {
+                            // Ultimate fallback: Retry without CORS if even hqdefault fails with CORS
+                            console.warn("Cover load failed completely with CORS. Using no-CORS fallback.");
+                            dstCover.removeAttribute('crossorigin');
+                            dstCover.onload = function() {
+                                extractCoverColor(dstCover); // Will likely throw SecurityError and default to Indigo
+                                dstCover.style.display = 'block';
+                                if (dstFallback) dstFallback.style.display = 'none';
+                            };
+                            dstCover.onerror = null;
+                            dstCover.src = srcCover.src;
+                        };
+                        
+                        dstCover.setAttribute('crossorigin', 'anonymous');
+                        dstCover.src = srcCover.src + joinChar + 'cors_fallback=' + Date.now();
                     };
 
                     dstCover.setAttribute('crossorigin', 'anonymous');
                     // Append cache buster to force browser to fetch with CORS headers
-                    dstCover.src = srcCover.src + joinChar + 'cors_bypass=' + Date.now();
+                    dstCover.src = hqUrl + (hqUrl.includes('?') ? '&' : '?') + 'cb=' + Date.now();
                 } else if (dstCover.complete && dstCover.naturalWidth > 0) {
                     // Already loaded successfully
                     dstCover.style.display = 'block';

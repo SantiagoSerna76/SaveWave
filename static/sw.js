@@ -1,4 +1,4 @@
-const CACHE_NAME = 'savewave-v16';
+const CACHE_NAME = 'savewave-v17';
 const OFFLINE_AUDIO_CACHE = 'savewave-offline';
 const ASSETS_TO_CACHE = [
     '/',
@@ -63,10 +63,20 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // ---------- HTML pages: ALWAYS network first (no cache) ----------
+    // ---------- HTML pages: Network first, update cache, fallback to cache ----------
     const isHTML = event.request.headers.get('Accept')?.includes('text/html');
     if (isHTML) {
-        event.respondWith(fetch(event.request).catch(() => caches.match(event.request)));
+        event.respondWith(
+            fetch(event.request).then(response => {
+                if (response && response.status === 200) {
+                    const responseClone = response.clone();
+                    caches.open(CACHE_NAME).then(cache => {
+                        cache.put(event.request, responseClone);
+                    });
+                }
+                return response;
+            }).catch(() => caches.match(event.request))
+        );
         return;
     }
 

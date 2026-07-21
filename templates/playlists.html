@@ -1922,6 +1922,13 @@
             const data = await res.json();
 
             if (data.success) {
+                // Save to localStorage for offline access
+                try {
+                    localStorage.setItem('savewave_playlist_' + id, JSON.stringify(data.playlist));
+                } catch (e) {
+                    console.warn('Could not save playlist to localStorage', e);
+                }
+                
                 renderPlaylist(data.playlist);
                 currentPlaylistItems = data.playlist.items;
                 generateShuffleOrder();
@@ -1931,20 +1938,39 @@
             }
         } catch (e) {
             console.error(e);
-            // Show friendly offline message instead of alert
-            const main = document.getElementById('playlistMain');
-            main.innerHTML = `
-                <div class="empty-state">
-                    <div class="empty-state-icon" style="background: rgba(239,68,68,0.1);">
-                        <i class="fas fa-wifi" style="color: #ef4444;"></i>
+            // Try to load from localStorage
+            let cachedPlaylist = null;
+            try {
+                const cachedData = localStorage.getItem('savewave_playlist_' + id);
+                if (cachedData) {
+                    cachedPlaylist = JSON.parse(cachedData);
+                }
+            } catch(err) {}
+
+            if (cachedPlaylist) {
+                renderPlaylist(cachedPlaylist);
+                currentPlaylistItems = cachedPlaylist.items;
+                generateShuffleOrder();
+                closeSidebarOnMobile();
+                if (typeof showToast === 'function') {
+                    showToast('<i class="fas fa-wifi-slash"></i> Mostrando versión offline');
+                }
+            } else {
+                // Show friendly offline message instead of alert
+                const main = document.getElementById('playlistMain');
+                main.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon" style="background: rgba(239,68,68,0.1);">
+                            <i class="fas fa-wifi" style="color: #ef4444;"></i>
+                        </div>
+                        <h2>Sin conexión</h2>
+                        <p>No se puede cargar esta playlist porque no hay conexión a internet y no se ha guardado localmente aún. Abre la app cuando tengas conexión para que se guarden los datos, luego podrás usarla offline.</p>
+                        <button class="btn-action mt-3" onclick="loadPlaylist(${id})">
+                            <i class="fas fa-redo"></i> Reintentar
+                        </button>
                     </div>
-                    <h2>Sin conexión</h2>
-                    <p>No se puede cargar esta playlist porque no hay conexión a internet. Abre la app cuando tengas conexión para que se guarden los datos, luego podrás usarla offline.</p>
-                    <button class="btn-action mt-3" onclick="loadPlaylist(${id})">
-                        <i class="fas fa-redo"></i> Reintentar
-                    </button>
-                </div>
-            `;
+                `;
+            }
         }
     }
 

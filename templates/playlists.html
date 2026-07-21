@@ -2777,8 +2777,28 @@
                 var secB = Math.max(0, finalB - 50);
                 _vizColor2 = {r: Math.round(secR), g: Math.round(secG), b: Math.round(secB)};
             }
+            // Save computed colors to localStorage for offline use
+            try {
+                if (imgEl.dataset.currentSrc) {
+                    localStorage.setItem('savewave_viz_' + imgEl.dataset.currentSrc, JSON.stringify({c1: _vizColor, c2: _vizColor2}));
+                }
+            } catch (err) {}
+
         } catch(e) {
             console.warn('Could not extract cover color (CORS)', e);
+            // Try to load from localStorage first (for offline playback)
+            try {
+                if (imgEl.dataset.currentSrc) {
+                    var cached = localStorage.getItem('savewave_viz_' + imgEl.dataset.currentSrc);
+                    if (cached) {
+                        var parsed = JSON.parse(cached);
+                        _vizColor = parsed.c1;
+                        _vizColor2 = parsed.c2;
+                        return;
+                    }
+                }
+            } catch (err) {}
+
             // Default to neutral silver instead of Indigo so it matches all covers safely
             _vizColor = {r: 230, g: 230, b: 230};
             _vizColor2 = {r: 160, g: 160, b: 160};

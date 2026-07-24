@@ -4148,7 +4148,7 @@
                                         if (imgRes && imgRes.ok) offlineCache.put(thumbCacheKey, imgRes);
                                     }).catch(() => {});
                                 }
-                            }
+                            }).catch(() => {});
                         }
                     } else {
                         console.error(`[Offline] ✗ ${shortTitle}: ${lastError}`);

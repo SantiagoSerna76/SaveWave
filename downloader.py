@@ -191,10 +191,10 @@ def _get_ydl_opts(extra_opts: dict = None, url: str = None) -> dict:
             break
 
     if platform == "youtube":
-        # android_vr NO requiere ejecución de JavaScript (Deno) y extrae las URLs en < 0.15s
+        # Usar clientes android e ios para evitar 403 Forbidden y extraer audio rápidamente (~0.3s)
         opts['extractor_args'] = {
             'youtube': {
-                'player_client': ['android_vr', 'mweb', 'web']
+                'player_client': ['android', 'ios', 'mweb', 'web']
             }
         }
 

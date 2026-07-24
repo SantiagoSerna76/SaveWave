@@ -915,9 +915,16 @@ def api_download_proxy():
             'noplaylist': True,
         }, url)
 
-        with yt_dlp.YoutubeDL(opts) as ydl:
-            info = ydl.extract_info(url, download=True)
-            actual_file = ydl.prepare_filename(info)
+        try:
+            with yt_dlp.YoutubeDL(opts) as ydl:
+                info = ydl.extract_info(url, download=True)
+                actual_file = ydl.prepare_filename(info)
+        except Exception as dl_err:
+            print(f"[download-proxy] Intento 1 falló ({dl_err}), reintentando con formato 'best'...")
+            opts['format'] = 'best/bestaudio'
+            with yt_dlp.YoutubeDL(opts) as ydl:
+                info = ydl.extract_info(url, download=True)
+                actual_file = ydl.prepare_filename(info)
 
         if not actual_file or not os.path.exists(actual_file):
             print(f"[download-proxy] ✗ Archivo no encontrado tras descarga: {actual_file}")

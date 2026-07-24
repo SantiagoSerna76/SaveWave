@@ -954,7 +954,7 @@ def api_download_proxy():
 
     try:
         opts = _get_ydl_opts({
-            'format': 'bestaudio[ext=m4a]/bestaudio/ba/b',
+            'format': 'worstaudio[ext=m4a]/worstaudio/bestaudio/ba/b',
             'outtmpl': temp_base + '.%(ext)s',
             'quiet': True,
             'no_warnings': True,

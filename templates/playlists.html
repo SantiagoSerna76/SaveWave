@@ -4085,8 +4085,8 @@
         try {
             const offlineCache = await caches.open(OFFLINE_CACHE_NAME);
             
-            // Limitar concurrencia a 2 para evitar saturar el CPU del VPS (deno gasta mucho CPU)
-            const limit = 2;
+            // Limitar concurrencia a 3 para equilibrio entre velocidad y uso de recursos
+            const limit = 3;
             const items = [...currentPlaylistItems];
             
             let wakeLock = null;
@@ -4139,21 +4139,15 @@
                         await offlineCache.put(cacheKey, audioRes.clone());
                         console.log(`[Offline] ✓ Audio guardado: ${shortTitle}`);
 
-                        // Descargar y cachear carátula/thumbnail
+                        // Descargar carátula en segundo plano SIN bloquear la cola de descargas
                         if (track.thumbnail) {
-                            try {
-                                const thumbCacheKey = '/offline-cache/thumb/?url=' + encodeURIComponent(track.thumbnail);
-                                const existingThumb = await offlineCache.match(thumbCacheKey);
+                            const thumbCacheKey = '/offline-cache/thumb/?url=' + encodeURIComponent(track.thumbnail);
+                            offlineCache.match(thumbCacheKey).then(existingThumb => {
                                 if (!existingThumb) {
-                                    const proxyImgUrl = '/api/image-proxy?url=' + encodeURIComponent(track.thumbnail);
-                                    const imgRes = await fetch(proxyImgUrl);
-                                    if (imgRes && imgRes.ok) {
-                                        await offlineCache.put(thumbCacheKey, imgRes);
-                                        console.log(`[Offline] ✓ Thumbnail guardado: ${shortTitle}`);
-                                    }
+                                    fetch('/api/image-proxy?url=' + encodeURIComponent(track.thumbnail)).then(imgRes => {
+                                        if (imgRes && imgRes.ok) offlineCache.put(thumbCacheKey, imgRes);
+                                    }).catch(() => {});
                                 }
-                            } catch(imgErr) {
-                                console.warn(`[Offline] Warn: no se pudo guardar el thumbnail para ${shortTitle}`, imgErr);
                             }
                         }
                     } else {

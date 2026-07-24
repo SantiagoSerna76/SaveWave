@@ -1941,8 +1941,8 @@
                     console.warn('Could not save playlist to localStorage', e);
                 }
                 
-                renderPlaylist(data.playlist);
                 currentPlaylistItems = data.playlist.items;
+                renderPlaylist(data.playlist);
                 generateShuffleOrder();
                 closeSidebarOnMobile();
             } else {
@@ -1960,8 +1960,8 @@
             } catch(err) {}
 
             if (cachedPlaylist) {
-                renderPlaylist(cachedPlaylist);
                 currentPlaylistItems = cachedPlaylist.items;
+                renderPlaylist(cachedPlaylist);
                 generateShuffleOrder();
                 closeSidebarOnMobile();
                 if (typeof showToast === 'function') {

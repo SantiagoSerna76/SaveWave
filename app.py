@@ -896,6 +896,28 @@ def api_download_proxy():
 
     url = normalize_url(url)
 
+    # Manejar archivos subidos localmente (MP3/MP4 locales)
+    if "/uploads/" in url or url.startswith("/static/"):
+        filename = os.path.basename(url.split("?")[0])
+        upload_folder = app.config.get("UPLOAD_FOLDER", os.path.join(app.root_path, "static", "uploads"))
+        upload_path = os.path.join(upload_folder, filename)
+        if not os.path.exists(upload_path):
+            upload_path = os.path.join(app.root_path, "static", "uploads", filename)
+        
+        if os.path.exists(upload_path):
+            try:
+                with open(upload_path, "rb") as f:
+                    file_data = f.read()
+                ext = os.path.splitext(filename)[1].lower()
+                mimetype = "audio/mpeg" if ext == ".mp3" else ("video/mp4" if ext == ".mp4" else "audio/mp4")
+                print(f"[download-proxy] ✓ Archivo local servido: {filename} ({len(file_data)//1024}KB)")
+                return Response(file_data, mimetype=mimetype, headers={
+                    "Content-Disposition": f"attachment; filename={filename}",
+                    "Content-Length": str(len(file_data))
+                })
+            except Exception as local_err:
+                print(f"[download-proxy] Error leyendo archivo local: {local_err}")
+
     import tempfile
     import glob
 

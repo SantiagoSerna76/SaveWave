@@ -929,17 +929,26 @@ def api_download_proxy():
 
     try:
         # Reutilizar _get_ydl_opts() para heredar cookies, ffmpeg, etc.
+        # Usamos formato 18 (mp4 360p) porque YouTube NO bloquea (403) los formatos NO-DASH en IPs de VPS (como DigitalOcean).
+        # Luego usamos ffmpeg para extraer solo el audio (m4a) y que el archivo siga pesando ~1MB.
         opts = _get_ydl_opts({
-            'format': 'worstaudio[ext=m4a]/worstaudio/best',
+            'format': '18/best',
             'outtmpl': temp_base + '.%(ext)s',
             'quiet': True,
             'no_warnings': True,
             'noplaylist': True,
+            'postprocessors': [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'm4a',
+                'preferredquality': '128',
+            }],
         }, url)
 
         with yt_dlp.YoutubeDL(opts) as ydl:
             info = ydl.extract_info(url, download=True)
+            # Después del postprocessor, el archivo será .m4a en lugar de .mp4
             actual_file = ydl.prepare_filename(info)
+            actual_file = os.path.splitext(actual_file)[0] + '.m4a'
 
         if not actual_file or not os.path.exists(actual_file):
             print(f"[download-proxy] ✗ Archivo no encontrado tras descarga: {actual_file}")

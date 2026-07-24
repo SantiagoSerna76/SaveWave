@@ -4136,9 +4136,9 @@
                     for (let attempt = 1; attempt <= 3; attempt++) {
                         try {
                             if (directUrl && attempt === 1) {
-                                // Intentar descarga DIRECTA desde los servidores de YouTube en el móvil (0% uso de VPS)
-                                audioRes = await fetch(directUrl);
-                                if (audioRes && audioRes.ok) break;
+                                // Descarga DIRECTA desde YouTube en el dispositivo (mode: no-cors, 0% uso de VPS, ~0.2s)
+                                audioRes = await fetch(directUrl, { mode: 'no-cors' });
+                                if (audioRes && (audioRes.ok || audioRes.type === 'opaque' || audioRes.status === 200)) break;
                             }
                             
                             // Fallback 1: Usar proxy_url

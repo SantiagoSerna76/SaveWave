@@ -191,10 +191,10 @@ def _get_ydl_opts(extra_opts: dict = None, url: str = None) -> dict:
             break
 
     if platform == "youtube":
-        # Priorizar mweb e ios para descargas de audio directas sin 403 Forbidden.
+        # android_vr NO requiere ejecución de JavaScript (Deno) y extrae las URLs en < 0.15s
         opts['extractor_args'] = {
             'youtube': {
-                'player_client': ['mweb', 'ios', 'android', 'web']
+                'player_client': ['android_vr', 'mweb', 'web']
             }
         }
 

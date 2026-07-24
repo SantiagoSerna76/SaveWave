@@ -964,6 +964,43 @@ def api_download_proxy():
             pass
 
 
+@app.route("/api/image-proxy")
+@limiter.limit("600 per minute")
+def api_image_proxy():
+    """
+    API: Proxy de imágenes para thumbnails y carátulas.
+    Permite a la PWA/ServiceWorker descargar y cachear imágenes de YouTube, Instagram, etc.
+    sin bloqueos de CORS y con cabeceras de caché persistente.
+    """
+    import requests as http_requests
+    import urllib.parse
+
+    image_url = request.args.get("url", "").strip()
+    if not image_url:
+        return jsonify({"success": False, "error": "URL de imagen vacía"}), 400
+
+    try:
+        image_url = urllib.parse.unquote(image_url)
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8"
+        }
+        res = http_requests.get(image_url, headers=headers, timeout=8, stream=True)
+        if res.status_ok if hasattr(res, 'status_ok') else res.status_code == 200:
+            content_type = res.headers.get("Content-Type", "image/jpeg")
+            img_data = res.content
+            return Response(img_data, mimetype=content_type, headers={
+                "Cache-Control": "public, max-age=31536000, immutable",
+                "Content-Length": str(len(img_data)),
+                "Access-Control-Allow-Origin": "*"
+            })
+        else:
+            return jsonify({"success": False, "error": f"HTTP {res.status_code}"}), 502
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+
 @app.route("/api/stream-proxy-get")
 @limiter.limit("300 per minute")
 def api_stream_proxy_get():

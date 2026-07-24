@@ -1,4 +1,4 @@
-const CACHE_NAME = 'savewave-v17';
+const CACHE_NAME = 'savewave-v18';
 const OFFLINE_AUDIO_CACHE = 'savewave-offline';
 const ASSETS_TO_CACHE = [
     '/',
@@ -43,6 +43,12 @@ self.addEventListener('activate', (event) => {
 // ==================== FETCH ====================
 self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
+
+    // ---------- OFFLINE THUMBNAIL CACHE ----------
+    if (url.pathname.startsWith('/offline-cache/thumb/')) {
+        event.respondWith(handleOfflineImage(event.request));
+        return;
+    }
 
     // ---------- OFFLINE AUDIO CACHE (with Range Request support) ----------
     if (url.pathname.startsWith('/offline-cache/')) {
@@ -163,3 +169,46 @@ async function handleStreamRequest(request) {
 
     return fetch(request);
 }
+
+
+// ==================== HELPER: Handle offline thumbnail images ====================
+async function handleOfflineImage(request) {
+    try {
+        const cache = await caches.open(OFFLINE_AUDIO_CACHE);
+        const cachedResponse = await cache.match(request);
+        if (cachedResponse) {
+            return cachedResponse;
+        }
+
+        const reqUrl = new URL(request.url);
+        const targetUrl = reqUrl.searchParams.get('url');
+
+        if (targetUrl) {
+            // Intento 1: Servidor proxy local
+            try {
+                const proxyUrl = '/api/image-proxy?url=' + encodeURIComponent(targetUrl);
+                const proxyRes = await fetch(proxyUrl);
+                if (proxyRes && proxyRes.ok) {
+                    const cloneRes = proxyRes.clone();
+                    cache.put(request, cloneRes).catch(() => {});
+                    return proxyRes;
+                }
+            } catch(e) {}
+
+            // Intento 2: Petición directa a la URL original
+            try {
+                const directRes = await fetch(targetUrl);
+                if (directRes && directRes.ok) {
+                    const cloneRes = directRes.clone();
+                    cache.put(request, cloneRes).catch(() => {});
+                    return directRes;
+                }
+            } catch(e) {}
+        }
+
+        return fetch(request);
+    } catch (err) {
+        return new Response('', { status: 404, statusText: 'Image Not Available Offline' });
+    }
+}
+

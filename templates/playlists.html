@@ -1893,6 +1893,21 @@
     const audioPlayer = document.getElementById('audioPlayer');
     const playPauseBtn = document.getElementById('playPauseBtn');
 
+    // ========== OFFLINE THUMBNAIL HELPER & PERSISTENT STORAGE ==========
+    function getThumbProxyUrl(rawUrl) {
+        if (!rawUrl) return '';
+        if (rawUrl.startsWith('data:') || rawUrl.startsWith('blob:') || rawUrl.startsWith('/offline-cache/')) {
+            return rawUrl;
+        }
+        return '/offline-cache/thumb/?url=' + encodeURIComponent(rawUrl);
+    }
+
+    if (navigator.storage && navigator.storage.persist) {
+        navigator.storage.persist().then(granted => {
+            if (granted) console.log("[SaveWave] Almacenamiento persistente activado.");
+        }).catch(e => console.warn("[SaveWave] Error activando storage.persist:", e));
+    }
+
     // ========== MOBILE SIDEBAR TOGGLE ==========
     function toggleSidebar() {
         const sidebar = document.getElementById('playlistSidebar');
@@ -1977,11 +1992,10 @@
     // ========== RENDER PLAYLIST ==========
     function renderPlaylist(playlist) {
         const main = document.getElementById('playlistMain');
-        const coverImg = playlist.cover_url
-            ? `<img src="${playlist.cover_url}" alt="Cover" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">`
-            : (playlist.items.length > 0 && playlist.items[0].thumbnail
-                ? `<img src="${playlist.items[0].thumbnail}" alt="Cover" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">`
-                : `<i class="fas fa-music"></i>`);
+        const playlistThumb = playlist.cover_url || (playlist.items.length > 0 && playlist.items[0].thumbnail ? playlist.items[0].thumbnail : null);
+        const coverImg = playlistThumb
+            ? `<img src="${getThumbProxyUrl(playlistThumb)}" alt="Cover" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">`
+            : `<i class="fas fa-music"></i>`;
         
         const coverContent = `
             <div style="position:relative; width:100%; height:100%; cursor:pointer;" onclick="document.getElementById('uploadPlaylistCoverInput').click()" onmouseenter="this.querySelector('.cover-overlay').style.opacity='1'" onmouseleave="this.querySelector('.cover-overlay').style.opacity='0'" title="Cambiar portada">
@@ -2007,12 +2021,13 @@
                 const safeThumb = encodeURIComponent(item.thumbnail || '');
                 const safeTitle = item.title.replace(/'/g, "\\'").replace(/"/g, '&quot;');
                 const platformLabel = item.platform === 'audio_local' ? 'Archivo local' : item.platform === 'video_local' ? 'Video local' : item.platform;
+                const thumbSrc = getThumbProxyUrl(item.thumbnail);
                 rows += `
                     <tr class="track-row" ondblclick="playTrack(${index})" onclick="handleTrackTap(event, ${index}, ${playlist.id}, ${item.id}, '${safeUrl}', '${safeThumb}', '${safeTitle}')" id="trackRow${index}">
                         <td class="track-number">${index + 1}</td>
                         <td style="width:100%;">
                             <div style="display:flex; align-items:center; gap:12px; min-width:0;">
-                                <img src="${item.thumbnail || ''}" class="track-thumb" alt="" onerror="this.style.display='none'">
+                                ${thumbSrc ? `<img src="${thumbSrc}" class="track-thumb" alt="" onerror="this.style.display='none'">` : ''}
                                 <div style="min-width:0; flex:1;">
                                     <div style="display:flex; align-items:center; gap:6px; min-width:0; width:100%;">
                                         <span class="track-title" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1; min-width:0; color:var(--text-color); font-weight:500; font-size:0.95rem;">${item.title}</span>
@@ -2346,7 +2361,7 @@
             const coverEl = document.getElementById('playerCover');
             if (coverEl) {
                 if (track.thumbnail) {
-                    coverEl.src = track.thumbnail;
+                    coverEl.src = getThumbProxyUrl(track.thumbnail);
                     coverEl.classList.remove('d-none');
                     coverEl.onerror = function() { this.classList.add('d-none'); };
                 } else {
@@ -3943,10 +3958,25 @@
             
             await offlineCache.put(cacheKey, cacheResponse);
             console.log('[SaveWave] Track auto-cached:', track.title);
+
+            // TAMBIÉN Descargar y guardar la carátula/thumbnail si existe
+            if (track.thumbnail) {
+                try {
+                    const thumbCacheKey = '/offline-cache/thumb/?url=' + encodeURIComponent(track.thumbnail);
+                    const existingThumb = await offlineCache.match(thumbCacheKey);
+                    if (!existingThumb) {
+                        const proxyImgUrl = '/api/image-proxy?url=' + encodeURIComponent(track.thumbnail);
+                        const imgRes = await fetch(proxyImgUrl);
+                        if (imgRes && imgRes.ok) {
+                            await offlineCache.put(thumbCacheKey, imgRes);
+                        }
+                    }
+                } catch(imgErr) {}
+            }
             
             // Show a subtle toast
             if (typeof showToast === 'function') {
-                showToast('<i class="fas fa-check-circle" style="color:#10b981;"></i> Canción guardada para reproducción rápida');
+                showToast('<i class="fas fa-check-circle" style="color:#10b981;"></i> Canción e imagen guardadas para reproducción rápida');
             }
         } catch(e) {
             console.warn('[SaveWave] Auto-cache failed for:', track.title, e);
@@ -4117,7 +4147,25 @@
 
                     if (audioRes && audioRes.ok) {
                         await offlineCache.put(cacheKey, audioRes.clone());
-                        console.log(`[Offline] ✓ ${shortTitle}`);
+                        console.log(`[Offline] ✓ Audio guardado: ${shortTitle}`);
+
+                        // Descargar y cachear carátula/thumbnail
+                        if (track.thumbnail) {
+                            try {
+                                const thumbCacheKey = '/offline-cache/thumb/?url=' + encodeURIComponent(track.thumbnail);
+                                const existingThumb = await offlineCache.match(thumbCacheKey);
+                                if (!existingThumb) {
+                                    const proxyImgUrl = '/api/image-proxy?url=' + encodeURIComponent(track.thumbnail);
+                                    const imgRes = await fetch(proxyImgUrl);
+                                    if (imgRes && imgRes.ok) {
+                                        await offlineCache.put(thumbCacheKey, imgRes);
+                                        console.log(`[Offline] ✓ Thumbnail guardado: ${shortTitle}`);
+                                    }
+                                }
+                            } catch(imgErr) {
+                                console.warn(`[Offline] Warn: no se pudo guardar el thumbnail para ${shortTitle}`, imgErr);
+                            }
+                        }
                     } else {
                         console.error(`[Offline] ✗ ${shortTitle}: ${lastError}`);
                         errors++;

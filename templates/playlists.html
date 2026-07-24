@@ -4116,31 +4116,51 @@
                     let audioRes = null;
                     let lastError = '';
 
-                    // Intentar hasta 3 veces (2 reintentos automáticos con espera progresiva)
+                    // 1. Obtener la URL directa del stream desde el VPS en ~0.05s (0% CPU/RAM)
+                    let directUrl = null;
+                    let proxyUrl = null;
+                    try {
+                        const streamRes = await fetch('/api/stream-proxy', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                            body: 'url=' + encodeURIComponent(track.url)
+                        });
+                        const streamData = await streamRes.json();
+                        if (streamData && streamData.success) {
+                            directUrl = streamData.direct_url;
+                            proxyUrl = streamData.proxy_url;
+                        }
+                    } catch(sErr) {}
+
+                    // 2. Descargar el archivo directamente en el dispositivo del usuario
                     for (let attempt = 1; attempt <= 3; attempt++) {
                         try {
+                            if (directUrl && attempt === 1) {
+                                // Intentar descarga DIRECTA desde los servidores de YouTube en el móvil (0% uso de VPS)
+                                audioRes = await fetch(directUrl);
+                                if (audioRes && audioRes.ok) break;
+                            }
+                            
+                            // Fallback 1: Usar proxy_url
+                            if (proxyUrl && attempt <= 2) {
+                                audioRes = await fetch(proxyUrl);
+                                if (audioRes && audioRes.ok) break;
+                            }
+
+                            // Fallback final: /api/download-proxy
                             audioRes = await fetch('/api/download-proxy', {
                                 method: 'POST',
                                 headers: {'Content-Type': 'application/x-www-form-urlencoded'},
                                 body: 'url=' + encodeURIComponent(track.url)
                             });
 
-                            if (audioRes && audioRes.ok) {
-                                break; // Éxito, salir del loop
-                            } else {
-                                lastError = `HTTP ${audioRes ? audioRes.status : 'null'}`;
-                                console.warn(`[Offline] ${shortTitle}: intento ${attempt} falló (${lastError})`);
-                                if (attempt < 3) {
-                                    await new Promise(r => setTimeout(r, attempt * 2000));
-                                }
-                                audioRes = null;
-                            }
+                            if (audioRes && audioRes.ok) break;
+
+                            lastError = `HTTP ${audioRes ? audioRes.status : 'null'}`;
+                            if (attempt < 3) await new Promise(r => setTimeout(r, 1000));
                         } catch(fetchErr) {
-                            lastError = fetchErr.message || 'Network error';
-                            console.warn(`[Offline] ${shortTitle}: intento ${attempt} excepción: ${lastError}`);
-                            if (attempt < 3) {
-                                await new Promise(r => setTimeout(r, attempt * 2000));
-                            }
+                            lastError = fetchErr.message || 'Error de red';
+                            if (attempt < 3) await new Promise(r => setTimeout(r, 1000));
                             audioRes = null;
                         }
                     }

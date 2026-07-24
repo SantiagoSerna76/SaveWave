@@ -1896,10 +1896,7 @@
     // ========== OFFLINE THUMBNAIL HELPER & PERSISTENT STORAGE ==========
     function getThumbProxyUrl(rawUrl) {
         if (!rawUrl) return '';
-        if (rawUrl.startsWith('data:') || rawUrl.startsWith('blob:') || rawUrl.startsWith('/offline-cache/')) {
-            return rawUrl;
-        }
-        return '/offline-cache/thumb/?url=' + encodeURIComponent(rawUrl);
+        return rawUrl;
     }
 
     if (navigator.storage && navigator.storage.persist) {
@@ -2019,7 +2016,7 @@
             playlist.items.forEach((item, index) => {
                 const safeUrl = encodeURIComponent(item.url);
                 const safeThumb = encodeURIComponent(item.thumbnail || '');
-                const safeTitle = item.title.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                const safeTitle = (item.title || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/[\r\n]+/g, ' ');
                 const platformLabel = item.platform === 'audio_local' ? 'Archivo local' : item.platform === 'video_local' ? 'Video local' : item.platform;
                 const thumbSrc = getThumbProxyUrl(item.thumbnail);
                 rows += `

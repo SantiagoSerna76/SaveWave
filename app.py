@@ -918,61 +918,32 @@ def api_download_proxy():
             except Exception as local_err:
                 print(f"[download-proxy] Error leyendo archivo local: {local_err}")
 
-    import requests as http_requests
-
-    # 1. Intentar flujo ultra-rápido (< 0.5s) usando la URL directa del stream de audio
-    try:
-        res = get_audio_direct_url(url, quality="low")
-        if res.get("success") and res.get("direct_url"):
-            direct_url = res["direct_url"]
-            headers = res.get("http_headers", {})
-            user_agent = session.get("yt_user_agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
-            req_headers = {"User-Agent": user_agent}
-            req_headers.update(headers)
-
-            img_res = http_requests.get(direct_url, headers=req_headers, timeout=8, stream=True)
-            if img_res.status_code == 200:
-                audio_bytes = img_res.content
-                if len(audio_bytes) > 50 * 1024: # > 50KB es un audio válido
-                    ext = res.get("format", "m4a")
-                    mime_map = {".m4a": "audio/mp4", "m4a": "audio/mp4", "webm": "audio/webm", "mp3": "audio/mpeg", "ogg": "audio/ogg"}
-                    mimetype = mime_map.get(ext, "audio/mp4")
-                    print(f"[download-proxy] ✓ Stream directo servido en ~0.3s: {len(audio_bytes)//1024}KB ({ext})")
-                    return Response(audio_bytes, mimetype=mimetype, headers={
-                        "Content-Disposition": f"attachment; filename=audio.{ext}",
-                        "Content-Length": str(len(audio_bytes))
-                    })
-    except Exception as stream_err:
-        print(f"[download-proxy] Info: Stream directo no disponible ({stream_err}), usando yt-dlp fallback...")
-
-    # 2. Fallback: descarga mediante yt-dlp si el stream directo no está disponible
     import tempfile
     import glob
 
+    # Crear archivo temporal SIN extensión.
+    # yt-dlp SIEMPRE añade la extensión del formato al outtmpl automáticamente.
+    # Si ponemos .m4a aquí, yt-dlp escribe a .m4a.m4a y el archivo "desaparece".
     temp_dir = tempfile.mkdtemp(prefix="savewave_dl_")
     temp_base = os.path.join(temp_dir, "audio")
 
     try:
+        # Reutilizar _get_ydl_opts() para heredar cookies, ffmpeg, etc.
         opts = _get_ydl_opts({
-            'format': 'worstaudio[ext=m4a]/worstaudio/bestaudio/ba/b',
+            'format': 'worstaudio[ext=m4a]/worstaudio/best',
             'outtmpl': temp_base + '.%(ext)s',
             'quiet': True,
             'no_warnings': True,
             'noplaylist': True,
         }, url)
 
-        try:
-            with yt_dlp.YoutubeDL(opts) as ydl:
-                info = ydl.extract_info(url, download=True)
-                actual_file = ydl.prepare_filename(info)
-        except Exception as dl_err:
-            print(f"[download-proxy] Intento 1 falló ({dl_err}), reintentando con formato 'best'...")
-            opts['format'] = 'best/bestaudio'
-            with yt_dlp.YoutubeDL(opts) as ydl:
-                info = ydl.extract_info(url, download=True)
-                actual_file = ydl.prepare_filename(info)
+        with yt_dlp.YoutubeDL(opts) as ydl:
+            info = ydl.extract_info(url, download=True)
+            actual_file = ydl.prepare_filename(info)
 
         if not actual_file or not os.path.exists(actual_file):
+            print(f"[download-proxy] ✗ Archivo no encontrado tras descarga: {actual_file}")
+            # Fallback a glob por si acaso
             downloaded_files = glob.glob(os.path.join(temp_dir, "audio*"))
             if not downloaded_files:
                 return jsonify({"success": False, "error": "yt-dlp no generó archivo de audio"}), 502
@@ -980,16 +951,20 @@ def api_download_proxy():
         file_size = os.path.getsize(actual_file)
 
         if file_size == 0:
+            print(f"[download-proxy] ✗ Archivo vacío: {actual_file}")
             return jsonify({"success": False, "error": "Archivo descargado vacío"}), 502
 
+        # Detectar el tipo MIME real según la extensión
         ext = os.path.splitext(actual_file)[1].lower()
         mime_map = {".m4a": "audio/mp4", ".webm": "audio/webm", ".mp3": "audio/mpeg", ".ogg": "audio/ogg"}
         mimetype = mime_map.get(ext, "audio/mp4")
 
+        # Leer a RAM (son ligeros, ~1.5MB) para enviar con Content-Length explícito.
+        # La Cache API de PWA móvil requiere Content-Length para guardar offline correctamente.
         with open(actual_file, "rb") as f:
             file_data = f.read()
 
-        print(f"[download-proxy] ✓ Fallback yt-dlp servido: {actual_file} ({len(file_data)//1024}KB, {ext})")
+        print(f"[download-proxy] ✓ {actual_file} ({len(file_data)//1024}KB, {ext})")
 
         return Response(file_data, mimetype=mimetype, headers={
             "Content-Disposition": f"attachment; filename=audio{ext}",
@@ -1003,6 +978,7 @@ def api_download_proxy():
         return jsonify({"success": False, "error": str(e)}), 500
 
     finally:
+        # Limpiar archivos temporales SIEMPRE, incluso si hubo error
         try:
             import shutil
             shutil.rmtree(temp_dir, ignore_errors=True)

@@ -191,10 +191,12 @@ def _get_ydl_opts(extra_opts: dict = None, url: str = None) -> dict:
             break
 
     if platform == "youtube":
-        # Usar clientes android e ios para evitar 403 Forbidden y extraer audio rápidamente (~0.3s)
+        # Siempre priorizar android_vr para YouTube. 
+        # android_vr NO requiere ejecución de JavaScript (Deno) y evade la protección "Sign in to confirm you're not a bot".
+        # Si android_vr falla, cae en mweb y web.
         opts['extractor_args'] = {
             'youtube': {
-                'player_client': ['android', 'ios', 'mweb', 'web']
+                'player_client': ['android_vr', 'mweb', 'web']
             }
         }
 

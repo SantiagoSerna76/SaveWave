@@ -1896,7 +1896,10 @@
     // ========== OFFLINE THUMBNAIL HELPER & PERSISTENT STORAGE ==========
     function getThumbProxyUrl(rawUrl) {
         if (!rawUrl) return '';
-        return rawUrl;
+        if (rawUrl.startsWith('data:') || rawUrl.startsWith('blob:') || rawUrl.startsWith('/offline-cache/')) {
+            return rawUrl;
+        }
+        return '/offline-cache/thumb/?url=' + encodeURIComponent(rawUrl);
     }
 
     if (navigator.storage && navigator.storage.persist) {

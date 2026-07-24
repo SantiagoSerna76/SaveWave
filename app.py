@@ -976,6 +976,7 @@ def api_download_proxy():
 
 
 @app.route("/api/image-proxy")
+@app.route("/offline-cache/thumb/")
 @limiter.limit("600 per minute")
 def api_image_proxy():
     """

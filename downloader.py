@@ -191,12 +191,10 @@ def _get_ydl_opts(extra_opts: dict = None, url: str = None) -> dict:
             break
 
     if platform == "youtube":
-        # Siempre priorizar android_vr para YouTube. 
-        # android_vr NO requiere ejecución de JavaScript (Deno) y evade la protección "Sign in to confirm you're not a bot".
-        # Si android_vr falla, cae en mweb y web.
+        # Priorizar mweb e ios para descargas de audio directas sin 403 Forbidden.
         opts['extractor_args'] = {
             'youtube': {
-                'player_client': ['android_vr', 'mweb', 'web']
+                'player_client': ['mweb', 'ios', 'android', 'web']
             }
         }
 
